@@ -73,7 +73,7 @@ export function paramsFor(difficulty: number): LoadBalanceParams {
     dropPenaltySec: 3,
     beamLength: 9,
     walkSpeed: 1.4,
-    targetLoads: 4,
+    targetLoads: 6,
   };
 }
 
