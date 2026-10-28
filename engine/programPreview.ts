@@ -146,10 +146,10 @@ export function adaptationProfile(ctx: SimContext, week: PreviewWeek): Adaptatio
 
   const hyp = accumulate(ctx, week, (it) => setWeight(ctx, it) * it.e.adaptationBias.hypertrophy).weekly;
   let massSum = 0;
-  let hypotrophy = 0;
+  let hypSum = 0;
   for (const m of MUSCLE_REGIONS) {
     massSum += MUSCLE_MASS_FRACTIONS[m];
-    hypotrophy += MUSCLE_MASS_FRACTIONS[m] * hypResponse(ctx, hyp[m]);
+    hypSum += MUSCLE_MASS_FRACTIONS[m] * hypResponse(ctx, hyp[m]);
   }
 
   let strength = 0;
@@ -183,7 +183,7 @@ export function adaptationProfile(ctx: SimContext, week: PreviewWeek): Adaptatio
   }
 
   return {
-    hypertrophy: hypotrophy / massSum,
+    hypertrophy: hypSum / massSum,
     maxStrength: saturate(strength, T.v0Strength * M.previewStrengthPatterns),
     power: saturate(power, T.v0Power),
     speed: saturate(speed, T.v0Power),
