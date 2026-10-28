@@ -167,7 +167,7 @@ export const useStore = create<StoreState>()((set, get) => {
     publish(game, {
       lastResults: out,
       pendingShift: pending,
-      notice: notice ?? s.notice,
+      notice,
       screen: pending ? 'minigame' : s.screen,
       settings: pending || stop ? { ...s.settings, autoPlay: false } : s.settings,
     });

@@ -268,7 +268,10 @@ export function bodyShape(state: CharacterState, P: Params): BodyShape {
   }, fc.calf);
   const upperArm = stations(6, (t) => {
     const belly = 1 + 0.22 * Math.exp(-(((t - 0.4) / 0.28) ** 2));
-    return 3.2 * Math.max(0.9, G.arm) * belly * (1 + 0.28 * (1 - t) * (G.delts - 0.2) * 0.5) + 0.2;
+    const armR = 3.2 * Math.max(0.9, G.arm) * belly + 0.2;
+    // Deltoid cap blends into the top of the arm (it sets the silhouette width at the shoulder).
+    const deltR = 5.0 * G.delts * clamp(1 - t / 0.5, 0, 1);
+    return Math.max(armR, deltR);
   }, fc.upperArm);
   const forearm = stations(6, (t) => {
     const belly = 1 + 0.35 * G.forearm * Math.exp(-(((t - 0.18) / 0.3) ** 2)) * 0.6;

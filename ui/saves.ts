@@ -42,12 +42,15 @@ export async function listSaves(): Promise<SaveSummary[]> {
 export async function saveGame(name: string, state: GameState): Promise<number> {
   const table = getDb().saves;
   const rec: SaveRecord = { name, updatedAt: Date.now(), day: state.character.day, state: JSON.stringify(state) };
-  const existing = await table.where('name').equals(name).first();
-  if (existing?.id !== undefined) {
-    await table.put({ ...rec, id: existing.id });
-    return existing.id;
-  }
-  return table.add(rec);
+  // One rw transaction: concurrent saves under the same name (e.g. autosave racing a manual save) never duplicate a row.
+  return getDb().transaction('rw', table, async () => {
+    const existing = await table.where('name').equals(name).first();
+    if (existing?.id !== undefined) {
+      await table.put({ ...rec, id: existing.id });
+      return existing.id;
+    }
+    return table.add(rec);
+  });
 }
 
 export async function loadSave(id: number): Promise<GameState | null> {
@@ -61,11 +64,16 @@ export async function deleteSave(id: number): Promise<void> {
 
 /** Write the single "Autosave" slot when >= 7 in-game days passed since it (or the game restarted earlier). Returns true if written. */
 export async function autosave(state: GameState): Promise<boolean> {
-  const existing = await getDb().saves.where('name').equals(AUTOSAVE_NAME).first();
   const day = state.character.day;
-  if (existing && day >= existing.day && day - existing.day < AUTOSAVE_EVERY_DAYS) return false;
-  await saveGame(AUTOSAVE_NAME, state);
-  return true;
+  const table = getDb().saves;
+  const due = await getDb().transaction('rw', table, async () => {
+    const existing = await table.where('name').equals(AUTOSAVE_NAME).first();
+    if (existing && day >= existing.day && day - existing.day < AUTOSAVE_EVERY_DAYS) return false;
+    const rec: SaveRecord = { name: AUTOSAVE_NAME, updatedAt: Date.now(), day, state: JSON.stringify(state) };
+    await table.put(existing?.id !== undefined ? { ...rec, id: existing.id } : rec);
+    return true;
+  });
+  return due;
 }
 
 /** Portable JSON text of a game (an envelope around the state). */
