@@ -90,4 +90,17 @@ export const economyDefs = {
   minigameReadinessPenalty: design(0.4, 'ratio', [0.2, 0.6], 'Sleep-deprived characters play worse and earn less.'),
   /** Accelerated mode multiplier (clearly labelled unrealistic). */
   acceleratedGainMultiplier: design(1.5, 'multiplier', [1.0, 3.0], 'Unrealistic mode.'),
+  /** Game-state integration (engine/economy.ts, engine/game.ts). */
+  daysPerMonth: design(30.4, 'days', [28, 31], 'Monthly bills are charged pro-rata per day as monthly / 30.4 (about 365 / 12).'),
+  startingCash: design(2000, 'USD', [0, 10000], 'Cash on hand at the start of a new game.'),
+  financialRunwayDays: design(21, 'days', [7, 60], 'Financial stress is 0 with at least this many days of fixed costs in cash and rises linearly to 1 at zero cash.'),
+  defaultJobPerformance: design(0.7, 'ratio', [0.3, 1], 'Mini-game performance assumed for a shift that was neither played nor auto-resolvable yet.'),
+  reportsKept: design(60, 'reports', [7, 365], 'Most recent DayReports retained in the game state.'),
+  ledgerEntriesKept: design(2000, 'entries', [100, 100000], 'Most recent ledger entries retained (cash is the source of truth).'),
+  cmjLogIntervalDays: design(7, 'days', [1, 30], 'Interval at which the countermovement jump is logged in the history (it is costly to evaluate).'),
+  defaultSleepHours: design(8, 'h', [6, 10], 'Sleep length of the default time template.'),
+  defaultBedHour: design(23, 'h', [20, 26], 'Bed time of the default time template (moved for early or late shifts).'),
+  defaultTrainingStartHour: design(18, 'h', [6, 21], 'Training start hour of the default time template.'),
+  defaultSessionMinutes: design(75, 'min', [30, 120], 'Session length reserved in the default time template.'),
+  defaultMealPlanSurplusKcal: design(200, 'kcal/day', [-500, 500], 'Energy above the estimated resting-plus-NEAT expenditure that the default meal plan is scaled to; training adds the rest.'),
 } as const;
