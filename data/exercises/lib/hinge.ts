@@ -1,0 +1,130 @@
+// Hinge and hip-thrust library: deadlift variants, hinge accessories, ballistic hinge, bridge/thrust variants.
+// refLoad = expected 1RM (kg) for the reference untrained 75 kg man at starting skill, scaled from the conventional deadlift (90) and RDL (70). [HEUR]
+import { ex } from '../define';
+import type { Exercise } from '../schema';
+
+export const HINGE_EXERCISES: Exercise[] = [
+  // --- deadlift variants ---
+  ex({
+    id: 'sumo_deadlift', name: 'Sumo deadlift', aliases: ['sumo'], category: 'hinge', movementPattern: 'hinge', gymTier: 'budget', refLoad: 88, repsModifier: 0.95, equipment: ['barbell'],
+    muscles: { gluteMax: 1, adductors: 0.8, vasti: 0.7, hamstrings: 0.6, spinalErectors: 0.75, forearms: 0.7, upperTraps: 0.6, midTrapsRhomboids: 0.5, lats: 0.4, gluteMed: 0.2 },
+    lengthBias: { gluteMax: 0.7, adductors: 0.7, hamstrings: 0.45, vasti: 0.5 }, resistanceProfile: 'descending',
+    axialLoad: 0.9, systemicFatigue: 0.95, localDamage: 0.55, skillDemand: 0.75, learningRate: 0.75, baseInjuryRisk: 0.35, riskTissues: ['lowBack', 'hamstrings', 'adductors', 'biceps'],
+    leverageExponents: { armLength: 0.2, femurTorso: 0.15, torsoLength: -0.1 }, metValue: 6, adaptationBias: { maxStrength: 1.1, hypertrophy: 0.8, power: 0.5 }, peakPowerLoadPct: 60, secondsPerRep: 4,
+    evidenceNotes: 'Wide stance gives a more upright torso, shorter bar path and higher vasti EMG than conventional (Escamilla 2002); lower erector demand is inferred from torso angle [HEUR].', verified: false,
+  }),
+  ex({
+    id: 'deficit_deadlift', name: 'Deficit deadlift', aliases: ['deficit pull'], category: 'hinge', movementPattern: 'hinge', gymTier: 'budget', refLoad: 82, repsModifier: 0.95, equipment: ['barbell', 'deficit platform'],
+    muscles: { gluteMax: 1, hamstrings: 0.8, spinalErectors: 1, vasti: 0.65, adductors: 0.5, forearms: 0.7, upperTraps: 0.6, midTrapsRhomboids: 0.5, lats: 0.4 },
+    lengthBias: { gluteMax: 0.75, hamstrings: 0.75, vasti: 0.6 }, resistanceProfile: 'descending',
+    axialLoad: 1, systemicFatigue: 1, localDamage: 0.7, skillDemand: 0.75, learningRate: 0.75, baseInjuryRisk: 0.4, riskTissues: ['lowBack', 'hamstrings', 'biceps'],
+    leverageExponents: { armLength: 0.4, femurTorso: -0.15, torsoLength: -0.2 }, metValue: 6, adaptationBias: { maxStrength: 1.05, hypertrophy: 0.9, power: 0.4 }, peakPowerLoadPct: 55, secondsPerRep: 4.5,
+    evidenceNotes: 'Standing on a platform lengthens the range, so glutes and hamstrings work deeper in the stretch off the floor; no direct trials [HEUR].', verified: false,
+  }),
+  ex({
+    id: 'block_pull', name: 'Block pull (rack pull from the knees)', aliases: ['rack pull'], category: 'hinge', movementPattern: 'hinge', gymTier: 'budget', refLoad: 110, repsModifier: 0.95, equipment: ['barbell', 'rack'],
+    muscles: { spinalErectors: 1, gluteMax: 0.9, upperTraps: 0.9, forearms: 0.9, hamstrings: 0.5, midTrapsRhomboids: 0.6, lats: 0.5, vasti: 0.3 },
+    lengthBias: { gluteMax: 0.4, hamstrings: 0.35 }, resistanceProfile: 'descending',
+    axialLoad: 1, systemicFatigue: 0.8, localDamage: 0.4, skillDemand: 0.5, learningRate: 1, baseInjuryRisk: 0.35, riskTissues: ['lowBack', 'hamstrings', 'biceps'],
+    leverageExponents: { armLength: 0.3, femurTorso: -0.05, torsoLength: -0.1 }, metValue: 6, adaptationBias: { maxStrength: 1.05, hypertrophy: 0.7, power: 0.4 }, peakPowerLoadPct: 60, secondsPerRep: 3.5,
+    evidenceNotes: 'Short range from knee height permits supramaximal loads for erectors, upper traps and grip, but trains the hips at short length [HEUR].', verified: false,
+  }),
+  ex({
+    id: 'trap_bar_deadlift', name: 'Trap bar deadlift', aliases: ['hex bar deadlift'], category: 'hinge', movementPattern: 'hinge', gymTier: 'powerlifting', refLoad: 100, repsModifier: 1, equipment: ['trap bar'],
+    muscles: { gluteMax: 1, vasti: 0.8, spinalErectors: 0.75, hamstrings: 0.6, adductors: 0.5, forearms: 0.7, upperTraps: 0.6, midTrapsRhomboids: 0.4, lats: 0.35 },
+    lengthBias: { gluteMax: 0.55, hamstrings: 0.5, vasti: 0.5 }, resistanceProfile: 'descending',
+    axialLoad: 0.85, systemicFatigue: 0.9, localDamage: 0.5, skillDemand: 0.5, learningRate: 1.1, baseInjuryRisk: 0.3, riskTissues: ['lowBack', 'hamstrings', 'knee'],
+    leverageExponents: { armLength: 0.3, femurTorso: -0.05, torsoLength: -0.1 }, metValue: 6, adaptationBias: { maxStrength: 1.05, hypertrophy: 0.9, power: 0.7 }, peakPowerLoadPct: 40, secondsPerRep: 3.5,
+    evidenceNotes: 'Hexagonal bar shifts work from hip to knee extensors, lowers lumbar load and raises peak power versus a straight bar (Swinton 2011).', verified: true,
+  }),
+  ex({
+    id: 'snatch_grip_deadlift', name: 'Snatch-grip deadlift', aliases: ['wide-grip deadlift'], category: 'hinge', movementPattern: 'hinge', gymTier: 'budget', refLoad: 75, repsModifier: 0.95, equipment: ['barbell'],
+    muscles: { spinalErectors: 1, gluteMax: 0.9, hamstrings: 0.75, upperTraps: 0.9, midTrapsRhomboids: 0.8, forearms: 0.8, lats: 0.5, vasti: 0.5, rearDelts: 0.4, adductors: 0.4 },
+    lengthBias: { gluteMax: 0.75, hamstrings: 0.7 }, resistanceProfile: 'descending',
+    axialLoad: 1, systemicFatigue: 0.95, localDamage: 0.65, skillDemand: 0.65, learningRate: 0.85, baseInjuryRisk: 0.4, riskTissues: ['lowBack', 'hamstrings', 'biceps'],
+    leverageExponents: { armLength: 0.3, femurTorso: -0.2, torsoLength: -0.25 }, metValue: 6, adaptationBias: { maxStrength: 0.95, hypertrophy: 0.95, power: 0.5 }, peakPowerLoadPct: 55, secondsPerRep: 4.5,
+    evidenceNotes: 'Wide grip lowers the start position and lengthens the range, adding upper-back and erector load for the same bar weight [HEUR].', verified: false,
+  }),
+  ex({
+    id: 'jefferson_deadlift', name: 'Jefferson deadlift', aliases: ['straddle deadlift'], category: 'hinge', movementPattern: 'hinge', gymTier: 'budget', refLoad: 75, repsModifier: 0.95, equipment: ['barbell', 'plates'],
+    muscles: { gluteMax: 1, adductors: 0.8, spinalErectors: 0.7, hamstrings: 0.6, vasti: 0.6, forearms: 0.7, upperTraps: 0.5, obliques: 0.4, gluteMed: 0.3 },
+    lengthBias: { gluteMax: 0.7, adductors: 0.65, hamstrings: 0.5 }, resistanceProfile: 'descending',
+    axialLoad: 0.9, systemicFatigue: 0.85, localDamage: 0.55, skillDemand: 0.85, learningRate: 0.55, baseInjuryRisk: 0.4, riskTissues: ['lowBack', 'hamstrings', 'adductors', 'biceps', 'hip'],
+    leverageExponents: { armLength: 0.3, femurTorso: 0.1, torsoLength: -0.1 }, metValue: 6, adaptationBias: { maxStrength: 1, hypertrophy: 0.8, power: 0.4 }, peakPowerLoadPct: 50, secondsPerRep: 4.5,
+    evidenceNotes: 'Evidence is limited: straddling the bar with a mixed grip is novel and untested, so it is extrapolated from sumo and conventional mechanics [HEUR].', verified: false,
+  }),
+  // --- hinge accessories ---
+  ex({
+    id: 'stiff_leg_deadlift', name: 'Stiff-leg deadlift', aliases: ['SLDL'], category: 'hinge', movementPattern: 'hinge', gymTier: 'budget', refLoad: 68, repsModifier: 1, equipment: ['barbell'],
+    muscles: { hamstrings: 1, gluteMax: 0.85, spinalErectors: 0.8, adductors: 0.4, forearms: 0.5, upperTraps: 0.3 },
+    lengthBias: { hamstrings: 0.95, gluteMax: 0.8 }, resistanceProfile: 'descending',
+    axialLoad: 0.75, systemicFatigue: 0.75, localDamage: 0.8, skillDemand: 0.55, learningRate: 0.95, baseInjuryRisk: 0.35, riskTissues: ['hamstrings', 'lowBack'],
+    leverageExponents: { armLength: 0.3, femurTorso: -0.1, torsoLength: -0.15 }, metValue: 5, adaptationBias: { maxStrength: 0.85, hypertrophy: 1.05, power: 0.25 }, secondsPerRep: 4,
+    evidenceNotes: 'Straight knees with deep hip flexion put the biarticular hamstrings at their longest, the position linked to greater growth (Maeo 2021, leg curl) [HEUR].', verified: false,
+  }),
+  ex({
+    id: 'single_leg_rdl', name: 'Single-leg Romanian deadlift', aliases: ['single-leg RDL', 'SLRDL'], category: 'hinge', movementPattern: 'hinge', gymTier: 'home', refLoad: 35, repsModifier: 1.1, equipment: ['dumbbell'],
+    muscles: { gluteMax: 1, hamstrings: 0.85, gluteMed: 0.5, spinalErectors: 0.5, forearms: 0.4, adductors: 0.3, obliques: 0.3 },
+    lengthBias: { gluteMax: 0.7, hamstrings: 0.85 },
+    axialLoad: 0.4, systemicFatigue: 0.45, localDamage: 0.55, skillDemand: 0.7, learningRate: 1, baseInjuryRisk: 0.25, riskTissues: ['hamstrings', 'lowBack'],
+    leverageExponents: { femurTorso: -0.1 }, metValue: 4.5, adaptationBias: { maxStrength: 0.7, hypertrophy: 1, power: 0.2, muscularEndurance: 0.9 }, unilateral: true, secondsPerRep: 3.5,
+    evidenceNotes: 'Single-limb deadlift ranks among the highest gluteus medius EMG exercises (Boren 2011); balance demand caps the load.', verified: true,
+  }),
+  ex({
+    id: 'good_morning', name: 'Good morning', aliases: ['GM'], category: 'hinge', movementPattern: 'hinge', gymTier: 'budget', refLoad: 45, repsModifier: 1, equipment: ['barbell', 'rack'],
+    muscles: { spinalErectors: 1, hamstrings: 0.9, gluteMax: 0.9, adductors: 0.4, obliques: 0.2 },
+    lengthBias: { hamstrings: 0.9, gluteMax: 0.8, spinalErectors: 0.6 }, resistanceProfile: 'descending',
+    axialLoad: 0.9, systemicFatigue: 0.65, localDamage: 0.7, skillDemand: 0.7, learningRate: 0.85, baseInjuryRisk: 0.45, riskTissues: ['lowBack', 'hamstrings'],
+    leverageExponents: { torsoLength: -0.3 }, metValue: 5, adaptationBias: { maxStrength: 0.9, hypertrophy: 0.9, power: 0.2 }, secondsPerRep: 4,
+    evidenceNotes: 'Bar-on-back hinge with a long lever from the torso; erector and hamstring demand is high and low-back risk rises with load and torso angle [HEUR].', verified: false,
+  }),
+  ex({
+    id: 'jefferson_curl', name: 'Jefferson curl', category: 'hinge', movementPattern: 'hinge', gymTier: 'budget', refLoad: 30, repsModifier: 1, equipment: ['barbell'],
+    muscles: { spinalErectors: 1, hamstrings: 0.6, gluteMax: 0.4, forearms: 0.3 },
+    lengthBias: { spinalErectors: 0.95, hamstrings: 0.9, gluteMax: 0.7 }, resistanceProfile: 'descending',
+    axialLoad: 0.35, systemicFatigue: 0.3, localDamage: 0.5, skillDemand: 0.7, learningRate: 0.7, baseInjuryRisk: 0.35, riskTissues: ['lowBack', 'hamstrings'],
+    metValue: 3.5, adaptationBias: { maxStrength: 0.4, hypertrophy: 0.5, power: 0.1, muscularEndurance: 0.6 }, secondsPerRep: 6,
+    evidenceNotes: 'Evidence is limited: no controlled trials of loaded spinal flexion, so effects are kept modest and extrapolated from lengthened-position training [HEUR].', verified: false,
+  }),
+  ex({
+    id: 'back_extension_45', name: '45-degree back extension', aliases: ['hyperextension', '45 degree hyper'], category: 'hinge', movementPattern: 'hinge', gymTier: 'commercial', loadType: 'bodyweight', bodyweightFraction: 0.5, refLoad: 50, repsModifier: 1.1, equipment: ['hyperextension bench'],
+    muscles: { spinalErectors: 1, gluteMax: 0.8, hamstrings: 0.7, adductors: 0.2 },
+    lengthBias: { hamstrings: 0.7, gluteMax: 0.65 }, resistanceProfile: 'ascending',
+    axialLoad: 0.15, systemicFatigue: 0.3, localDamage: 0.4, skillDemand: 0.3, learningRate: 1.5, baseInjuryRisk: 0.2, riskTissues: ['lowBack', 'hamstrings'],
+    metValue: 4, adaptationBias: { maxStrength: 0.6, hypertrophy: 0.9, power: 0.2, muscularEndurance: 1 }, secondsPerRep: 3,
+    evidenceNotes: 'Bodyweight hip and trunk extension on a 45-degree bench loads erectors, glutes and hamstrings, and progresses by holding a plate [HEUR].', verified: false,
+  }),
+  ex({
+    id: 'reverse_hyper', name: 'Reverse hyperextension', aliases: ['reverse hyper'], category: 'hinge', movementPattern: 'hinge', gymTier: 'powerlifting', refLoad: 60, repsModifier: 1.2, equipment: ['reverse hyper machine'],
+    muscles: { gluteMax: 1, hamstrings: 0.8, spinalErectors: 0.7, adductors: 0.3 },
+    lengthBias: { gluteMax: 0.4, hamstrings: 0.5 }, resistanceProfile: 'ascending',
+    axialLoad: 0.05, systemicFatigue: 0.45, localDamage: 0.35, skillDemand: 0.35, learningRate: 1.3, baseInjuryRisk: 0.15, riskTissues: ['lowBack'],
+    metValue: 4.5, adaptationBias: { maxStrength: 0.8, hypertrophy: 0.9, power: 0.3, muscularEndurance: 0.9 }, secondsPerRep: 3,
+    evidenceNotes: 'Evidence is limited: popularised in powerlifting for high-volume, low-axial posterior-chain work, so it is modelled on other hip-extension exercises [HEUR].', verified: false,
+  }),
+  ex({
+    id: 'kettlebell_swing', name: 'Kettlebell swing', aliases: ['KB swing', 'Russian swing'], category: 'hinge', movementPattern: 'hinge', gymTier: 'home', refLoad: 32, repsModifier: 1.3, equipment: ['kettlebell'],
+    muscles: { gluteMax: 1, hamstrings: 0.8, spinalErectors: 0.6, forearms: 0.5, lats: 0.3, vasti: 0.3, adductors: 0.25, obliques: 0.2 },
+    lengthBias: { gluteMax: 0.4, hamstrings: 0.6 },
+    axialLoad: 0.2, systemicFatigue: 0.65, localDamage: 0.3, skillDemand: 0.55, learningRate: 1, baseInjuryRisk: 0.25, riskTissues: ['lowBack', 'hamstrings'],
+    metValue: 9, adaptationBias: { maxStrength: 0.5, hypertrophy: 0.4, power: 0.8, muscularEndurance: 1.3 }, peakPowerLoadPct: 50, secondsPerRep: 2,
+    evidenceNotes: 'Hip-dominant ballistic with high glute and hamstring drive and modest spinal load (McGill & Marshall 2012); 6 weeks raised maximal and explosive strength (Lake & Lauder 2012).', verified: true,
+  }),
+  // --- hip thrust pattern ---
+  ex({
+    id: 'glute_bridge', name: 'Barbell glute bridge', aliases: ['bridge'], category: 'hinge', movementPattern: 'hipThrust', gymTier: 'budget', refLoad: 80, repsModifier: 1.2, equipment: ['barbell'],
+    muscles: { gluteMax: 1, hamstrings: 0.4, adductors: 0.3, vasti: 0.25 },
+    lengthBias: { gluteMax: 0.1 }, resistanceProfile: 'ascending',
+    axialLoad: 0.2, systemicFatigue: 0.35, localDamage: 0.25, skillDemand: 0.2, learningRate: 1.6, baseInjuryRisk: 0.12, riskTissues: ['hip'],
+    metValue: 4, adaptationBias: { maxStrength: 0.7, hypertrophy: 0.85, power: 0.5 }, secondsPerRep: 3,
+    evidenceNotes: 'Floor bridge shortens the range versus a hip thrust (glute activation advantage over squats, Contreras 2015), so glutes are loaded at short length [HEUR].', verified: false,
+  }),
+  ex({
+    id: 'single_leg_hip_thrust', name: 'Single-leg hip thrust', aliases: ['single-leg thrust'], category: 'hinge', movementPattern: 'hipThrust', gymTier: 'home', loadType: 'bodyweight', bodyweightFraction: 0.6, refLoad: 60, repsModifier: 1.15, equipment: ['bench'],
+    muscles: { gluteMax: 1, hamstrings: 0.45, gluteMed: 0.4, vasti: 0.25, adductors: 0.25 },
+    lengthBias: { gluteMax: 0.2 }, resistanceProfile: 'ascending',
+    axialLoad: 0.05, systemicFatigue: 0.3, localDamage: 0.3, skillDemand: 0.45, learningRate: 1.3, baseInjuryRisk: 0.15, riskTissues: ['hip', 'hamstrings'],
+    metValue: 4, adaptationBias: { maxStrength: 0.7, hypertrophy: 0.9, power: 0.4 }, unilateral: true, secondsPerRep: 3,
+    evidenceNotes: 'Per-leg hip thrust raises glute demand and adds gluteus medius pelvic-stability work, letting bodyweight reach hard sets [HEUR].', verified: false,
+  }),
+];

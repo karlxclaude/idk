@@ -315,6 +315,12 @@ export function createCharacter(ctx: SimContext, profile: CharacterProfile, seed
 
 /** Reference untrained man (75 kg, 175 cm, median genetics) used to anchor exercise refLoad values. */
 export function referenceCharacter(ctx: SimContext): CharacterState {
+  const st = buildReference(ctx);
+  for (const m of MUSCLE_REGIONS) st.muscles[m].momentArm = 1;
+  return st;
+}
+
+function buildReference(ctx: SimContext): CharacterState {
   const h = REF_HEIGHT_M;
   const bf = REF_BODY_FAT;
   // Solve FFMI so body mass is ~75 kg.

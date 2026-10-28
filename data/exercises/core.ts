@@ -79,14 +79,14 @@ export const CORE_EXERCISES = [
     id: 'bench_press', name: 'Competition bench press (paused)', aliases: ['bench'], category: 'horizontalPress', movementPattern: 'horizontalPress', gymTier: 'budget', refLoad: 55,
     muscles: { midLowerChest: 1, upperChest: 0.5, frontDelts: 0.7, tricepsLatMed: 0.7, tricepsLong: 0.4 }, lengthBias: { midLowerChest: 0.8, upperChest: 0.7, tricepsLatMed: 0.5 },
     axialLoad: 0.1, systemicFatigue: 0.6, localDamage: 0.5, skillDemand: 0.65, learningRate: 0.9, baseInjuryRisk: 0.3, riskTissues: ['shoulder', 'pec', 'elbow'],
-    leverageExponents: { armLength: -0.4 }, metValue: 4, adaptationBias: { maxStrength: 1, hypertrophy: 1, power: 0.6 }, peakPowerLoadPct: 40, secondsPerRep: 3,
-    evidenceNotes: 'Long arms = longer ROM, worse leverage [HEUR].', verified: true,
+    leverageExponents: { armLength: -0.4 }, metValue: 4, adaptationBias: { maxStrength: 1, hypertrophy: 1, power: 0.6 }, peakPowerLoadPct: 40, secondsPerRep: 3, legDrive: 0.6,
+    evidenceNotes: 'Paused competition bench with arch and leg drive. Long arms = longer ROM, worse leverage [HEUR].', verified: true,
   }),
   ex({
     id: 'larsen_press', name: 'Larsen press', category: 'horizontalPress', movementPattern: 'horizontalPress', gymTier: 'budget', refLoad: 48,
     muscles: { midLowerChest: 1, upperChest: 0.5, frontDelts: 0.7, tricepsLatMed: 0.8, tricepsLong: 0.4 }, lengthBias: { midLowerChest: 0.8, upperChest: 0.7 },
     axialLoad: 0.05, systemicFatigue: 0.5, localDamage: 0.5, skillDemand: 0.45, learningRate: 1.1, baseInjuryRisk: 0.25, riskTissues: ['shoulder', 'pec'],
-    leverageExponents: { armLength: -0.4 }, metValue: 4, adaptationBias: { maxStrength: 0.95, hypertrophy: 1 }, secondsPerRep: 3,
+    leverageExponents: { armLength: -0.4 }, metValue: 4, adaptationBias: { maxStrength: 0.95, hypertrophy: 1 }, secondsPerRep: 3, legDrive: 0,
     evidenceNotes: 'Feet up: no leg drive, less arch, lower skill than competition bench.', verified: true,
   }),
   ex({

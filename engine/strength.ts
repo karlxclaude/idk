@@ -12,7 +12,6 @@ let refCache: { ctx: SimContext; state: CharacterState } | null = null;
 function refState(ctx: SimContext): CharacterState {
   if (refCache && refCache.ctx === ctx) return refCache.state;
   const st = referenceCharacter(ctx);
-  for (const m of MUSCLE_REGIONS) st.muscles[m].momentArm = 1;
   refCache = { ctx, state: st };
   return st;
 }

@@ -34,9 +34,7 @@ function legStrength(ctx: SimContext, s: CharacterState): number {
 let refLegCache: { ctx: SimContext; v: number } | null = null;
 function refLeg(ctx: SimContext): number {
   if (refLegCache && refLegCache.ctx === ctx) return refLegCache.v;
-  const r = referenceCharacter(ctx);
-  for (const k in r.muscles) r.muscles[k as MuscleId].momentArm = 1;
-  const v = legStrength(ctx, r);
+  const v = legStrength(ctx, referenceCharacter(ctx));
   refLegCache = { ctx, v };
   return v;
 }

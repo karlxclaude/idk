@@ -67,6 +67,8 @@ export const ExerciseSchema = z.object({
   sprint: z.object({ f0h: z.number().min(0).max(1), vmax: z.number().min(0).max(1), technique: z.number().min(0).max(1) }).optional(),
   /** Prevention tags (e.g. 'nordic', 'copenhagen'). */
   prevention: z.array(z.string()).default([]),
+  /** Lower-body contribution to an upper-body press (bench leg drive), 0-1. Affects load expression, not hypertrophy. */
+  legDrive: z.number().min(0).max(1).default(0),
   /** Unilateral exercises deliver cross-education. */
   unilateral: z.boolean().default(false),
   /** Sides: exercises performed per-side double the time cost. */
