@@ -1,0 +1,3321 @@
+[
+  {
+    "id": "acsm2021",
+    "authors": "American College of Sports Medicine",
+    "year": 2021,
+    "title": "ACSM's Guidelines for Exercise Testing and Prescription (11th ed.)",
+    "journal": "Wolters Kluwer",
+    "doi": null,
+    "pmid": null,
+    "kind": "book",
+    "constantsInformed": [
+      "aerobic.vo2BaseMen20s",
+      "aerobic.vo2BaseWomen20s",
+      "model.vo2IndividualSd"
+    ],
+    "verified": false,
+    "notes": "Age/sex VO2max norms (approx.: men 20-29 50th percentile ~43-45, women ~36-38 mL/kg/min)."
+  },
+  {
+    "id": "baker2017",
+    "authors": "Baker",
+    "year": 2017,
+    "title": "Sweating Rate and Sweat Sodium Concentration in Athletes: A Review of Methodology and Intra/Interindividual Variability",
+    "journal": "Sports Med",
+    "doi": "10.1007/s40279-017-0691-5",
+    "pmid": "28332116",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "nutrition.sweatRateBase",
+      "nutrition.sweatSodiumMmol"
+    ],
+    "verified": true,
+    "notes": "Sweat rate 0.5-2 L/h and sweat sodium ~10-90 mmol/L vary widely between athletes."
+  },
+  {
+    "id": "balsalobre2016",
+    "authors": "Balsalobre-Fernández, Santos-Concejero, Grivas",
+    "year": 2016,
+    "title": "Effects of Strength Training on Running Economy in Highly Trained Runners: A Systematic Review With Meta-Analysis of Controlled Trials",
+    "journal": "J Strength Cond Res",
+    "doi": "10.1519/JSC.0000000000001316",
+    "pmid": "26694507",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "aerobic.economyStrengthBonus"
+    ],
+    "verified": true,
+    "notes": "Strength training improved running economy (ES 1.4) in highly trained runners."
+  },
+  {
+    "id": "banister1975",
+    "authors": "Banister EW, Calvert TW, Savage MV, Bach T",
+    "year": 1975,
+    "title": "A systems model of training for athletic performance",
+    "journal": "Aust J Sports Med",
+    "doi": null,
+    "pmid": null,
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "fatigue.fitnessTauDays",
+      "fatigue.fatigueTauDays"
+    ],
+    "verified": false,
+    "notes": "Original fitness-fatigue impulse-response model. Not indexed in PubMed/Crossref; companion Calvert et al. 1976 IEEE Trans SMC (10.1109/tsmc.1976.5409179) verified."
+  },
+  {
+    "id": "barakat2020",
+    "authors": "Barakat C, Pearson J, Escalante G, Campbell B, De Souza EO",
+    "year": 2020,
+    "title": "Body recomposition: can trained individuals build muscle and lose fat at the same time?",
+    "journal": "Strength Cond J",
+    "doi": "10.1519/ssc.0000000000000584",
+    "pmid": null,
+    "kind": "peer-reviewed",
+    "constantsInformed": [],
+    "verified": true,
+    "notes": ""
+  },
+  {
+    "id": "bartholomew2008",
+    "authors": "Bartholomew, Stults-Kolehmainen, Elrod, Todd",
+    "year": 2008,
+    "title": "Strength gains after resistance training: the effect of stressful, negative life events",
+    "journal": "J Strength Cond Res",
+    "doi": "10.1519/JSC.0b013e318173d0bf",
+    "pmid": "18545186",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "hypertrophy.stress"
+    ],
+    "verified": true,
+    "notes": "High life stress: smaller bench and squat gains over 12 weeks."
+  },
+  {
+    "id": "bickel2011",
+    "authors": "Bickel, Cross, Bamman",
+    "year": 2011,
+    "title": "Exercise dosing to retain resistance training adaptations in young and older adults",
+    "journal": "Med Sci Sports Exerc",
+    "doi": "10.1249/MSS.0b013e318207c15d",
+    "pmid": "21131862",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "hypertrophy.maintenanceResponse",
+      "hypertrophy.atrophyTauDays",
+      "strength.maintenanceStimulusFraction"
+    ],
+    "verified": true,
+    "notes": "1/3 and 1/9 doses maintained hypertrophy in young (not old) adults over 32 weeks."
+  },
+  {
+    "id": "blsAvgPrice",
+    "authors": "US Bureau of Labor Statistics",
+    "year": 2025,
+    "title": "Average Price Data (CPI), US city average",
+    "journal": "bls.gov",
+    "doi": null,
+    "pmid": null,
+    "kind": "database",
+    "constantsInformed": [
+      "economy.minimumWage"
+    ],
+    "verified": false,
+    "notes": "Prices entered from memory of typical 2024-2025 US grocery prices; regional multiplier for Massachusetts applied. Not fetched."
+  },
+  {
+    "id": "bohm2015",
+    "authors": "Bohm, Mersmann, Arampatzis",
+    "year": 2015,
+    "title": "Human tendon adaptation in response to mechanical loading: a systematic review and meta-analysis of exercise intervention studies on healthy adults",
+    "journal": "Sports Med Open",
+    "doi": "10.1186/s40798-015-0009-9",
+    "pmid": "27747846",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "injury.tissueGapHazardPer30pct",
+      "injury.tendonTauDays",
+      "injury.tendonMaxGainPerYear"
+    ],
+    "verified": true,
+    "notes": "Tendon stiffness adapts to high-intensity loading over >=12 weeks (ES ~0.7)."
+  },
+  {
+    "id": "bosquet2013",
+    "authors": "Bosquet, Berryman, Dupuy, Mekary, Arvisais, Bherer, et al.",
+    "year": 2013,
+    "title": "Effect of training cessation on muscular performance: a meta-analysis",
+    "journal": "Scand J Med Sci Sports",
+    "doi": "10.1111/sms.12047",
+    "pmid": "23347054",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "hypertrophy.atrophyGraceDays",
+      "strength.neuralGraceDays",
+      "strength.neuralDecayTauDays"
+    ],
+    "verified": true,
+    "notes": "Detraining SMD: maximal force -0.46, power -0.20, submaximal -0.62; dose-response with cessation duration."
+  },
+  {
+    "id": "bouchard1990",
+    "authors": "Bouchard, Tremblay, Després, Nadeau, Lupien, Thériault, et al.",
+    "year": 1990,
+    "title": "The response to long-term overfeeding in identical twins",
+    "journal": "N Engl J Med",
+    "doi": "10.1056/NEJM199005243222101",
+    "pmid": "2336074",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "energy.neatResponsivenessSd",
+      "energy.surplusLeanFractionNoTraining"
+    ],
+    "verified": true,
+    "notes": "84,000 kcal surplus over 100 days in 12 twin pairs: gain 4.3-13.3 kg (mean 8.1)."
+  },
+  {
+    "id": "bouchard1999",
+    "authors": "Bouchard, An, Rice, Skinner, Wilmore, Gagnon, et al.",
+    "year": 1999,
+    "title": "Familial aggregation of VO(2max) response to exercise training: results from the HERITAGE Family Study",
+    "journal": "J Appl Physiol (1985)",
+    "doi": "10.1152/jappl.1999.87.3.1003",
+    "pmid": "10484570",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "aerobic.vo2TrainableFraction",
+      "aerobic.responderSigma",
+      "aerobic.kAerPerDay"
+    ],
+    "verified": true,
+    "notes": "Maximal heritability estimate 47% for VO2max trainability; mean gain ~400 mL/min, range from ~0 to >1 L/min."
+  },
+  {
+    "id": "breenPhillips2011",
+    "authors": "Breen, Phillips",
+    "year": 2011,
+    "title": "Skeletal muscle protein metabolism in the elderly: Interventions to counteract the 'anabolic resistance' of ageing",
+    "journal": "Nutr Metab (Lond)",
+    "doi": "10.1186/1743-7075-8-68",
+    "pmid": "21975196",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "nutrition.leucineThresholdG",
+      "nutrition.leucineThresholdOlderG",
+      "hypertrophy.age"
+    ],
+    "verified": true,
+    "notes": "CORRECTION vs spec: journal is Nutr Metab (Lond)."
+  },
+  {
+    "id": "bruusgaard2010",
+    "authors": "Bruusgaard, Johansen, Egner, Rana, Gundersen",
+    "year": 2010,
+    "title": "Myonuclei acquired by overload exercise precede hypertrophy and are not lost on detraining",
+    "journal": "Proc Natl Acad Sci U S A",
+    "doi": "10.1073/pnas.0913935107",
+    "pmid": "20713720",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "hypertrophy.muscleMemoryMultiplier"
+    ],
+    "verified": true,
+    "notes": "Mouse myonuclei retained on detraining (contested in humans by Psilander 2019)."
+  },
+  {
+    "id": "brzycki1993",
+    "authors": "Brzycki M",
+    "year": 1993,
+    "title": "Strength testing: predicting a one-rep max from reps-to-fatigue",
+    "journal": "J Phys Educ Recreat Dance",
+    "doi": "10.1080/07303084.1993.10606684",
+    "pmid": null,
+    "kind": "peer-reviewed",
+    "constantsInformed": [],
+    "verified": false,
+    "notes": "1RM = w / (1.0278 - 0.0278 r). DOI from memory, not resolved."
+  },
+  {
+    "id": "burden2015",
+    "authors": "Burden, Morton, Richards, Whyte, Pedlar",
+    "year": 2015,
+    "title": "Is iron treatment beneficial in, iron-deficient but non-anaemic (IDNA) endurance athletes? A systematic review and meta-analysis",
+    "journal": "Br J Sports Med",
+    "doi": "10.1136/bjsports-2014-093624",
+    "pmid": "25361786",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "nutrition.idnaPerformancePenalty"
+    ],
+    "verified": true,
+    "notes": "Iron treatment in IDNA endurance athletes: moderate effect on VO2max (Hedges g 0.61) and [Hb] (0.70)."
+  },
+  {
+    "id": "burke2011",
+    "authors": "Burke, Hawley, Wong, Jeukendrup",
+    "year": 2011,
+    "title": "Carbohydrates for training and competition",
+    "journal": "J Sports Sci",
+    "doi": "10.1080/02640414.2011.585473",
+    "pmid": "21660838",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "hypertrophy.trainedGlycogenBonus",
+      "aerobic.glycogenPerKgMuscle",
+      "aerobic.glycogenPerformancePenalty",
+      "nutrition.carbLightGkg",
+      "nutrition.carbModerateGkg",
+      "nutrition.carbHighGkg",
+      "nutrition.carbVeryHighGkg"
+    ],
+    "verified": true,
+    "notes": "Carbohydrate targets by load: 3-5, 5-7, 6-10, 8-12 g/kg/day."
+  },
+  {
+    "id": "busso2003",
+    "authors": "Busso",
+    "year": 2003,
+    "title": "Variable dose-response relationship between exercise training and performance",
+    "journal": "Med Sci Sports Exerc",
+    "doi": "10.1249/01.MSS.0000074465.13621.37",
+    "pmid": "12840641",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "fatigue.fitnessTauDays",
+      "fatigue.fatigueTauDays",
+      "fatigue.fatigueGainRatio",
+      "fatigue.fatigueLoadExponent"
+    ],
+    "verified": true,
+    "notes": "Fatigue gain in the impulse-response model rises with training load (variable dose-response)."
+  },
+  {
+    "id": "carroll2006",
+    "authors": "Carroll, Herbert, Munn, Lee, Gandevia",
+    "year": 2006,
+    "title": "Contralateral effects of unilateral strength training: evidence and possible mechanisms",
+    "journal": "J Appl Physiol (1985)",
+    "doi": "10.1152/japplphysiol.00531.2006",
+    "pmid": "17043329",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "training.crossEducation"
+    ],
+    "verified": true,
+    "notes": "CORRECTION vs spec: journal is J Appl Physiol. Review of contralateral strength effects (~8% in earlier meta-analysis)."
+  },
+  {
+    "id": "cheuvrontKenefick2014",
+    "authors": "Cheuvront, Kenefick",
+    "year": 2014,
+    "title": "Dehydration: physiology, assessment, and performance effects",
+    "journal": "Compr Physiol",
+    "doi": "10.1002/cphy.c130017",
+    "pmid": "24692140",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "nutrition.dehydrationAerobicThreshold",
+      "model.waterNeedBaseL"
+    ],
+    "verified": true,
+    "notes": "Compr Physiol review: >2% body-mass hypohydration impairs aerobic performance, worse in heat."
+  },
+  {
+    "id": "cormie2010",
+    "authors": "Cormie, McGuigan, Newton",
+    "year": 2010,
+    "title": "Influence of strength on magnitude and mechanisms of adaptation to power training",
+    "journal": "Med Sci Sports Exerc",
+    "doi": "10.1249/MSS.0b013e3181cf818d",
+    "pmid": "20639724",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "power.v0TrainableMax",
+      "power.powerStrongThreshold",
+      "power.powerStrongBonus"
+    ],
+    "verified": true,
+    "notes": "DOWNGRADE vs spec: magnitude of improvement was NOT significantly influenced by strength level; only a tendency toward larger jump gains in the stronger group. Treated as L."
+  },
+  {
+    "id": "cormie2011",
+    "authors": "Cormie, McGuigan, Newton",
+    "year": 2011,
+    "title": "Developing maximal neuromuscular power: part 2 - training considerations for improving maximal power production",
+    "journal": "Sports Med",
+    "doi": "10.2165/11538500-000000000-00000",
+    "pmid": "21244105",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "training.powerLoadWindowPct",
+      "power.v0TrainableMax"
+    ],
+    "verified": true,
+    "notes": "Peak power load varies by exercise: ~0% 1RM jump squat (body mass), 70-80% 1RM power clean; ~30-45% bench throw."
+  },
+  {
+    "id": "costill1976",
+    "authors": "Costill, Daniels, Evans, Fink, Krahenbuhl, Saltin, et al.",
+    "year": 1976,
+    "title": "Skeletal muscle enzymes and fiber composition in male and female track athletes",
+    "journal": "J Appl Physiol",
+    "doi": "10.1152/jappl.1976.40.2.149",
+    "pmid": "129449",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "strength.fiberStrengthPerTenth",
+      "power.v0FiberPerTenth"
+    ],
+    "verified": true,
+    "notes": "Distance runners ~70-80% type I; sprinters type II dominant."
+  },
+  {
+    "id": "coyle1984",
+    "authors": "Coyle, Martin, Sinacore, Joyner, Hagberg, Holloszy, et al.",
+    "year": 1984,
+    "title": "Time course of loss of adaptations after stopping prolonged intense endurance training",
+    "journal": "J Appl Physiol Respir Environ Exerc Physiol",
+    "doi": "10.1152/jappl.1984.57.6.1857",
+    "pmid": "6511559",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "aerobic.detrainFastFraction",
+      "aerobic.detrainFastTauDays",
+      "aerobic.detrainSlowTauDays"
+    ],
+    "verified": true,
+    "notes": "VO2max -7% at 21 d, -16% at 56 d of detraining in endurance-trained subjects."
+  },
+  {
+    "id": "craven2022",
+    "authors": "Craven, McCartney, Desbrow, Sabapathy, Bellinger, Roberts, et al.",
+    "year": 2022,
+    "title": "Effects of Acute Sleep Loss on Physical Performance: A Systematic and Meta-Analytical Review",
+    "journal": "Sports Med",
+    "doi": "10.1007/s40279-022-01706-y",
+    "pmid": "35708888",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "strength.readinessStrengthPenalty",
+      "fatigue.readinessSleepDebtPerHour",
+      "fatigue.acuteSleepPerformance"
+    ],
+    "verified": true,
+    "notes": "Acute sleep loss (<=6 h): mean performance change -7.6% (CI -11.9 to -3.1)."
+  },
+  {
+    "id": "cross2017sled",
+    "authors": "Cross MR, Brughelli M, Samozino P, Brown SR, Morin JB",
+    "year": 2017,
+    "title": "Optimal loading for maximizing power during sled-resisted sprinting",
+    "journal": "Int J Sports Physiol Perform",
+    "doi": "10.1123/ijspp.2016-0362",
+    "pmid": null,
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "power.f0hTrainableMax",
+      "power.sledF0hBias"
+    ],
+    "verified": true,
+    "notes": "Peak sprint power at ~70-96% body-mass sled loading."
+  },
+  {
+    "id": "cunningham1980",
+    "authors": "Cunningham",
+    "year": 1980,
+    "title": "A reanalysis of the factors influencing basal metabolic rate in normal adults",
+    "journal": "Am J Clin Nutr",
+    "doi": "10.1093/ajcn/33.11.2372",
+    "pmid": "7435418",
+    "kind": "peer-reviewed",
+    "constantsInformed": [],
+    "verified": true,
+    "notes": "RMR = 500 + 22 x FFM (kg)."
+  },
+  {
+    "id": "damas2016",
+    "authors": "Damas, Phillips, Libardi, Vechin, Lixandrão, Jannig, et al.",
+    "year": 2016,
+    "title": "Resistance training-induced changes in integrated myofibrillar protein synthesis are related to hypertrophy only after attenuation of muscle damage",
+    "journal": "J Physiol",
+    "doi": "10.1113/JP272472",
+    "pmid": "27219125",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "hypertrophy.earlyWaterGainKg",
+      "hypertrophy.edemaPerDamage"
+    ],
+    "verified": true,
+    "notes": "Fibre CSA increase only significant at 10 wk; MyoPS at 3 wk and 10 wk (not week 1) correlated with hypertrophy."
+  },
+  {
+    "id": "design",
+    "authors": "PHENOTYPE design team",
+    "year": 2026,
+    "title": "Game design choice (no physiological claim)",
+    "journal": "-",
+    "doi": null,
+    "pmid": null,
+    "kind": "design",
+    "constantsInformed": [
+      "training.sessionSaturationTail",
+      "training.nearFailureFatigueMultiplier",
+      "training.repeatedBoutDecayDays",
+      "training.lengthenedDamageBonus",
+      "training.sessionFatigueRepLoss",
+      "training.intraSetRecoveryPerMin",
+      "training.sessionSlowFatiguePerSet",
+      "training.velocityLossExponent",
+      "training.v0Power",
+      "training.damagePerSet",
+      "training.systemicFatiguePerSet",
+      "training.skillStart",
+      "training.skillDecayTauDays",
+      "training.neuralTransferScale",
+      "training.transferSamePatternBase",
+      "training.transferSamePatternOverlap",
+      "training.transferCrossPatternScale",
+      "training.transferOtherEquipment",
+      "training.transferMax",
+      "training.transferMin",
+      "hypertrophy.ceilingExponent",
+      "hypertrophy.ffmiCeilingSdMen",
+      "hypertrophy.ffmiCeilingSdWomen",
+      "hypertrophy.regionHeadroomUpper",
+      "hypertrophy.regionHeadroomLegs",
+      "hypertrophy.regionHeadroomCalves",
+      "hypertrophy.regionHeadroomCore",
+      "hypertrophy.earlyWaterTauDays",
+      "hypertrophy.mrvPenalty",
+      "strength.skillFloor",
+      "strength.neuralFastQualitySaturation",
+      "strength.skillResponderExponent",
+      "strength.skillLoadSpecificity",
+      "strength.epleyWeight",
+      "power.v0TauDays",
+      "power.sscTauDays",
+      "power.v0LegLengthExponent",
+      "power.vmaxTauDays",
+      "power.rfTrainableMax",
+      "power.rfTauSessions",
+      "power.f0hStrengthExponent",
+      "power.rfdTauDays",
+      "power.rfdTrainableMax",
+      "fatigue.refDailyLoad",
+      "fatigue.readinessFatigueWeight",
+      "fatigue.readinessSleepDebtCapH",
+      "fatigue.readinessDamageWeight",
+      "fatigue.readinessIllnessWeight",
+      "fatigue.sleepDebtDecay",
+      "fatigue.sleepDebtMaxH",
+      "fatigue.stressDecayPerDay",
+      "fatigue.stressReliefPerSocialHour",
+      "fatigue.forThreshold",
+      "fatigue.nforAdaptationMultiplier",
+      "fatigue.otsAdaptationMultiplier",
+      "fatigue.nforReadinessPenalty",
+      "fatigue.forSupercompensation",
+      "fatigue.illnessBaseDaily",
+      "fatigue.illnessStressMultiplier",
+      "fatigue.illnessDurationDays",
+      "aerobic.zone1Weight",
+      "aerobic.zone2Weight",
+      "aerobic.kThresholdPerDay",
+      "aerobic.kEconomyPerDay",
+      "aerobic.economyRunVolumeKm",
+      "aerobic.liverGlycogenG",
+      "aerobic.glycogenUseZ1PerKcal",
+      "aerobic.glycogenUseZ3PerKcal",
+      "aerobic.interferenceSaturationMin",
+      "aerobic.interferenceRowing",
+      "aerobic.interferenceSwimming",
+      "energy.rmrOrganRefNonMuscleLeanKg",
+      "energy.rmrOrganScalingExponent",
+      "energy.adaptiveThermogenesisTauDays",
+      "energy.constrainedTeeThresholdKcal",
+      "energy.carbBaselineUseG",
+      "energy.glycogenRefillTauDays",
+      "energy.organShareOfLeanLoss",
+      "energy.fastLossLeanPenalty",
+      "energy.waterPerSodiumG",
+      "energy.sodiumRefG",
+      "energy.essentialFatMen",
+      "energy.essentialFatWomen",
+      "energy.fatDistributionAndroidMen",
+      "energy.fatDistributionAndroidWomen",
+      "energy.e1rmErrorBase",
+      "energy.e1rmErrorPerRep",
+      "energy.vo2LabErrorSd",
+      "energy.vo2FieldErrorSd",
+      "injury.intensityHazardExponent",
+      "injury.fatigueHazardMax",
+      "injury.techniqueHazardMax",
+      "injury.priorInjuryMultiplier",
+      "injury.priorInjuryDecayDays",
+      "injury.pronenessSigma",
+      "injury.bmdDeficiencyVitDPenalty",
+      "injury.preventionDoseSetsPerWeek",
+      "injury.durationStrainDays",
+      "injury.durationTendinopathyDays",
+      "injury.durationJointIrritationDays",
+      "injury.durationLowBackDays",
+      "injury.durationStressFractureDays",
+      "injury.durationSigma",
+      "injury.rehabSpeedup",
+      "injury.ageHazardAt60",
+      "nutrition.proteinMealsTarget",
+      "nutrition.qualityFloorAtDiaas04",
+      "nutrition.fatLowPenalty",
+      "nutrition.lowEaDaysToEffect",
+      "nutrition.fiberHungerReductionPer30g",
+      "nutrition.unplannedMealProbAtMaxHunger",
+      "nutrition.unplannedMealKcal",
+      "nutrition.sweatRateSd",
+      "nutrition.sweatSodiumSd",
+      "nutrition.sweatTempCoefficientPerC",
+      "nutrition.ironLossMgPerDayMen",
+      "nutrition.ironLossMgPerDayWomen",
+      "nutrition.ironStoreDeficientMg",
+      "nutrition.ironStoreAnemicMg",
+      "nutrition.ironStoreFullMg",
+      "nutrition.ironStoreStartMen",
+      "nutrition.ironStoreStartWomen",
+      "nutrition.hbLossPerDayAnemic",
+      "nutrition.hbRegainPerDay",
+      "nutrition.hbMinFraction",
+      "nutrition.vitDBaselineNgMl",
+      "nutrition.vitDSufficient",
+      "nutrition.vitDHalfLifeDays",
+      "nutrition.vitDSunIuPerMinSummer",
+      "nutrition.vitDStartNgMl",
+      "nutrition.vitDMusclePenalty",
+      "nutrition.magnesiumRdaMg",
+      "nutrition.magnesiumDeficiencyEconomyPenalty",
+      "nutrition.magnesiumStoreDays",
+      "nutrition.b12RdaUg",
+      "nutrition.b12StoreMonthsToDeplete",
+      "nutrition.calciumRdaMg",
+      "nutrition.kcalPerDrink",
+      "nutrition.creatineDailyDoseG",
+      "nutrition.nitrateEliteAttenuation",
+      "nutrition.hmbTrainedEffect",
+      "genetics.leverageClamp",
+      "genetics.responderCorrelation",
+      "genetics.wristCircMeanMen",
+      "genetics.wristCircMeanWomen",
+      "genetics.wristCircSd",
+      "genetics.frameCeilingPerCm",
+      "genetics.banisterTauSd",
+      "genetics.tendonStiffnessSd",
+      "genetics.bodyFatMeanMen",
+      "genetics.bodyFatSdMen",
+      "genetics.bodyFatMeanWomen",
+      "genetics.bodyFatSdWomen",
+      "genetics.ffmiUntrainedSdMen",
+      "genetics.ffmiUntrainedSdWomen",
+      "genetics.recoveryAt60",
+      "economy.regionalPriceMultiplier",
+      "economy.rentMonthly",
+      "economy.utilitiesMonthly",
+      "economy.gymBudgetMonthly",
+      "economy.gymCommercialMonthly",
+      "economy.gymPowerliftingMonthly",
+      "economy.gymStrongmanMonthly",
+      "economy.trackAccessMonthly",
+      "economy.homeGymBasicCost",
+      "economy.homeGymFullCost",
+      "economy.testDxaCost",
+      "economy.testVo2LabCost",
+      "economy.testVo2FieldCost",
+      "economy.testBloodPanelCost",
+      "economy.testBiopsyCost",
+      "economy.testBiaCost",
+      "economy.testSkinfoldCost",
+      "economy.coachingMonthly",
+      "economy.ptCertificationCost",
+      "economy.creatineMonthly",
+      "economy.caffeineMonthly",
+      "economy.betaAlanineMonthly",
+      "economy.vitDMonthly",
+      "economy.ironMonthly",
+      "economy.b12Monthly",
+      "economy.magnesiumMonthly",
+      "economy.nitrateMonthly",
+      "economy.bicarbMonthly",
+      "economy.bcaaMonthly",
+      "economy.testBoosterMonthly",
+      "economy.fatBurnerMonthly",
+      "economy.glutamineMonthly",
+      "economy.hmbMonthly",
+      "economy.entryFeePowerlifting",
+      "economy.entryFeeWeightlifting",
+      "economy.entryFeeStrongman",
+      "economy.entryFeeSprintMeet",
+      "economy.entryFee5k",
+      "economy.entryFee10k",
+      "economy.entryFeeRow2k",
+      "economy.entryFeeRuck",
+      "economy.prizeLocalWin",
+      "economy.blockMinutes",
+      "economy.commuteDefaultMin",
+      "economy.cookingMinPerMeal",
+      "economy.shoppingMinPerWeek",
+      "economy.preparedMealMarkup",
+      "economy.wageWarehouse",
+      "economy.wageDelivery",
+      "economy.wageLineCook",
+      "economy.wageRetail",
+      "economy.wageDataEntry",
+      "economy.wageConstruction",
+      "economy.wagePersonalTrainer",
+      "economy.minigameReadinessPenalty",
+      "economy.acceleratedGainMultiplier",
+      "model.segmentClampSd",
+      "model.heightMinCm",
+      "model.heightMaxCm",
+      "model.wristMinCm",
+      "model.wristMaxCm",
+      "model.ffmiCeilingMinMen",
+      "model.ffmiCeilingMaxMen",
+      "model.ffmiCeilingMinWomen",
+      "model.ffmiCeilingMaxWomen",
+      "model.ffmiUntrainedMin",
+      "model.ffmiUntrainedMax",
+      "model.bmrFactorMin",
+      "model.bmrFactorMax",
+      "model.neatRespMin",
+      "model.neatRespMax",
+      "model.fitnessTauMin",
+      "model.fitnessTauMax",
+      "model.fatigueTauMin",
+      "model.fatigueTauMax",
+      "model.tendonStiffMin",
+      "model.tendonStiffMax",
+      "model.caffeineHalfLifeMinH",
+      "model.caffeineHalfLifeMaxH",
+      "model.noviceSkillMin",
+      "model.noviceSkillMax",
+      "model.sweatRateMin",
+      "model.sweatRateMax",
+      "model.sweatSodiumMin",
+      "model.sweatSodiumMax",
+      "model.androidFatSd",
+      "model.androidFatMin",
+      "model.androidFatMax",
+      "model.bodyFatMin",
+      "model.bodyFatMax",
+      "model.typeIIMin",
+      "model.typeIIMax",
+      "model.momentArmMin",
+      "model.momentArmMax",
+      "model.vo2IndividualMin",
+      "model.vo2IndividualMax",
+      "model.bmdSd",
+      "model.bmdMinStart",
+      "model.bmdMaxStart",
+      "model.initialGlycogenFraction",
+      "model.glycogenDeficitMinFraction",
+      "model.ceilingGlycogenMassFactor",
+      "model.minHeadroom",
+      "model.historyTrainingResponse",
+      "model.historyRecentPastYears",
+      "model.knownSkillRbe",
+      "model.sessionsPerYear",
+      "model.historyNeuralPerformance",
+      "model.typicalLeanFractionMen",
+      "model.typicalLeanFractionWomen",
+      "model.aerResponderCeilingExponent",
+      "model.aerResponderRateExponent",
+      "model.aerHistoryResponse",
+      "model.aerHistoryThresholdShare",
+      "model.aerHistoryEconomyShare",
+      "model.economyBikeStart",
+      "model.economyRowStart",
+      "model.economyHistoryGain",
+      "model.runHoursPerEnduranceYear",
+      "model.historyPowerShare",
+      "model.historyRfdShare",
+      "model.historyF0hShare",
+      "model.historyPowerTauMultiplier",
+      "model.bmdHistoryMaxYears",
+      "model.startStress",
+      "model.startMagnesiumStatus",
+      "model.startCalciumStatus",
+      "model.startHunger",
+      "model.startEa",
+      "model.fastPoolMaxStep",
+      "model.neuralMaxStep",
+      "model.memoryThreshold",
+      "model.neuralMemoryThreshold",
+      "model.lightTrainingDriftFactor",
+      "model.minSetsForQuality",
+      "model.skillDecayGraceDays",
+      "model.powerGraceDays",
+      "model.v0FromPlyo",
+      "model.v0FromSprint",
+      "model.sscFromSprint",
+      "model.v0DownTauMultiplier",
+      "model.sscDownTauMultiplier",
+      "model.rfDaysPerSession",
+      "model.rfDecayTauDays",
+      "model.thresholdDetrainFactor",
+      "model.economyStimMin",
+      "model.economyDetrainFactor",
+      "model.thresholdMinResponse",
+      "model.bikeRowEconomyRate",
+      "model.tendonFloor",
+      "model.tendonMinResponse",
+      "model.tendonDownTauMultiplier",
+      "model.tendonResponseOffset",
+      "model.bmdTaperCeiling",
+      "model.bmdMin",
+      "model.bmdMax",
+      "model.boneLoadingNorm",
+      "model.boneRunKmPerUnit",
+      "model.economyStrengthPlyoNorm",
+      "model.damageCap",
+      "model.maxSessionFatigue",
+      "model.neatJobOffset",
+      "model.wakingHours",
+      "model.neatMinFraction",
+      "model.neatTauDays",
+      "model.balanceEmaDays",
+      "model.adaptiveThermoFullDeficit",
+      "model.forbesReferenceFatKg",
+      "model.surplusLeanMax",
+      "model.proteinAdequacyStart",
+      "model.proteinAdequacySpan",
+      "model.maxLeanSparing",
+      "model.shortSleepMaxFactor",
+      "model.leanShareMin",
+      "model.leanShareMax",
+      "model.nonMuscleLeanFloor",
+      "model.carbRefillEfficiency",
+      "model.lowCarbGlycogenDrain",
+      "model.glycogenFloorG",
+      "model.jobSweatMetThreshold",
+      "model.jobSweatFraction",
+      "model.illCardioFraction",
+      "model.prelimTdee",
+      "model.warmupMinutes",
+      "model.restAfterLastSetS",
+      "model.defaultTargetReps",
+      "model.maxPctFresh",
+      "model.systemicEffortBase",
+      "model.powerLoadPerBallisticSet",
+      "model.ballisticBiasThreshold",
+      "model.powerBiasThreshold",
+      "model.nonBallisticPowerLoadFactor",
+      "model.gaussianLoadCoefficient",
+      "model.injuryIntensityRef",
+      "model.injuryIntensityFloor",
+      "model.plyoEffortBase",
+      "model.plyoEffortPer5Reps",
+      "model.plyoVlBase",
+      "model.plyoVlPerRep",
+      "model.sprintRefDistanceM",
+      "model.sprintDistFactorMin",
+      "model.sprintDistFactorMax",
+      "model.sprintMeanSpeed",
+      "model.unloadedPowerLoadFactor",
+      "model.unloadedImpactBonus",
+      "model.slowIntentPowerFactor",
+      "model.skillTransferRate",
+      "model.skillMaxStep",
+      "model.skillTransferMaxStep",
+      "model.skillFullSets",
+      "model.rbeGainPerCardio",
+      "model.liftSweatFraction",
+      "model.glycogenPerHardSetG",
+      "model.glycogenPerLiftKcal",
+      "model.noneLoadHypFactor",
+      "model.hardStimForLastDay",
+      "model.sessionFatigueExponent",
+      "model.damageEffortExponent",
+      "model.primaryActivation",
+      "model.creditPrimaryThreshold",
+      "model.minStrStimForPatternDay",
+      "model.nonHardSetQualityWeight",
+      "model.zone1Offset",
+      "model.zone2Offset",
+      "model.zone3Offset",
+      "model.zone3Max",
+      "model.zone3WorkShare",
+      "model.zone3RecoveryOffset",
+      "model.interferenceZone2Mult",
+      "model.interferenceZone3Mult",
+      "model.interferenceWalkFactor",
+      "model.impactRunningThreshold",
+      "model.runInjuryRiskRef",
+      "model.liftInjuryRiskRef",
+      "model.strongmanInjuryRiskRef",
+      "model.plyoInjuryFactor",
+      "model.noviceRunHours",
+      "model.cardioIntensityHazardZ2",
+      "model.cardioIntensityHazardZ3",
+      "model.cardioDamagePerHalfHour",
+      "model.cardioDamageZ3Mult",
+      "model.cardioSweatOffset",
+      "model.alcoholSleepLossPerDrink",
+      "model.alcoholSleepLossMax",
+      "model.stressSleepThreshold",
+      "model.stressSleepLoss",
+      "model.sleepDebtMemoryDays",
+      "model.chronicSleepDebtDivisor",
+      "model.sleepDeficitSpanH",
+      "model.recoveryAgeStart",
+      "model.recoveryAgeSpan",
+      "model.recoveryAgeMaxFactor",
+      "model.strainCapacityMult",
+      "model.strainFitnessWeight",
+      "model.strainMaxWeight",
+      "model.strainMeanWeight",
+      "model.strainConcurrentWeight",
+      "model.strainConcurrentMin",
+      "model.stressBase",
+      "model.stressJobWeight",
+      "model.stressMoneyWeight",
+      "model.stressSleepWeight",
+      "model.stressSleepDebtSpanH",
+      "model.stressNforBonus",
+      "model.stressOtsBonus",
+      "model.overreachPoorRecoveryRate",
+      "model.overreachLowStrainRecovery",
+      "model.overreachModerateRecovery",
+      "model.overreachEasyFraction",
+      "model.forEntryDays",
+      "model.winterIllnessMultiplier",
+      "model.lowEaIllnessMultiplier",
+      "model.illnessDurationMin",
+      "model.illnessDurationMax",
+      "model.readinessMin",
+      "model.readinessMax",
+      "model.otsReadinessMultiplier",
+      "model.poorRecoverySleepDebtH",
+      "model.poorRecoveryStress",
+      "model.acwrMinChronic",
+      "model.acwrNoviceAcute",
+      "model.acwrNoviceBase",
+      "model.acwrNoviceSlope",
+      "model.injurySleepSpanH",
+      "model.injuryAgeStart",
+      "model.injuryAgeSpan",
+      "model.injuryAgeMaxFactor",
+      "model.bmdZScoreSd",
+      "model.tissueGapRef",
+      "model.boneImpactOffset",
+      "model.minInjuryDays",
+      "model.severityMin",
+      "model.rehabDailyFraction",
+      "model.leucineShortfallPenalty",
+      "model.ironStoreFracMax",
+      "model.ironUpregulationBase",
+      "model.ironStoreMinMg",
+      "model.ironStoreMaxMg",
+      "model.hepcidinTrainingDayShare",
+      "model.magnesiumSupplementMg",
+      "model.b12SupplementUg",
+      "model.b12SupplementAbsorption",
+      "model.b12RepletionDays",
+      "model.b12DeficientShare",
+      "model.calciumStatusDays",
+      "model.statusIntakeCap",
+      "model.magnesiumDeficientStatus",
+      "model.b12DeficientStatus",
+      "model.b12AnemicStatus",
+      "model.b12HbLossFactor",
+      "model.calciumLowStatus",
+      "model.anemicHbFraction",
+      "model.waterFromFoodL",
+      "model.hydrationCarryover",
+      "model.hydrationDeficitShare",
+      "model.hydrationMax",
+      "model.creatineNonResponderMax",
+      "model.creatineLoadingUntil",
+      "model.creatineWashoutDays",
+      "model.betaAlanineWashoutDays",
+      "model.caffeineHabitDays",
+      "model.caffeineFullDoseMgKg",
+      "model.hungerSatietySpan",
+      "model.hungerProteinSpanGkg",
+      "model.hungerFiberSpanG",
+      "model.hungerSleepDebtPerH",
+      "model.hungerSleepDebtCapH",
+      "model.dehydrationRefFraction",
+      "model.dehydrationAerobicSpan",
+      "model.jumpPoolSquat",
+      "model.jumpPoolHinge",
+      "model.jumpPoolLunge",
+      "model.jumpPoolOlympic",
+      "model.jumpPoolSprint",
+      "model.v0ReadinessShare",
+      "model.broadJumpVelocityFactor",
+      "model.broadJumpAngleDeg",
+      "model.broadJumpReachFraction",
+      "model.sprintRelForceMin",
+      "model.sprintRelForceMax",
+      "model.vmaxV0Exponent",
+      "model.vmaxLegExponent",
+      "model.vmaxTechniqueShare",
+      "model.raceVo2maxMinutes",
+      "model.raceAnaerobicBonus",
+      "model.raceAnaerobicSpanMin",
+      "model.raceLt2Minutes",
+      "model.raceLt1Minutes",
+      "model.raceLt2Offset",
+      "model.raceLt1Offset",
+      "model.raceUltraCap",
+      "model.raceInitialFraction",
+      "model.rowEfficiencyTrainable",
+      "model.rowAnaerobicBase",
+      "model.rowAnaerobicRfd",
+      "model.minRepsPct",
+      "model.maxReps",
+      "model.failPctTolerance",
+      "model.loadStepBarbell",
+      "model.loadStepMachine",
+      "model.loadStepDumbbell"
+    ],
+    "verified": true,
+    "notes": "Constants tagged with this source are gameplay/tuning choices."
+  },
+  {
+    "id": "drake2013",
+    "authors": "Drake, Roehrs, Shambroom, Roth",
+    "year": 2013,
+    "title": "Caffeine effects on sleep taken 0, 3, or 6 hours before going to bed",
+    "journal": "J Clin Sleep Med",
+    "doi": "10.5664/jcsm.3170",
+    "pmid": "24235903",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "fatigue.caffeineHalfLifeH",
+      "fatigue.caffeineSleepLossPer100mg"
+    ],
+    "verified": true,
+    "notes": "400 mg caffeine at 0, 3 or 6 h before bed all disturbed sleep; the >1 h total-sleep-time reduction at 6 h is reported in the paper body (not the abstract)."
+  },
+  {
+    "id": "elia1992",
+    "authors": "Elia M",
+    "year": 1992,
+    "title": "Organ and tissue contribution to metabolic rate. In: Energy Metabolism: Tissue Determinants and Cellular Corollaries",
+    "journal": "Raven Press",
+    "doi": null,
+    "pmid": null,
+    "kind": "book",
+    "constantsInformed": [
+      "energy.rmrMuscle",
+      "energy.rmrAdipose",
+      "energy.rmrOrganRefKcal"
+    ],
+    "verified": false,
+    "notes": "Tissue-specific metabolic rates; evaluated by Wang 2010 (verified)."
+  },
+  {
+    "id": "epley1985",
+    "authors": "Epley B",
+    "year": 1985,
+    "title": "Poundage chart. Boyd Epley Workout",
+    "journal": "Body Enterprises, Lincoln NE",
+    "doi": null,
+    "pmid": null,
+    "kind": "book",
+    "constantsInformed": [],
+    "verified": false,
+    "notes": "1RM = w (1 + r/30). Widely cited practitioner formula."
+  },
+  {
+    "id": "fao2013",
+    "authors": "FAO Expert Consultation",
+    "year": 2013,
+    "title": "Dietary protein quality evaluation in human nutrition",
+    "journal": "FAO Food Nutr Pap 92",
+    "doi": null,
+    "pmid": null,
+    "kind": "consensus",
+    "constantsInformed": [],
+    "verified": false,
+    "notes": "DIAAS methodology."
+  },
+  {
+    "id": "fernandezElias2015",
+    "authors": "Fernández-Elías, Ortega, Nelson, Mora-Rodriguez",
+    "year": 2015,
+    "title": "Relationship between muscle water and glycogen recovery after prolonged exercise in the heat in humans",
+    "journal": "Eur J Appl Physiol",
+    "doi": "10.1007/s00421-015-3175-z",
+    "pmid": "25911631",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "hypertrophy.earlyWaterGainKg",
+      "hypertrophy.trainedGlycogenBonus",
+      "aerobic.glycogenPerKgMuscle",
+      "energy.waterPerGlycogen",
+      "energy.scaleNoiseSd",
+      "model.glycogenDeficitScaleKcal"
+    ],
+    "verified": true,
+    "notes": "CORRECTION vs spec: journal is Eur J Appl Physiol. ~3 g water per g glycogen during recovery."
+  },
+  {
+    "id": "fleg2005",
+    "authors": "Fleg, Morrell, Bos, Brant, Talbot, Wright, et al.",
+    "year": 2005,
+    "title": "Accelerated longitudinal decline of aerobic capacity in healthy older adults",
+    "journal": "Circulation",
+    "doi": "10.1161/CIRCULATIONAHA.105.545459",
+    "pmid": "16043637",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "aerobic.ageFactor"
+    ],
+    "verified": true,
+    "notes": "Longitudinal decline accelerates: 3-6%/decade in the 20s-30s to >20%/decade in the 70s. The flat ~10%/decade in the spec is a cross-sectional average; the game uses the accelerating schedule."
+  },
+  {
+    "id": "fryar2021",
+    "authors": "Fryar CD, Carroll MD, Gu Q, Afful J, Ogden CL",
+    "year": 2021,
+    "title": "Anthropometric reference data for children and adults: United States, 2015-2018",
+    "journal": "Vital Health Stat 3",
+    "doi": null,
+    "pmid": "33541517",
+    "kind": "report",
+    "constantsInformed": [
+      "genetics.heightMeanMen",
+      "genetics.heightSdMen",
+      "genetics.heightMeanWomen",
+      "genetics.heightSdWomen"
+    ],
+    "verified": false,
+    "notes": "NHANES: men 20+ mean height 175.3 cm (SD ~7.4), weight 90.6 kg; women 161.3 cm (SD ~6.9), 77.5 kg. Not re-fetched; values from memory."
+  },
+  {
+    "id": "gabbett2016",
+    "authors": "Gabbett",
+    "year": 2016,
+    "title": "The training-injury prevention paradox: should athletes be training smarter and harder?",
+    "journal": "Br J Sports Med",
+    "doi": "10.1136/bjsports-2015-095788",
+    "pmid": "26758673",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "injury.acwrThreshold",
+      "injury.acwrHazardPerUnit"
+    ],
+    "verified": true,
+    "notes": "Proposes ACWR sweet spot 0.8-1.3, danger >1.5; contested by Impellizzeri 2020."
+  },
+  {
+    "id": "gallagher1998",
+    "authors": "Gallagher, Belmonte, Deurenberg, Wang, Krasnow, Pi-Sunyer, et al.",
+    "year": 1998,
+    "title": "Organ-tissue mass measurement allows modeling of REE and metabolically active tissue mass",
+    "journal": "Am J Physiol",
+    "doi": "10.1152/ajpendo.1998.275.2.E249",
+    "pmid": "9688626",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "energy.rmrOrganRefKcal"
+    ],
+    "verified": true,
+    "notes": "Organ-tissue REE model; liver, brain, heart, kidneys ~60% of REE."
+  },
+  {
+    "id": "garthe2011",
+    "authors": "Garthe, Raastad, Refsnes, Koivisto, Sundgot-Borgen",
+    "year": 2011,
+    "title": "Effect of two different weight-loss rates on body composition and strength and power-related performance in elite athletes",
+    "journal": "Int J Sport Nutr Exerc Metab",
+    "doi": "10.1123/ijsnem.21.2.97",
+    "pmid": "21558571",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "energy.leanSparingTraining",
+      "energy.safeLossRatePerWeek"
+    ],
+    "verified": true,
+    "notes": "0.7%/wk vs 1.4%/wk loss: LBM +2.1% vs -0.2%; fat loss 31% vs 21%."
+  },
+  {
+    "id": "gonzalezBadillo2014",
+    "authors": "González-Badillo, Rodríguez-Rosell, Sánchez-Medina, Gorostiaga, Pareja-Blanco",
+    "year": 2014,
+    "title": "Maximal intended velocity training induces greater gains in bench press performance than deliberately slower half-velocity training",
+    "journal": "Eur J Sport Sci",
+    "doi": "10.1080/17461391.2014.905987",
+    "pmid": "24734902",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "training.intentSubmaxPower"
+    ],
+    "verified": true,
+    "notes": "Maximal intended velocity gave ~2x greater bench press strength gain than half-velocity training."
+  },
+  {
+    "id": "grgic2018caffeine",
+    "authors": "Grgic, Trexler, Lazinica, Pedisic",
+    "year": 2018,
+    "title": "Effects of caffeine intake on muscle strength and power: a systematic review and meta-analysis",
+    "journal": "J Int Soc Sports Nutr",
+    "doi": "10.1186/s12970-018-0216-0",
+    "pmid": "29527137",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "nutrition.caffeineStrengthEffect",
+      "nutrition.caffeinePowerEffect"
+    ],
+    "verified": true,
+    "notes": "Caffeine: ES 0.20 strength, 0.17 power (JISSN 2018)."
+  },
+  {
+    "id": "grgic2018freq",
+    "authors": "Grgic, Schoenfeld, Davies, Lazinica, Krieger, Pedisic, et al.",
+    "year": 2018,
+    "title": "Effect of Resistance Training Frequency on Gains in Muscular Strength: A Systematic Review and Meta-Analysis",
+    "journal": "Sports Med",
+    "doi": "10.1007/s40279-018-0872-x",
+    "pmid": "29470825",
+    "kind": "peer-reviewed",
+    "constantsInformed": [],
+    "verified": true,
+    "notes": "Higher frequency improves strength when volume not equated; little effect when equated."
+  },
+  {
+    "id": "grgic2021bicarb",
+    "authors": "Grgic, Grgic, Del Coso, Schoenfeld, Pedisic",
+    "year": 2021,
+    "title": "Effects of sodium bicarbonate supplementation on exercise performance: an umbrella review",
+    "journal": "J Int Soc Sports Nutr",
+    "doi": "10.1186/s12970-021-00469-7",
+    "pmid": "34794476",
+    "kind": "consensus",
+    "constantsInformed": [
+      "nutrition.bicarbEffect",
+      "nutrition.bicarbGutDistressProb"
+    ],
+    "verified": true,
+    "notes": "ISSN position stand on sodium bicarbonate: 0.2-0.3 g/kg; most benefit for 30 s-12 min efforts; GI side effects common."
+  },
+  {
+    "id": "guest2021",
+    "authors": "Guest, VanDusseldorp, Nelson, Grgic, Schoenfeld, Jenkins, et al.",
+    "year": 2021,
+    "title": "International society of sports nutrition position stand: caffeine and exercise performance",
+    "journal": "J Int Soc Sports Nutr",
+    "doi": "10.1186/s12970-020-00383-4",
+    "pmid": "33388079",
+    "kind": "consensus",
+    "constantsInformed": [
+      "fatigue.caffeineHalfLifeH",
+      "aerobic.caffeineEnduranceBonus",
+      "nutrition.caffeineStrengthEffect",
+      "nutrition.caffeineDoseMgPerKg",
+      "nutrition.caffeineToleranceFactor",
+      "genetics.caffeineHalfLifeSigma"
+    ],
+    "verified": true,
+    "notes": "ISSN caffeine position stand: 3-6 mg/kg, 60 min pre; CYP1A2 genotype modulates response."
+  },
+  {
+    "id": "hall2007",
+    "authors": "Hall",
+    "year": 2007,
+    "title": "Body fat and fat-free mass inter-relationships: Forbes's theory revisited",
+    "journal": "Br J Nutr",
+    "doi": "10.1017/S0007114507691946",
+    "pmid": "17367567",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "energy.forbesC",
+      "energy.surplusLeanFractionNoTraining"
+    ],
+    "verified": true,
+    "notes": "Forbes curve: dFFM/dFM = 10.4/FM (kg) for small changes; extended for large changes."
+  },
+  {
+    "id": "hall2008",
+    "authors": "Hall",
+    "year": 2008,
+    "title": "What is the required energy deficit per unit weight loss?",
+    "journal": "Int J Obes (Lond)",
+    "doi": "10.1038/sj.ijo.0803720",
+    "pmid": "17848938",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "energy.kcalPerKgFat",
+      "energy.kcalPerKgLean",
+      "energy.kcalPerKgMuscleGain",
+      "model.glycogenDeficitScaleKcal"
+    ],
+    "verified": true,
+    "notes": "Energy densities ~9,440 kcal/kg fat and ~1,816 kcal/kg lean (in paper body); 3,500 kcal/lb rule only matches obese subjects."
+  },
+  {
+    "id": "hall2011",
+    "authors": "Hall, Sacks, Chandramohan, Chow, Wang, Gortmaker, et al.",
+    "year": 2011,
+    "title": "Quantification of the effect of energy imbalance on bodyweight",
+    "journal": "Lancet",
+    "doi": "10.1016/S0140-6736(11)60812-X",
+    "pmid": "21872751",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "energy.neatBase",
+      "energy.neatMassExponent"
+    ],
+    "verified": true,
+    "notes": "Dynamic model: ~10 kcal/day per lb of eventual weight change, half reached after ~1 year."
+  },
+  {
+    "id": "haroy2019",
+    "authors": "Harøy, Clarsen, Wiger, Øyen, Serner, Thorborg, et al.",
+    "year": 2019,
+    "title": "The Adductor Strengthening Programme prevents groin problems among male football players: a cluster-randomised controlled trial",
+    "journal": "Br J Sports Med",
+    "doi": "10.1136/bjsports-2017-098937",
+    "pmid": "29891614",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "injury.copenhagenGroinReduction"
+    ],
+    "verified": true,
+    "notes": "Copenhagen adduction programme: 41% lower risk of groin problems (OR 0.59)."
+  },
+  {
+    "id": "heaney2003",
+    "authors": "Heaney, Davies, Chen, Holick, Barger-Lux",
+    "year": 2003,
+    "title": "Human serum 25-hydroxycholecalciferol response to extended oral dosing with cholecalciferol",
+    "journal": "Am J Clin Nutr",
+    "doi": "10.1093/ajcn/77.1.204",
+    "pmid": "12499343",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "nutrition.vitDPerIuPerDay"
+    ],
+    "verified": true,
+    "notes": "25(OH)D rises ~0.7 ng/mL per 100 IU/day cholecalciferol at steady state."
+  },
+  {
+    "id": "heinemeier2013",
+    "authors": "Heinemeier KM, Schjerling P, Heinemeier J, Magnusson SP, Kjaer M",
+    "year": 2013,
+    "title": "Lack of tissue renewal in human adult Achilles tendon is revealed by nuclear bomb 14C",
+    "journal": "FASEB J",
+    "doi": "10.1096/fj.12-225599",
+    "pmid": null,
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "injury.tissueGapHazardPer30pct",
+      "injury.tendonMaxGainPerYear"
+    ],
+    "verified": true,
+    "notes": ""
+  },
+  {
+    "id": "helms2014",
+    "authors": "Helms, Aragon, Fitschen",
+    "year": 2014,
+    "title": "Evidence-based recommendations for natural bodybuilding contest preparation: nutrition and supplementation",
+    "journal": "J Int Soc Sports Nutr",
+    "doi": "10.1186/1550-2783-11-20",
+    "pmid": "24864135",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "energy.leanSparingTraining",
+      "energy.leanSparingProtein",
+      "energy.safeLossRatePerWeek",
+      "nutrition.fatMinFraction"
+    ],
+    "verified": true,
+    "notes": "Contest prep: 0.5-1% BM/week loss; 2.3-3.1 g/kg FFM protein."
+  },
+  {
+    "id": "helms2023",
+    "authors": "Helms, Spence, Sousa, Kreiger, Taylor, Oranchuk, et al.",
+    "year": 2023,
+    "title": "Effect of Small and Large Energy Surpluses on Strength, Muscle, and Skinfold Thickness in Resistance-Trained Individuals: A Parallel Groups Design",
+    "journal": "Sports Med Open",
+    "doi": "10.1186/s40798-023-00651-y",
+    "pmid": "37914977",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "hypertrophy.energyBalance"
+    ],
+    "verified": true,
+    "notes": "Larger surplus increased skinfolds, not muscle thickness; 5% vs 15% similar hypertrophy."
+  },
+  {
+    "id": "henselmans2022",
+    "authors": "Henselmans, Bjørnsen, Hedderman, Vårvik",
+    "year": 2022,
+    "title": "The Effect of Carbohydrate Intake on Strength and Resistance Training Performance: A Systematic Review",
+    "journal": "Nutrients",
+    "doi": "10.3390/nu14040856",
+    "pmid": "35215506",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "nutrition.liftingCarbSessionMin",
+      "nutrition.liftingCarbSetsThreshold"
+    ],
+    "verified": true,
+    "notes": "CORRECTION vs spec: journal is Nutrients, not Sports Med. Carbohydrate matters for RT only in long high-volume sessions (>10 sets / >45 min)."
+  },
+  {
+    "id": "herrmann2024",
+    "authors": "Herrmann, Willis, Ainsworth, Barreira, Hastert, Kracht, et al.",
+    "year": 2024,
+    "title": "2024 Adult Compendium of Physical Activities: A third update of the energy costs of human activities",
+    "journal": "J Sport Health Sci",
+    "doi": "10.1016/j.jshs.2023.10.010",
+    "pmid": "38242596",
+    "kind": "consensus",
+    "constantsInformed": [
+      "economy.metWarehouse",
+      "economy.metDelivery",
+      "economy.metLineCook",
+      "economy.metRetail",
+      "economy.metDataEntry",
+      "economy.metConstruction",
+      "economy.metPersonalTrainer",
+      "economy.metSleep",
+      "economy.metSedentary",
+      "economy.metLightActivity"
+    ],
+    "verified": true,
+    "notes": "2024 Adult Compendium: MET values for >1,100 activities."
+  },
+  {
+    "id": "heviaLarrain2021",
+    "authors": "Hevia-Larraín, Gualano, Longobardi, Gil, Fernandes, Costa, et al.",
+    "year": 2021,
+    "title": "High-Protein Plant-Based Diet Versus a Protein-Matched Omnivorous Diet to Support Resistance Training Adaptations: A Comparison Between Habitual Vegans and Omnivores",
+    "journal": "Sports Med",
+    "doi": "10.1007/s40279-021-01434-9",
+    "pmid": "33599941",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "nutrition.qualityWeight"
+    ],
+    "verified": true,
+    "notes": "Vegan vs omnivore at 1.6 g/kg protein: similar strength and hypertrophy."
+  },
+  {
+    "id": "hickson1981",
+    "authors": "Hickson RC, Rosenkoetter MA",
+    "year": 1981,
+    "title": "Reduced training frequencies and maintenance of increased aerobic power",
+    "journal": "Med Sci Sports Exerc",
+    "doi": null,
+    "pmid": "7253867",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "aerobic.targetSaturationResponse"
+    ],
+    "verified": false,
+    "notes": "Frequency cut by up to 2/3 maintained VO2max for 15 weeks when intensity kept. From memory."
+  },
+  {
+    "id": "hickson1982",
+    "authors": "Hickson RC, Kanakis C, Davis JR, Moore AM, Rich S",
+    "year": 1982,
+    "title": "Reduced training duration effects on aerobic power, endurance, and cardiac growth",
+    "journal": "J Appl Physiol",
+    "doi": "10.1152/jappl.1982.53.1.225",
+    "pmid": "7118435",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "aerobic.targetSaturationResponse"
+    ],
+    "verified": false,
+    "notes": "Duration cut by up to 2/3 maintained VO2max. From memory."
+  },
+  {
+    "id": "hickson1985",
+    "authors": "Hickson, Foster, Pollock, Galassi, Rich",
+    "year": 1985,
+    "title": "Reduced training intensities and loss of aerobic power, endurance, and cardiac growth",
+    "journal": "J Appl Physiol (1985)",
+    "doi": "10.1152/jappl.1985.58.2.492",
+    "pmid": "3156841",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "aerobic.targetSaturationResponse"
+    ],
+    "verified": true,
+    "notes": "This paper shows that cutting INTENSITY by 1/3 or 2/3 loses VO2max. The frequency and duration reductions (up to 2/3 with intensity kept) come from the companion Hickson studies (1981 frequency; 1982 duration), not retrieved here; the combined claim is marked partially verified."
+  },
+  {
+    "id": "hobson2012",
+    "authors": "Hobson RM, Saunders B, Ball G, Harris RC, Sale C",
+    "year": 2012,
+    "title": "Effects of beta-alanine supplementation on exercise performance: a meta-analysis",
+    "journal": "Amino Acids",
+    "doi": "10.1007/s00726-011-1200-z",
+    "pmid": "22270875",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "nutrition.betaAlanineEffect"
+    ],
+    "verified": false,
+    "notes": "Median improvement 2.85% in 60-240 s efforts. From memory; not re-fetched."
+  },
+  {
+    "id": "holt1995",
+    "authors": "Holt, Miller, Petocz, Farmakalidis",
+    "year": 1995,
+    "title": "A satiety index of common foods",
+    "journal": "Eur J Clin Nutr",
+    "doi": null,
+    "pmid": "7498104",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "nutrition.satietyEffect",
+      "energy.hungerBalance"
+    ],
+    "verified": true,
+    "notes": "Satiety index of 38 foods (boiled potatoes highest at 323, croissant lowest at 47)."
+  },
+  {
+    "id": "hubal2005",
+    "authors": "Hubal, Gordish-Dressman, Thompson, Price, Hoffman, Angelopoulos, et al.",
+    "year": 2005,
+    "title": "Variability in muscle size and strength gain after unilateral resistance training",
+    "journal": "Med Sci Sports Exerc",
+    "doi": null,
+    "pmid": "15947721",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "training.noviceSkillSd",
+      "hypertrophy.kHypPerDay",
+      "hypertrophy.responderSigma",
+      "strength.neuralQualityGainMax",
+      "strength.neuralFastGainSigma",
+      "strength.neuralQualityTauDays",
+      "genetics.responderSigmaStrength"
+    ],
+    "verified": true,
+    "notes": "n=585: CSA change -2 to +59%; 1RM 0 to +250%; MVC -32 to +149%. CV ~0.5 for CSA change."
+  },
+  {
+    "id": "hultman1996",
+    "authors": "Hultman, Söderlund, Timmons, Cederblad, Greenhaff",
+    "year": 1996,
+    "title": "Muscle creatine loading in men",
+    "journal": "J Appl Physiol (1985)",
+    "doi": "10.1152/jappl.1996.81.1.232",
+    "pmid": "8828669",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "nutrition.creatineLoadingDays",
+      "nutrition.creatineMaintenanceSaturationDays"
+    ],
+    "verified": true,
+    "notes": "20 g/day x 6 days or 3 g/day x 28 days saturate muscle creatine."
+  },
+  {
+    "id": "hunter2014",
+    "authors": "Hunter",
+    "year": 2014,
+    "title": "Sex differences in human fatigability: mechanisms and insight to physiological responses",
+    "journal": "Acta Physiol (Oxf)",
+    "doi": "10.1111/apha.12234",
+    "pmid": "24433272",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "strength.femaleRepsMultiplier"
+    ],
+    "verified": true,
+    "notes": "Women are less fatigable than men at matched relative intensity in many tasks."
+  },
+  {
+    "id": "hurrellEgli2010",
+    "authors": "Hurrell R, Egli I",
+    "year": 2010,
+    "title": "Iron bioavailability and dietary reference values",
+    "journal": "Am J Clin Nutr",
+    "doi": "10.3945/ajcn.2010.28674f",
+    "pmid": null,
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "nutrition.ironAbsorptionHeme",
+      "nutrition.ironAbsorptionNonHeme"
+    ],
+    "verified": true,
+    "notes": ""
+  },
+  {
+    "id": "hyldahlHubal2014",
+    "authors": "Hyldahl RD, Hubal MJ",
+    "year": 2014,
+    "title": "Lengthening our perspective: morphological, cellular, and molecular responses to eccentric exercise",
+    "journal": "Muscle Nerve",
+    "doi": "10.1002/mus.24077",
+    "pmid": null,
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "training.damageHalfLifeH",
+      "training.noveltyDamageMultiplier",
+      "training.damageForceLoss"
+    ],
+    "verified": true,
+    "notes": "EIMD time course 24-96 h; repeated bout protection."
+  },
+  {
+    "id": "impellizzeri2020",
+    "authors": "Impellizzeri, Tenan, Kempton, Novak, Coutts",
+    "year": 2020,
+    "title": "Acute:Chronic Workload Ratio: Conceptual Issues and Fundamental Pitfalls",
+    "journal": "Int J Sports Physiol Perform",
+    "doi": "10.1123/ijspp.2019-0864",
+    "pmid": "32502973",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "injury.acwrThreshold",
+      "injury.acwrHazardPerUnit"
+    ],
+    "verified": true,
+    "notes": "Conceptual critique of the acute:chronic workload ratio; game keeps the load-spike hazard tunable and labelled contested."
+  },
+  {
+    "id": "iom2011",
+    "authors": "Institute of Medicine",
+    "year": 2011,
+    "title": "Dietary Reference Intakes for Calcium and Vitamin D",
+    "journal": "National Academies Press",
+    "doi": "10.17226/13050",
+    "pmid": null,
+    "kind": "consensus",
+    "constantsInformed": [
+      "nutrition.vitDDeficient"
+    ],
+    "verified": true,
+    "notes": "Summarised in Ross et al. 2011 JCEM (verified)."
+  },
+  {
+    "id": "israetelSfr",
+    "authors": "Israetel M, Hoffmann J, Smith CW",
+    "year": 2015,
+    "title": "Scientific Principles of Strength Training; RP hypertrophy guides (stimulus-to-fatigue ratio)",
+    "journal": "Renaissance Periodization",
+    "doi": null,
+    "pmid": null,
+    "kind": "practitioner",
+    "constantsInformed": [
+      "training.sessionSaturationSets",
+      "hypertrophy.mrvSets"
+    ],
+    "verified": false,
+    "notes": "Practitioner heuristic; SFR is computed from fields rather than labelled."
+  },
+  {
+    "id": "janssen2000",
+    "authors": "Janssen, Heymsfield, Wang, Ross",
+    "year": 2000,
+    "title": "Skeletal muscle mass and distribution in 468 men and women aged 18-88 yr",
+    "journal": "J Appl Physiol (1985)",
+    "doi": "10.1152/jappl.2000.89.1.81",
+    "pmid": "10904038",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "hypertrophy.smmFractionOfFfmMen",
+      "hypertrophy.smmFractionOfFfmWomen"
+    ],
+    "verified": true,
+    "notes": "Skeletal muscle mass (MRI) in 468 adults: ~33 kg men (38% of BM), ~21 kg women (31%); 55% in lower body."
+  },
+  {
+    "id": "jaric2002",
+    "authors": "Jaric",
+    "year": 2002,
+    "title": "Muscle strength testing: use of normalisation for body size",
+    "journal": "Sports Med",
+    "doi": "10.2165/00007256-200232100-00002",
+    "pmid": "12141882",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "strength.massToForceExponent"
+    ],
+    "verified": true,
+    "notes": "Allometric scaling exponent ~0.67 for strength vs body mass."
+  },
+  {
+    "id": "jones1996",
+    "authors": "Jones, Doust",
+    "year": 1996,
+    "title": "A 1% treadmill grade most accurately reflects the energetic cost of outdoor running",
+    "journal": "J Sports Sci",
+    "doi": "10.1080/02640419608727717",
+    "pmid": "8887211",
+    "kind": "peer-reviewed",
+    "constantsInformed": [],
+    "verified": true,
+    "notes": "1% treadmill grade matches outdoor running energy cost."
+  },
+  {
+    "id": "jones2014",
+    "authors": "Jones",
+    "year": 2014,
+    "title": "Dietary nitrate supplementation and exercise performance",
+    "journal": "Sports Med",
+    "doi": "10.1007/s40279-014-0149-y",
+    "pmid": "24791915",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "nutrition.nitrateEnduranceEffect"
+    ],
+    "verified": true,
+    "notes": "Dietary nitrate: small benefits in sub-elite; attenuated in elites."
+  },
+  {
+    "id": "joynerCoyle2008",
+    "authors": "Joyner, Coyle",
+    "year": 2008,
+    "title": "Endurance exercise performance: the physiology of champions",
+    "journal": "J Physiol",
+    "doi": "10.1113/jphysiol.2007.143834",
+    "pmid": "17901124",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "aerobic.vo2TrainableFraction",
+      "aerobic.lt1StartFraction",
+      "aerobic.lt2StartFraction",
+      "aerobic.lt1MaxFraction",
+      "aerobic.lt2MaxFraction",
+      "aerobic.economyRunBest",
+      "model.rowEfficiencyBase"
+    ],
+    "verified": true,
+    "notes": "Endurance performance = VO2max x fractional utilisation x economy."
+  },
+  {
+    "id": "judelson2007",
+    "authors": "Judelson, Maresh, Anderson, Armstrong, Casa, Kraemer, et al.",
+    "year": 2007,
+    "title": "Hydration and muscular performance: does fluid balance affect strength, power and high-intensity endurance?",
+    "journal": "Sports Med",
+    "doi": "10.2165/00007256-200737100-00006",
+    "pmid": "17887814",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "nutrition.dehydrationStrengthAt3pct",
+      "nutrition.dehydrationPowerAt3pct",
+      "nutrition.dehydrationEnduranceAt3pct"
+    ],
+    "verified": true,
+    "notes": "Hypohydration: strength ~-2%, power ~-3%, high-intensity endurance ~-10%."
+  },
+  {
+    "id": "kassiano2023",
+    "authors": "Kassiano, Costa, Kunevaliki, Soares, Zacarias, Manske, et al.",
+    "year": 2023,
+    "title": "Greater Gastrocnemius Muscle Hypertrophy After Partial Range of Motion Training Performed at Long Muscle Lengths",
+    "journal": "J Strength Cond Res",
+    "doi": "10.1519/JSC.0000000000004460",
+    "pmid": "37015016",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "training.lengthBiasMax"
+    ],
+    "verified": true,
+    "notes": "Partial ROM at long muscle lengths produced greater gastrocnemius hypertrophy than short-length partials or full ROM (JSCR)."
+  },
+  {
+    "id": "keoghWinwood2017",
+    "authors": "Keogh, Winwood",
+    "year": 2017,
+    "title": "The Epidemiology of Injuries Across the Weight-Training Sports",
+    "journal": "Sports Med",
+    "doi": "10.1007/s40279-016-0575-0",
+    "pmid": "27328853",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "injury.ratePowerlifting",
+      "injury.rateWeightlifting",
+      "injury.rateStrongman",
+      "injury.rateBodybuilding"
+    ],
+    "verified": true,
+    "notes": "Abstract gives bodybuilding 0.24-1 and strongman 4.5-6.1 injuries/1000 h; powerlifting (1.0-4.4) and weightlifting (2.4-3.3) figures are in the paper body."
+  },
+  {
+    "id": "kouri1995",
+    "authors": "Kouri, Pope, Katz, Oliva",
+    "year": 1995,
+    "title": "Fat-free mass index in users and nonusers of anabolic-androgenic steroids",
+    "journal": "Clin J Sport Med",
+    "doi": "10.1097/00042752-199510000-00003",
+    "pmid": "7496846",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "hypertrophy.ffmiCeilingMeanMen",
+      "hypertrophy.ffmiHeightCorrection"
+    ],
+    "verified": true,
+    "notes": "CORRECTION vs spec: height normalisation constant is 6.3 x (1.80 - height), not 6.1. Natural-athlete normalized FFMI ceiling 25.0; presteroid Mr America mean 25.4."
+  },
+  {
+    "id": "kreider2017",
+    "authors": "Kreider, Kalman, Antonio, Ziegenfuss, Wildman, Collins, et al.",
+    "year": 2017,
+    "title": "International Society of Sports Nutrition position stand: safety and efficacy of creatine supplementation in exercise, sport, and medicine",
+    "journal": "J Int Soc Sports Nutr",
+    "doi": "10.1186/s12970-017-0173-z",
+    "pmid": "28615996",
+    "kind": "consensus",
+    "constantsInformed": [
+      "hypertrophy.creatineHypertrophyBonus",
+      "strength.creatineAcuteStrength",
+      "nutrition.creatineWaterGainKg"
+    ],
+    "verified": true,
+    "notes": "ISSN creatine position stand: 3-5 g/day maintenance; ~1-2 kg water gain in first week with loading."
+  },
+  {
+    "id": "laforgia2006",
+    "authors": "LaForgia, Withers, Gore",
+    "year": 2006,
+    "title": "Effects of exercise intensity and duration on the excess post-exercise oxygen consumption",
+    "journal": "J Sports Sci",
+    "doi": "10.1080/02640410600552064",
+    "pmid": "17101527",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "energy.epocFraction"
+    ],
+    "verified": true,
+    "notes": "EPOC is 6-15% of the net exercise oxygen cost."
+  },
+  {
+    "id": "lamon2021",
+    "authors": "Lamon, Morabito, Arentson-Lantz, Knowles, Vincent, Condo, et al.",
+    "year": 2021,
+    "title": "The effect of acute sleep deprivation on skeletal muscle protein synthesis and the hormonal environment",
+    "journal": "Physiol Rep",
+    "doi": "10.14814/phy2.14660",
+    "pmid": "33400856",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "fatigue.localRecoverySleepWeight",
+      "hypertrophy.sleep"
+    ],
+    "verified": true,
+    "notes": "One night total sleep deprivation: MPS -18%, cortisol +21%, testosterone -24%."
+  },
+  {
+    "id": "lasevicius2018",
+    "authors": "Lasevicius, Ugrinowitsch, Schoenfeld, Roschel, Tavares, De Souza, et al.",
+    "year": 2018,
+    "title": "Effects of different intensities of resistance training with equated volume load on muscle strength and hypertrophy",
+    "journal": "Eur J Sport Sci",
+    "doi": "10.1080/17461391.2018.1450898",
+    "pmid": "29564973",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "training.hypLoad"
+    ],
+    "verified": true,
+    "notes": "20% 1RM gave about half the CSA gain of 40-80% 1RM (VL 8.9% vs ~20%; EF 11.4% vs ~25%). 80% best for strength."
+  },
+  {
+    "id": "levine1999",
+    "authors": "Levine, Eberhardt, Jensen",
+    "year": 1999,
+    "title": "Role of nonexercise activity thermogenesis in resistance to fat gain in humans",
+    "journal": "Science",
+    "doi": "10.1126/science.283.5399.212",
+    "pmid": "9880251",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "energy.neatBase",
+      "energy.neatResponsivenessMean",
+      "energy.neatResponsivenessSd"
+    ],
+    "verified": true,
+    "notes": "NEAT change range (-98 to +692 kcal/day) is reported in the paper body; the abstract reports a 10-fold spread in fat storage explained by NEAT."
+  },
+  {
+    "id": "lopez2021",
+    "authors": "Lopez, Radaelli, Taaffe, Newton, Galvão, Trajano, et al.",
+    "year": 2021,
+    "title": "Resistance Training Load Effects on Muscle Hypertrophy and Strength Gain: Systematic Review and Network Meta-analysis",
+    "journal": "Med Sci Sports Exerc",
+    "doi": "10.1249/MSS.0000000000002585",
+    "pmid": "33433148",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "training.hypLoad",
+      "training.strLoad"
+    ],
+    "verified": true,
+    "notes": "Network meta-analysis: similar hypertrophy across loads; strength gains favour higher loads."
+  },
+  {
+    "id": "loucks2003",
+    "authors": "Loucks, Thuma",
+    "year": 2003,
+    "title": "Luteinizing hormone pulsatility is disrupted at a threshold of energy availability in regularly menstruating women",
+    "journal": "J Clin Endocrinol Metab",
+    "doi": "10.1210/jc.2002-020369",
+    "pmid": "12519869",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "injury.bmdLossPerYearLowEa",
+      "nutrition.eaThreshold",
+      "nutrition.eaOptimal",
+      "nutrition.eaAdaptation"
+    ],
+    "verified": true,
+    "notes": "LH pulsatility disrupted below 30 kcal/kg LBM/day energy availability."
+  },
+  {
+    "id": "maeo2021",
+    "authors": "Maeo, Huang, Wu, Sakurai, Kusagawa, Sugiyama, et al.",
+    "year": 2021,
+    "title": "Greater Hamstrings Muscle Hypertrophy but Similar Damage Protection after Training at Long versus Short Muscle Lengths",
+    "journal": "Med Sci Sports Exerc",
+    "doi": "10.1249/MSS.0000000000002523",
+    "pmid": "33009197",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "training.lengthBiasMax",
+      "training.damageForceLoss"
+    ],
+    "verified": true,
+    "notes": "Seated (long length) vs prone leg curl: whole hamstrings +14% vs +9% (ratio ~1.55) in biarticular heads; monoarticular head unaffected."
+  },
+  {
+    "id": "maeo2023",
+    "authors": "Maeo, Wu, Huang, Sakurai, Kusagawa, Sugiyama, et al.",
+    "year": 2023,
+    "title": "Triceps brachii hypertrophy is substantially greater after elbow extension training performed in the overhead versus neutral arm position",
+    "journal": "Eur J Sport Sci",
+    "doi": "10.1080/17461391.2022.2100279",
+    "pmid": "35819335",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "training.lengthBiasMax"
+    ],
+    "verified": true,
+    "notes": "Overhead vs neutral triceps extension: whole triceps +19.9% vs +13.9% (1.4x), long head +28.5% vs +19.6% (1.5x). Single-study ratios larger than the game default length-bias multiplier."
+  },
+  {
+    "id": "mah2011",
+    "authors": "Mah, Mah, Kezirian, Dement",
+    "year": 2011,
+    "title": "The effects of sleep extension on the athletic performance of collegiate basketball players",
+    "journal": "Sleep",
+    "doi": "10.5665/SLEEP.1132",
+    "pmid": "21731144",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "fatigue.readinessSleepDebtPerHour",
+      "fatigue.sleepNeedH",
+      "fatigue.acuteSleepPerformance"
+    ],
+    "verified": true,
+    "notes": "Sleep extension (+110 min): basketball sprint 16.2 -> 15.5 s (-4.3%)."
+  },
+  {
+    "id": "manca2017",
+    "authors": "Manca, Dragone, Dvir, Deriu",
+    "year": 2017,
+    "title": "Cross-education of muscular strength following unilateral resistance training: a meta-analysis",
+    "journal": "Eur J Appl Physiol",
+    "doi": "10.1007/s00421-017-3720-z",
+    "pmid": "28936703",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "training.crossEducation"
+    ],
+    "verified": true,
+    "notes": "CORRECTION vs spec: pooled cross-education 11.9% (upper 9.4%, lower 16.4%); the ~7.8% figure is the earlier meta-analytic estimate (Carroll 2006 era). Game uses 10%."
+  },
+  {
+    "id": "markovic2007",
+    "authors": "Markovic",
+    "year": 2007,
+    "title": "Does plyometric training improve vertical jump height? A meta-analytical review",
+    "journal": "Br J Sports Med",
+    "doi": "10.1136/bjsm.2007.035113",
+    "pmid": "17347316",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "power.v0TrainableMax",
+      "power.cmjBonusBase",
+      "power.cmjBonusTrainable",
+      "power.armSwingBonus"
+    ],
+    "verified": true,
+    "notes": "Plyometrics: CMJ +8.7% (95% CI 7.0-10.4), SJ +4.7%, CMJA +7.5%, DJ +4.7%."
+  },
+  {
+    "id": "martins2020",
+    "authors": "Martins, Roekenes, Salamati, Gower, Hunter",
+    "year": 2020,
+    "title": "Metabolic adaptation is an illusion, only present when participants are in negative energy balance",
+    "journal": "Am J Clin Nutr",
+    "doi": "10.1093/ajcn/nqaa220",
+    "pmid": "32844188",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "energy.neatDeficitSuppression",
+      "energy.adaptiveThermogenesisMax"
+    ],
+    "verified": true,
+    "notes": "Metabolic adaptation largely present only during negative energy balance (smaller than previously claimed)."
+  },
+  {
+    "id": "mathai2017",
+    "authors": "Mathai, Liu, Stein",
+    "year": 2017,
+    "title": "Values for digestible indispensable amino acid scores (DIAAS) for some dairy and plant proteins may better describe protein quality than values calculated using the concept for protein digestibility-corrected amino acid scores (PDCAAS)",
+    "journal": "Br J Nutr",
+    "doi": "10.1017/S0007114517000125",
+    "pmid": "28382889",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "nutrition.qualityWeight"
+    ],
+    "verified": true,
+    "notes": "DIAAS milk protein concentrate 1.18, whey isolate 1.09-1.25? (values in paper); pea 0.82; wheat 0.45."
+  },
+  {
+    "id": "maughan2018",
+    "authors": "Maughan, Burke, Dvorak, Larson-Meyer, Peeling, Phillips, et al.",
+    "year": 2018,
+    "title": "IOC consensus statement: dietary supplements and the high-performance athlete",
+    "journal": "Br J Sports Med",
+    "doi": "10.1136/bjsports-2018-099027",
+    "pmid": "29540367",
+    "kind": "consensus",
+    "constantsInformed": [],
+    "verified": true,
+    "notes": "IOC consensus on dietary supplements (also published in IJSNEM)."
+  },
+  {
+    "id": "mcdonaldAragon",
+    "authors": "McDonald L; Aragon A",
+    "year": 2009,
+    "title": "Practitioner models of maximal rates of muscle gain by training year",
+    "journal": "bodyrecomposition.com / Alan Aragon Research Review",
+    "doi": null,
+    "pmid": null,
+    "kind": "practitioner",
+    "constantsInformed": [
+      "hypertrophy.kHypPerDay",
+      "hypertrophy.ffmiCeilingMeanMen"
+    ],
+    "verified": false,
+    "notes": "Not peer-reviewed. Year 1: 20-25 lb (McDonald) / 1-1.5% BM per month (Aragon); halving each year."
+  },
+  {
+    "id": "mchugh2003",
+    "authors": "McHugh",
+    "year": 2003,
+    "title": "Recent advances in the understanding of the repeated bout effect: the protective effect against muscle damage from a single bout of eccentric exercise",
+    "journal": "Scand J Med Sci Sports",
+    "doi": "10.1034/j.1600-0838.2003.02477.x",
+    "pmid": "12641640",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "training.noveltyDamageMultiplier",
+      "training.repeatedBoutProtection",
+      "model.rbeGainPerBout"
+    ],
+    "verified": true,
+    "notes": "Repeated bout effect: substantial protection from EIMD after a single prior bout."
+  },
+  {
+    "id": "mcnulty2020",
+    "authors": "McNulty, Elliott-Sale, Dolan, Swinton, Ansdell, Goodall, et al.",
+    "year": 2020,
+    "title": "The Effects of Menstrual Cycle Phase on Exercise Performance in Eumenorrheic Women: A Systematic Review and Meta-Analysis",
+    "journal": "Sports Med",
+    "doi": "10.1007/s40279-020-01319-3",
+    "pmid": "32661839",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "genetics.menstrualEffect"
+    ],
+    "verified": true,
+    "notes": "Menstrual-cycle phase effects on performance trivial (ES -0.06), low-quality evidence."
+  },
+  {
+    "id": "meeusen2013",
+    "authors": "Meeusen, Duclos, Foster, Fry, Gleeson, Nieman, et al.",
+    "year": 2013,
+    "title": "Prevention, diagnosis, and treatment of the overtraining syndrome: joint consensus statement of the European College of Sport Science and the American College of Sports Medicine",
+    "journal": "Med Sci Sports Exerc",
+    "doi": "10.1249/MSS.0b013e318279a10a",
+    "pmid": "23247672",
+    "kind": "consensus",
+    "constantsInformed": [
+      "fatigue.nforDays",
+      "fatigue.otsDays",
+      "fatigue.nforRecoveryDays",
+      "fatigue.otsRecoveryDays"
+    ],
+    "verified": true,
+    "notes": "Joint ECSS/ACSM consensus: functional OR (days-weeks), NFOR (weeks-months), OTS (months)."
+  },
+  {
+    "id": "mifflin1990",
+    "authors": "Mifflin, St Jeor, Hill, Scott, Daugherty, Koh, et al.",
+    "year": 1990,
+    "title": "A new predictive equation for resting energy expenditure in healthy individuals",
+    "journal": "Am J Clin Nutr",
+    "doi": "10.1093/ajcn/51.2.241",
+    "pmid": "2305711",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "energy.bmrGeneticSd"
+    ],
+    "verified": true,
+    "notes": "REE = 10W + 6.25H - 5A + 5 (men) / -161 (women)."
+  },
+  {
+    "id": "milanovic2015",
+    "authors": "Milanović, Sporiš, Weston",
+    "year": 2015,
+    "title": "Effectiveness of High-Intensity Interval Training (HIT) and Continuous Endurance Training for VO2max Improvements: A Systematic Review and Meta-Analysis of Controlled Trials",
+    "journal": "Sports Med",
+    "doi": "10.1007/s40279-015-0365-0",
+    "pmid": "26243014",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "aerobic.vo2BaseMen20s",
+      "aerobic.kAerPerDay",
+      "aerobic.v0AerobicLoad",
+      "aerobic.zone3Weight",
+      "model.vo2IndividualSd"
+    ],
+    "verified": true,
+    "notes": "Endurance training +4.9 mL/kg/min vs controls; HIT slightly larger (+5.5 in paper body)."
+  },
+  {
+    "id": "milewski2014",
+    "authors": "Milewski, Skaggs, Bishop, Pace, Ibrahim, Wren, et al.",
+    "year": 2014,
+    "title": "Chronic lack of sleep is associated with increased sports injuries in adolescent athletes",
+    "journal": "J Pediatr Orthop",
+    "doi": "10.1097/BPO.0000000000000151",
+    "pmid": "25028798",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "fatigue.sleepNeedH",
+      "injury.sleepHazardMax"
+    ],
+    "verified": true,
+    "notes": "CORRECTION vs spec: journal is J Pediatr Orthop. OR 1.7 (95% CI 1.0-3.0) for <8 h sleep."
+  },
+  {
+    "id": "mitchell2012",
+    "authors": "Mitchell, Williams, Atherton, Larvin, Lund, Narici, et al.",
+    "year": 2012,
+    "title": "Sarcopenia, dynapenia, and the impact of advancing age on human skeletal muscle size and strength; a quantitative review",
+    "journal": "Front Physiol",
+    "doi": "10.3389/fphys.2012.00260",
+    "pmid": "22934016",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "hypertrophy.sarcopeniaOnsetAge",
+      "hypertrophy.sarcopeniaRatePerYear",
+      "model.bmdAgeOnset",
+      "strength.ageNeural"
+    ],
+    "verified": true,
+    "notes": "Cross-sectional median loss 0.47%/yr men, 0.37%/yr women; longitudinal at 75 y: 0.8-0.98%/yr men, 0.64-0.70%/yr women; strength lost 2-5x faster than mass."
+  },
+  {
+    "id": "moranNavarro2017",
+    "authors": "Morán-Navarro, Pérez, Mora-Rodríguez, de la Cruz-Sánchez, González-Badillo, Sánchez-Medina, et al.",
+    "year": 2017,
+    "title": "Time course of recovery following resistance training leading or not to failure",
+    "journal": "Eur J Appl Physiol",
+    "doi": "10.1007/s00421-017-3725-7",
+    "pmid": "28965198",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "training.failureFatigueMultiplier",
+      "training.damageHalfLifeH",
+      "strength.readinessStrengthPenalty"
+    ],
+    "verified": true,
+    "notes": "Training to failure slowed recovery by 24-48 h versus non-failure protocols of equal volume."
+  },
+  {
+    "id": "morin2011",
+    "authors": "Morin, Edouard, Samozino",
+    "year": 2011,
+    "title": "Technical ability of force application as a determinant factor of sprint performance",
+    "journal": "Med Sci Sports Exerc",
+    "doi": "10.1249/MSS.0b013e318216ea37",
+    "pmid": "21364480",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "power.f0hRef",
+      "power.rfStart",
+      "power.rfF0hGain"
+    ],
+    "verified": true,
+    "notes": "Ratio of forces (horizontal/total) better predicts 100 m performance than total force."
+  },
+  {
+    "id": "morin2017",
+    "authors": "Morin, Petrakos, Jiménez-Reyes, Brown, Samozino, Cross, et al.",
+    "year": 2017,
+    "title": "Very-Heavy Sled Training for Improving Horizontal-Force Output in Soccer Players",
+    "journal": "Int J Sports Physiol Perform",
+    "doi": "10.1123/ijspp.2016-0444",
+    "pmid": "27834560",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "power.f0hTrainableMax",
+      "power.sledF0hBias"
+    ],
+    "verified": true,
+    "notes": "Very-heavy sled (80% BM) training improved horizontal force output (F0) in soccer players; IJSPP."
+  },
+  {
+    "id": "moritaniDeVries1979",
+    "authors": "Moritani, deVries",
+    "year": 1979,
+    "title": "Neural factors versus hypertrophy in the time course of muscle strength gain",
+    "journal": "Am J Phys Med",
+    "doi": null,
+    "pmid": "453338",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "training.skillSessionsTau",
+      "strength.neuralQualityGainMax",
+      "strength.neuralFastGainMedian",
+      "strength.neuralFastTauDays",
+      "strength.neuralQualityTauDays"
+    ],
+    "verified": true,
+    "notes": "Neural factors dominate the first 3-4 weeks of strength gain; hypertrophy thereafter."
+  },
+  {
+    "id": "morton2018",
+    "authors": "Morton, Murphy, McKellar, Schoenfeld, Henselmans, Helms, et al.",
+    "year": 2018,
+    "title": "A systematic review, meta-analysis and meta-regression of the effect of protein supplementation on resistance training-induced gains in muscle mass and strength in healthy adults",
+    "journal": "Br J Sports Med",
+    "doi": "10.1136/bjsports-2017-097608",
+    "pmid": "28698222",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "energy.leanSparingProtein",
+      "hypertrophy.protein"
+    ],
+    "verified": true,
+    "notes": "Protein supplementation: +0.30 kg FFM, +2.49 kg 1RM; break point 1.62 g/kg/day (95% CI upper ~2.2 g/kg in paper body)."
+  },
+  {
+    "id": "mountjoy2023",
+    "authors": "Mountjoy, Ackerman, Bailey, Burke, Constantini, Hackney, et al.",
+    "year": 2023,
+    "title": "2023 International Olympic Committee's (IOC) consensus statement on Relative Energy Deficiency in Sport (REDs)",
+    "journal": "Br J Sports Med",
+    "doi": "10.1136/bjsports-2023-106994",
+    "pmid": "37752011",
+    "kind": "consensus",
+    "constantsInformed": [
+      "injury.bmdLossPerYearLowEa",
+      "injury.stressFractureBmdHazardPerSd",
+      "injury.stressFractureLowEaMultiplier",
+      "nutrition.eaThreshold",
+      "nutrition.lowEaAdaptationPenalty",
+      "nutrition.lowEaPerformancePenalty",
+      "nutrition.eaAdaptation"
+    ],
+    "verified": true,
+    "notes": "IOC REDs consensus: low EA impairs bone, endocrine, performance and raises injury risk."
+  },
+  {
+    "id": "mujika2000",
+    "authors": "Mujika I, Padilla S",
+    "year": 2000,
+    "title": "Detraining: loss of training-induced physiological and performance adaptations. Part I: short term insufficient training stimulus",
+    "journal": "Sports Med",
+    "doi": "10.2165/00007256-200030020-00002",
+    "pmid": "10966148",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "hypertrophy.atrophyGraceDays",
+      "hypertrophy.atrophyTauDays",
+      "strength.neuralMemoryMultiplier",
+      "strength.neuralDecayTauDays"
+    ],
+    "verified": true,
+    "notes": ""
+  },
+  {
+    "id": "murphyKoehler2022",
+    "authors": "Murphy, Koehler",
+    "year": 2022,
+    "title": "Energy deficiency impairs resistance training gains in lean mass but not strength: A meta-analysis and meta-regression",
+    "journal": "Scand J Med Sci Sports",
+    "doi": "10.1111/sms.14075",
+    "pmid": "34623696",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "energy.leanSparingTraining",
+      "hypertrophy.energyBalance"
+    ],
+    "verified": true,
+    "notes": "A deficit of ~500 kcal/day prevented lean-mass gain; strength gains comparable."
+  },
+  {
+    "id": "nedeltcheva2010",
+    "authors": "Nedeltcheva, Kilkus, Imperial, Schoeller, Penev",
+    "year": 2010,
+    "title": "Insufficient sleep undermines dietary efforts to reduce adiposity",
+    "journal": "Ann Intern Med",
+    "doi": "10.7326/0003-4819-153-7-201010050-00006",
+    "pmid": "20921542",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "energy.sleepLeanLossMultiplier",
+      "energy.shortSleepH",
+      "hypertrophy.sleep",
+      "energy.hungerBalance"
+    ],
+    "verified": true,
+    "notes": "5.5 vs 8.5 h sleep during a 14-day diet: fat loss -55%, FFM loss +60%."
+  },
+  {
+    "id": "ogasawara2013",
+    "authors": "Ogasawara, Yasuda, Ishii, Abe",
+    "year": 2013,
+    "title": "Comparison of muscle hypertrophy following 6-month of continuous and periodic strength training",
+    "journal": "Eur J Appl Physiol",
+    "doi": "10.1007/s00421-012-2511-9",
+    "pmid": "23053130",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "hypertrophy.muscleMemoryMultiplier",
+      "strength.neuralMemoryMultiplier"
+    ],
+    "verified": true,
+    "notes": "6-wk-on/3-wk-off cycles matched continuous training for CSA and 1RM over 24 weeks."
+  },
+  {
+    "id": "openpowerlifting",
+    "authors": "OpenPowerlifting project",
+    "year": 2025,
+    "title": "OpenPowerlifting database",
+    "journal": "openpowerlifting.org",
+    "doi": null,
+    "pmid": null,
+    "kind": "database",
+    "constantsInformed": [
+      "strength.neuralQualityGainMax"
+    ],
+    "verified": false,
+    "notes": "Tested raw totals by bodyweight class used as sanity bands; not fetched, approximate percentiles from memory."
+  },
+  {
+    "id": "parejaBlanco2017",
+    "authors": "Pareja-Blanco, Rodríguez-Rosell, Sánchez-Medina, Sanchis-Moysi, Dorado, Mora-Custodio, et al.",
+    "year": 2017,
+    "title": "Effects of velocity loss during resistance training on athletic performance, strength gains and muscle adaptations",
+    "journal": "Scand J Med Sci Sports",
+    "doi": "10.1111/sms.12678",
+    "pmid": "27038416",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "training.velocityLossAtFailure",
+      "training.powVelocityLoss"
+    ],
+    "verified": true,
+    "notes": "VL20 vs VL40: similar strength; CMJ +9.5% vs +3.5%; more hypertrophy with VL40; IIX preserved with VL20."
+  },
+  {
+    "id": "parr2014",
+    "authors": "Parr, Camera, Areta, Burke, Phillips, Hawley, et al.",
+    "year": 2014,
+    "title": "Alcohol ingestion impairs maximal post-exercise rates of myofibrillar protein synthesis following a single bout of concurrent training",
+    "journal": "PLoS One",
+    "doi": "10.1371/journal.pone.0088384",
+    "pmid": "24533082",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "hypertrophy.alcohol"
+    ],
+    "verified": true,
+    "notes": "Alcohol post-exercise: MPS -24% (with protein) and -37% (with carbohydrate)."
+  },
+  {
+    "id": "pedrosa2022",
+    "authors": "Pedrosa, Lima, Schoenfeld, Lacerda, Simões, Pereira, et al.",
+    "year": 2022,
+    "title": "Partial range of motion training elicits favorable improvements in muscular adaptations when carried out at long muscle lengths",
+    "journal": "Eur J Sport Sci",
+    "doi": "10.1080/17461391.2021.1927199",
+    "pmid": "33977835",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "training.lengthBiasMax"
+    ],
+    "verified": true,
+    "notes": "Initial (lengthened) partial ROM knee extension produced greater regional quadriceps hypertrophy than final partial ROM or full ROM."
+  },
+  {
+    "id": "peeling2008",
+    "authors": "Peeling, Dawson, Goodman, Landers, Trinder",
+    "year": 2008,
+    "title": "Athletic induced iron deficiency: new insights into the role of inflammation, cytokines and hormones",
+    "journal": "Eur J Appl Physiol",
+    "doi": "10.1007/s00421-008-0726-6",
+    "pmid": "18365240",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "nutrition.ironLossPerRunningKm",
+      "nutrition.ironHepcidinAbsorptionPenalty"
+    ],
+    "verified": true,
+    "notes": "Exercise-induced hepcidin rise reduces iron absorption; athletes at higher risk of deficiency."
+  },
+  {
+    "id": "pelland2024",
+    "authors": "Pelland, Remmert, Robinson, Hinson, Zourdos",
+    "year": 2025,
+    "title": "The Resistance Training Dose Response: Meta-Regressions Exploring the Effects of Weekly Volume and Frequency on Muscle Hypertrophy and Strength Gains",
+    "journal": "Sports Med",
+    "doi": "10.1007/s40279-025-02344-w",
+    "pmid": "41343037",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "training.synergistCredit",
+      "training.hardSetRir",
+      "training.v0Hypertrophy",
+      "training.v0Strength",
+      "hypertrophy.mrvSets"
+    ],
+    "verified": true,
+    "notes": "Published online 2025 (print 2026) in Sports Med. Fractional (0.5) credit for indirect sets fit best; diminishing returns stronger for strength; frequency compatible with negligible hypertrophy effect."
+  },
+  {
+    "id": "peterson2011",
+    "authors": "Peterson, Sen, Gordon",
+    "year": 2011,
+    "title": "Influence of resistance exercise on lean body mass in aging adults: a meta-analysis",
+    "journal": "Med Sci Sports Exerc",
+    "doi": "10.1249/MSS.0b013e3181eb6265",
+    "pmid": "20543750",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "hypertrophy.age",
+      "strength.ageNeural"
+    ],
+    "verified": true,
+    "notes": "Older adults (>=50 y): pooled lean mass gain 1.1 kg (95% CI 0.9-1.2)."
+  },
+  {
+    "id": "pontzer2016",
+    "authors": "Pontzer, Durazo-Arvizu, Dugas, Plange-Rhule, Bovet, Forrester, et al.",
+    "year": 2016,
+    "title": "Constrained Total Energy Expenditure and Metabolic Adaptation to Physical Activity in Adult Humans",
+    "journal": "Curr Biol",
+    "doi": "10.1016/j.cub.2015.12.046",
+    "pmid": "26832439",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "energy.constrainedTeeOffset"
+    ],
+    "verified": true,
+    "notes": "TEE plateaus at high activity levels (constrained model); modest effect."
+  },
+  {
+    "id": "psilander2019",
+    "authors": "Psilander, Eftestøl, Cumming, Juvkam, Ekblom, Sunding, et al.",
+    "year": 2019,
+    "title": "Effects of training, detraining, and retraining on strength, hypertrophy, and myonuclear number in human skeletal muscle",
+    "journal": "J Appl Physiol (1985)",
+    "doi": "10.1152/japplphysiol.00917.2018",
+    "pmid": "30991013",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "hypertrophy.muscleMemoryMultiplier"
+    ],
+    "verified": true,
+    "notes": "No myonuclear retention advantage detected in humans after detraining."
+  },
+  {
+    "id": "ralston2017",
+    "authors": "Ralston, Kilgore, Wyatt, Baker",
+    "year": 2017,
+    "title": "The Effect of Weekly Set Volume on Strength Gain: A Meta-Analysis",
+    "journal": "Sports Med",
+    "doi": "10.1007/s40279-017-0762-7",
+    "pmid": "28755103",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "training.v0Strength"
+    ],
+    "verified": true,
+    "notes": "Higher weekly sets (>=10) yield greater strength gains than low (<5), ES difference 0.18 (diminishing)."
+  },
+  {
+    "id": "rawsonVolek2003",
+    "authors": "Rawson, Volek",
+    "year": 2003,
+    "title": "Effects of creatine supplementation and resistance training on muscle strength and weightlifting performance",
+    "journal": "J Strength Cond Res",
+    "doi": "10.1519/1533-4287(2003)017<0822:eocsar>2.0.co;2",
+    "pmid": "14636102",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "hypertrophy.creatineHypertrophyBonus",
+      "strength.creatineAcuteStrength",
+      "strength.creatineAdaptationBonus",
+      "strength.creatineRepsBonus"
+    ],
+    "verified": true,
+    "notes": "Creatine + RT: +8% greater strength gain (20 vs 12%) and +14% greater rep performance (26 vs 12%) than placebo."
+  },
+  {
+    "id": "refalo2023",
+    "authors": "Refalo, Helms, Trexler, Hamilton, Fyfe",
+    "year": 2023,
+    "title": "Influence of Resistance Training Proximity-to-Failure on Skeletal Muscle Hypertrophy: A Systematic Review with Meta-analysis",
+    "journal": "Sports Med",
+    "doi": "10.1007/s40279-022-01784-y",
+    "pmid": "36334240",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "training.hypRir"
+    ],
+    "verified": true,
+    "notes": "Also: Refalo et al. 2023 Sports Med Open (RIR-based). Hypertrophy favours closer proximity to failure; strength similar."
+  },
+  {
+    "id": "roberts2020",
+    "authors": "Roberts, Nuckols, Krieger",
+    "year": 2020,
+    "title": "Sex Differences in Resistance Training: A Systematic Review and Meta-Analysis",
+    "journal": "J Strength Cond Res",
+    "doi": "10.1519/JSC.0000000000003521",
+    "pmid": "32218059",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "hypertrophy.ffmiCeilingMeanWomen"
+    ],
+    "verified": true,
+    "notes": "CORRECTION vs spec: journal is J Strength Cond Res, not Sports Med. No sex difference in hypertrophy ES (0.07); females larger relative upper-body strength ES."
+  },
+  {
+    "id": "robinson2024",
+    "authors": "Robinson, Pelland, Remmert, Refalo, Jukic, Steele, et al.",
+    "year": 2024,
+    "title": "Exploring the Dose-Response Relationship Between Estimated Resistance Training Proximity to Failure, Strength Gain, and Muscle Hypertrophy: A Series of Meta-Regressions",
+    "journal": "Sports Med",
+    "doi": "10.1007/s40279-024-02069-2",
+    "pmid": "38970765",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "training.hardSetRir",
+      "training.hypRir",
+      "training.strRir"
+    ],
+    "verified": true,
+    "notes": "Strength gains similar across a wide range of RIR; hypertrophy increases as sets approach failure."
+  },
+  {
+    "id": "rosenbaumLeibel2010",
+    "authors": "Rosenbaum, Leibel",
+    "year": 2010,
+    "title": "Adaptive thermogenesis in humans",
+    "journal": "Int J Obes (Lond)",
+    "doi": "10.1038/ijo.2010.184",
+    "pmid": "20935667",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "energy.neatDeficitSuppression",
+      "energy.adaptiveThermogenesisMax"
+    ],
+    "verified": true,
+    "notes": "Adaptive thermogenesis ~10-15% below predicted after weight loss."
+  },
+  {
+    "id": "ross2011",
+    "authors": "Ross, Manson, Abrams, Aloia, Brannon, Clinton, et al.",
+    "year": 2011,
+    "title": "The 2011 report on dietary reference intakes for calcium and vitamin D from the Institute of Medicine: what clinicians need to know",
+    "journal": "J Clin Endocrinol Metab",
+    "doi": "10.1210/jc.2010-2704",
+    "pmid": "21118827",
+    "kind": "consensus",
+    "constantsInformed": [
+      "nutrition.vitDDeficient"
+    ],
+    "verified": true,
+    "notes": "IOM 2011 DRI report summary; deficiency threshold 20 ng/mL (50 nmol/L) serum 25(OH)D."
+  },
+  {
+    "id": "rutherfurd2015",
+    "authors": "Rutherfurd, Fanning, Miller, Moughan",
+    "year": 2015,
+    "title": "Protein digestibility-corrected amino acid scores and digestible indispensable amino acid scores differentially describe protein quality in growing male rats",
+    "journal": "J Nutr",
+    "doi": "10.3945/jn.114.195438",
+    "pmid": "25644361",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "nutrition.qualityWeight"
+    ],
+    "verified": true,
+    "notes": "DIAAS: whey isolate 1.09, soy 0.90, pea 0.82, rice 0.37-0.6, wheat ~0.4."
+  },
+  {
+    "id": "samozino2008",
+    "authors": "Samozino, Morin, Hintzy, Belli",
+    "year": 2008,
+    "title": "A simple method for measuring force, velocity and power output during squat jump",
+    "journal": "J Biomech",
+    "doi": "10.1016/j.jbiomech.2008.07.028",
+    "pmid": "18789803",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "power.f0RefLower",
+      "power.cmjBonusBase",
+      "power.pushOffFractionOfLeg",
+      "power.gravity"
+    ],
+    "verified": true,
+    "notes": "Squat jump: h = hPO x (F/(m g) - 1) via push-off distance and mean force."
+  },
+  {
+    "id": "samozino2012",
+    "authors": "Samozino, Rejc, Di Prampero, Belli, Morin",
+    "year": 2012,
+    "title": "Optimal force-velocity profile in ballistic movements--altius: citius or fortius?",
+    "journal": "Med Sci Sports Exerc",
+    "doi": "10.1249/MSS.0b013e31822d757a",
+    "pmid": "21775909",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "power.f0RefLower",
+      "power.v0RefLower"
+    ],
+    "verified": true,
+    "notes": ""
+  },
+  {
+    "id": "samozino2016",
+    "authors": "Samozino, Rabita, Dorel, Slawinski, Peyrot, Saez de Villarreal, et al.",
+    "year": 2016,
+    "title": "A simple method for measuring power, force, velocity properties, and mechanical effectiveness in sprint running",
+    "journal": "Scand J Med Sci Sports",
+    "doi": "10.1111/sms.12490",
+    "pmid": "25996964",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "power.f0hRef",
+      "power.vmaxRef",
+      "power.vmaxTrainableMax",
+      "power.bodyMassExponentSprint"
+    ],
+    "verified": true,
+    "notes": "Sprint F-v profiling from split times: v(t) = vmax(1 - exp(-t/tau)); F0 = vmax/tau (N/kg)."
+  },
+  {
+    "id": "saunders2004",
+    "authors": "Saunders, Pyne, Telford, Hawley",
+    "year": 2004,
+    "title": "Factors affecting running economy in trained distance runners",
+    "journal": "Sports Med",
+    "doi": "10.2165/00007256-200434070-00005",
+    "pmid": "15233599",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "aerobic.economyRunStart",
+      "aerobic.economyRunBest"
+    ],
+    "verified": true,
+    "notes": "Running economy factors: training, environment, physiology, biomechanics, anthropometry."
+  },
+  {
+    "id": "saunders2017",
+    "authors": "Saunders, Elliott-Sale, Artioli, Swinton, Dolan, Roschel, et al.",
+    "year": 2017,
+    "title": "β-alanine supplementation to improve exercise capacity and performance: a systematic review and meta-analysis",
+    "journal": "Br J Sports Med",
+    "doi": "10.1136/bjsports-2016-096396",
+    "pmid": "27797728",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "nutrition.betaAlanineEffect",
+      "nutrition.betaAlanineLoadingDays"
+    ],
+    "verified": true,
+    "notes": "beta-alanine overall ES 0.18; greater for 0.5-10 min capacity tests (ES ~0.5); the ~2.85% median improvement is from Hobson 2012."
+  },
+  {
+    "id": "schmidtPrommer2010",
+    "authors": "Schmidt, Prommer",
+    "year": 2010,
+    "title": "Impact of alterations in total hemoglobin mass on VO 2max",
+    "journal": "Exerc Sport Sci Rev",
+    "doi": "10.1097/JES.0b013e3181d4957a",
+    "pmid": "20335738",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "aerobic.hbMassSexDiff",
+      "aerobic.hbMassPerKgMen",
+      "aerobic.hbMassPerKgWomen",
+      "aerobic.vo2HbElasticity",
+      "model.hbTrainedGain"
+    ],
+    "verified": true,
+    "notes": "VO2max rises ~4 mL/min per g haemoglobin mass; r ~0.8."
+  },
+  {
+    "id": "schoenfeld2013timing",
+    "authors": "Schoenfeld, Aragon, Krieger",
+    "year": 2013,
+    "title": "The effect of protein timing on muscle strength and hypertrophy: a meta-analysis",
+    "journal": "J Int Soc Sports Nutr",
+    "doi": "10.1186/1550-2783-10-53",
+    "pmid": "24299050",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "nutrition.proteinDistributionBonus"
+    ],
+    "verified": true,
+    "notes": "Protein timing effect disappears when total protein is controlled."
+  },
+  {
+    "id": "schoenfeld2015tempo",
+    "authors": "Schoenfeld, Ogborn, Krieger",
+    "year": 2015,
+    "title": "Effect of repetition duration during resistance training on muscle hypertrophy: a systematic review and meta-analysis",
+    "journal": "Sports Med",
+    "doi": "10.1007/s40279-015-0304-0",
+    "pmid": "25601394",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "training.tempoSlowMultiplier",
+      "training.tempoSlowThresholdS"
+    ],
+    "verified": true,
+    "notes": "Rep durations 0.5-8 s similar hypertrophy; >10 s inferior."
+  },
+  {
+    "id": "schoenfeld2016freq",
+    "authors": "Schoenfeld, Ogborn, Krieger",
+    "year": 2016,
+    "title": "Effects of Resistance Training Frequency on Measures of Muscle Hypertrophy: A Systematic Review and Meta-Analysis",
+    "journal": "Sports Med",
+    "doi": "10.1007/s40279-016-0543-8",
+    "pmid": "27102172",
+    "kind": "peer-reviewed",
+    "constantsInformed": [],
+    "verified": true,
+    "notes": "Training a muscle 2x/week > 1x/week when volume not equated."
+  },
+  {
+    "id": "schoenfeld2016rest",
+    "authors": "Schoenfeld, Pope, Benik, Hester, Sellers, Nooner, et al.",
+    "year": 2016,
+    "title": "Longer Interset Rest Periods Enhance Muscle Strength and Hypertrophy in Resistance-Trained Men",
+    "journal": "J Strength Cond Res",
+    "doi": "10.1519/JSC.0000000000001272",
+    "pmid": "26605807",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "training.hypRest"
+    ],
+    "verified": true,
+    "notes": "3-min vs 1-min rest: greater 1RM and anterior thigh thickness with long rest."
+  },
+  {
+    "id": "schoenfeld2017load",
+    "authors": "Schoenfeld, Grgic, Ogborn, Krieger",
+    "year": 2017,
+    "title": "Strength and Hypertrophy Adaptations Between Low- vs. High-Load Resistance Training: A Systematic Review and Meta-analysis",
+    "journal": "J Strength Cond Res",
+    "doi": "10.1519/JSC.0000000000002200",
+    "pmid": "28834797",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "training.hypLoad",
+      "training.strLoad"
+    ],
+    "verified": true,
+    "notes": "Low-load (<=60% 1RM) and high-load (>60%) training to failure produced similar hypertrophy; high load better for 1RM strength."
+  },
+  {
+    "id": "schoenfeld2017volume",
+    "authors": "Schoenfeld, Ogborn, Krieger",
+    "year": 2017,
+    "title": "Dose-response relationship between weekly resistance training volume and increases in muscle mass: A systematic review and meta-analysis",
+    "journal": "J Sports Sci",
+    "doi": "10.1080/02640414.2016.1210197",
+    "pmid": "27433992",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "training.v0Hypertrophy",
+      "hypertrophy.kHypPerDay"
+    ],
+    "verified": true,
+    "notes": "+0.37% muscle growth per additional weekly set; 10+ sets > <5 sets (3.9% difference high vs low)."
+  },
+  {
+    "id": "schoenfeld2019freq",
+    "authors": "Schoenfeld, Grgic, Krieger",
+    "year": 2019,
+    "title": "How many times per week should a muscle be trained to maximize muscle hypertrophy? A systematic review and meta-analysis of studies examining the effects of resistance training frequency",
+    "journal": "J Sports Sci",
+    "doi": "10.1080/02640414.2018.1555906",
+    "pmid": "30558493",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "training.sessionSaturationSets"
+    ],
+    "verified": true,
+    "notes": "When volume equated, frequency has no significant effect on hypertrophy."
+  },
+  {
+    "id": "schoenfeldAragon2018",
+    "authors": "Schoenfeld, Aragon",
+    "year": 2018,
+    "title": "How much protein can the body use in a single meal for muscle-building? Implications for daily protein distribution",
+    "journal": "J Int Soc Sports Nutr",
+    "doi": "10.1186/s12970-018-0215-1",
+    "pmid": "29497353",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "nutrition.proteinPerMealTarget",
+      "nutrition.proteinDistributionBonus",
+      "nutrition.leucineThresholdG"
+    ],
+    "verified": true,
+    "notes": "~0.4 g/kg/meal across >=4 meals to maximise anabolism (practical target)."
+  },
+  {
+    "id": "schumann2022",
+    "authors": "Schumann, Feuerbacher, Sünkeler, Freitag, Rønnestad, Doma, et al.",
+    "year": 2022,
+    "title": "Compatibility of Concurrent Aerobic and Strength Training for Skeletal Muscle Size and Function: An Updated Systematic Review and Meta-Analysis",
+    "journal": "Sports Med",
+    "doi": "10.1007/s40279-021-01587-7",
+    "pmid": "34757594",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "hypertrophy.interferenceHypertrophy",
+      "strength.interferenceStrength",
+      "power.interferencePower",
+      "aerobic.interferenceSameSessionMultiplier",
+      "aerobic.interferenceGapHours"
+    ],
+    "verified": true,
+    "notes": "CORRECTION vs spec: hypertrophy SMD -0.01, max strength -0.06 (ns), explosive strength -0.28; explosive-strength attenuation was significant for same-session training vs sessions separated by >=3 h (spec said 6 h). Game uses a 3 h window."
+  },
+  {
+    "id": "schutz2002",
+    "authors": "Schutz, Kyle, Pichard",
+    "year": 2002,
+    "title": "Fat-free mass index and fat mass index percentiles in Caucasians aged 18-98 y",
+    "journal": "Int J Obes Relat Metab Disord",
+    "doi": "10.1038/sj.ijo.0802037",
+    "pmid": "12080449",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "hypertrophy.ffmiCeilingMeanMen",
+      "hypertrophy.ffmiCeilingMeanWomen",
+      "genetics.ffmiUntrainedMeanMen",
+      "genetics.ffmiUntrainedMeanWomen"
+    ],
+    "verified": true,
+    "notes": "FFMI/FMI percentiles in Caucasians 18-98 y; mean FFMI ~18.9 men, ~15.4 women."
+  },
+  {
+    "id": "seaborne2018",
+    "authors": "Seaborne, Strauss, Cocks, Shepherd, O'Brien, van Someren, et al.",
+    "year": 2018,
+    "title": "Human Skeletal Muscle Possesses an Epigenetic Memory of Hypertrophy",
+    "journal": "Sci Rep",
+    "doi": "10.1038/s41598-018-20287-3",
+    "pmid": "29382913",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "hypertrophy.muscleMemoryMultiplier"
+    ],
+    "verified": true,
+    "notes": "Epigenetic memory of hypertrophy in human skeletal muscle (hypomethylation retained)."
+  },
+  {
+    "id": "seiler2010",
+    "authors": "Seiler",
+    "year": 2010,
+    "title": "What is best practice for training intensity and duration distribution in endurance athletes?",
+    "journal": "Int J Sports Physiol Perform",
+    "doi": "10.1123/ijspp.5.3.276",
+    "pmid": "20861519",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "aerobic.v0AerobicLoad",
+      "aerobic.lt1StartFraction",
+      "aerobic.lt2StartFraction"
+    ],
+    "verified": true,
+    "notes": "~80/20 polarized intensity distribution among elite endurance athletes."
+  },
+  {
+    "id": "seitz2014",
+    "authors": "Seitz, Reyes, Tran, Saez de Villarreal, Haff",
+    "year": 2014,
+    "title": "Increases in lower-body strength transfer positively to sprint performance: a systematic review with meta-analysis",
+    "journal": "Sports Med",
+    "doi": "10.1007/s40279-014-0227-1",
+    "pmid": "25059334",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "power.f0StrengthExponent",
+      "power.vmaxStrengthExponent"
+    ],
+    "verified": true,
+    "notes": "Squat-strength ES strongly correlated with sprint ES (r = -0.77); mean sprint improvement in the pooled studies was ~3%. Effect on sprint per unit squat gain remains modest."
+  },
+  {
+    "id": "seynnes2007",
+    "authors": "Seynnes, de Boer, Narici",
+    "year": 2007,
+    "title": "Early skeletal muscle hypertrophy and architectural changes in response to high-intensity resistance training",
+    "journal": "J Appl Physiol (1985)",
+    "doi": "10.1152/japplphysiol.00789.2006",
+    "pmid": "17053104",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "hypertrophy.earlyWaterGainKg",
+      "strength.neuralFastGainMedian"
+    ],
+    "verified": true,
+    "notes": "Quadriceps CSA +3.5-5.2% at 20 days, +6.5-7.4% at 35 days (flywheel)."
+  },
+  {
+    "id": "shimano2006",
+    "authors": "Shimano, Kraemer, Spiering, Volek, Hatfield, Silvestre, et al.",
+    "year": 2006,
+    "title": "Relationship between the number of repetitions and selected percentages of one repetition maximum in free weight exercises in trained and untrained men",
+    "journal": "J Strength Cond Res",
+    "doi": "10.1519/R-18195.1",
+    "pmid": "17194239",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "strength.lowerBodyRepsMultiplier"
+    ],
+    "verified": true,
+    "notes": "Reps at 60/80/90% 1RM higher in leg-dominant lifts (back squat) than bench/arm curl."
+  },
+  {
+    "id": "simoneauBouchard1989",
+    "authors": "Simoneau, Bouchard",
+    "year": 1989,
+    "title": "Human variation in skeletal muscle fiber-type proportion and enzyme activities",
+    "journal": "Am J Physiol",
+    "doi": "10.1152/ajpendo.1989.257.4.E567",
+    "pmid": "2529775",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "strength.fiberStrengthPerTenth",
+      "strength.fiberRepsPerTenth",
+      "genetics.typeIMean",
+      "genetics.typeISd",
+      "genetics.typeIMin",
+      "genetics.typeIMax"
+    ],
+    "verified": true,
+    "notes": "Vastus lateralis type I ranged 15-85%; CV ~30%."
+  },
+  {
+    "id": "singer2024",
+    "authors": "Singer, Wolf, Generoso, Arias, Delcastillo, Echevarria, et al.",
+    "year": 2024,
+    "title": "Give it a rest: a systematic review with Bayesian meta-analysis on the effect of inter-set rest interval duration on muscle hypertrophy",
+    "journal": "Front Sports Act Living",
+    "doi": "10.3389/fspor.2024.1429789",
+    "pmid": "39205815",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "training.hypRest"
+    ],
+    "verified": true,
+    "notes": "CORRECTION vs spec: journal is Front Sports Act Living. Small benefit to rest >60 s; no appreciable difference beyond 90 s."
+  },
+  {
+    "id": "slater2019",
+    "authors": "Slater, Dieter, Marsh, Helms, Shaw, Iraki, et al.",
+    "year": 2019,
+    "title": "Is an Energy Surplus Required to Maximize Skeletal Muscle Hypertrophy Associated With Resistance Training",
+    "journal": "Front Nutr",
+    "doi": "10.3389/fnut.2019.00131",
+    "pmid": "31482093",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "energy.kcalPerKgMuscleGain",
+      "hypertrophy.energyBalance"
+    ],
+    "verified": true,
+    "notes": ""
+  },
+  {
+    "id": "spiering2021",
+    "authors": "Spiering, Mujika, Sharp, Foulis",
+    "year": 2021,
+    "title": "Maintaining Physical Performance: The Minimal Dose of Exercise Needed to Preserve Endurance and Strength Over Time",
+    "journal": "J Strength Cond Res",
+    "doi": "10.1519/JSC.0000000000003964",
+    "pmid": "33629972",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "hypertrophy.maintenanceResponse",
+      "strength.neuralGraceDays",
+      "strength.maintenanceStimulusFraction",
+      "aerobic.targetSaturationResponse"
+    ],
+    "verified": true,
+    "notes": "Strength/size maintained up to 32 wk with 1 session/wk and 1 set/exercise if intensity kept (young); older need ~2 sessions, 2-3 sets."
+  },
+  {
+    "id": "stogglSperlich2014",
+    "authors": "Stöggl, Sperlich",
+    "year": 2014,
+    "title": "Polarized training has greater impact on key endurance variables than threshold, high intensity, or high volume training",
+    "journal": "Front Physiol",
+    "doi": "10.3389/fphys.2014.00033",
+    "pmid": "24550842",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "aerobic.zone3Weight"
+    ],
+    "verified": true,
+    "notes": "Polarized > threshold/HVLIT for VO2max and TT performance in trained athletes."
+  },
+  {
+    "id": "stultsKolehmainen2014",
+    "authors": "Stults-Kolehmainen, Bartholomew, Sinha",
+    "year": 2014,
+    "title": "Chronic psychological stress impairs recovery of muscular function and somatic sensations over a 96-hour period",
+    "journal": "J Strength Cond Res",
+    "doi": "10.1519/JSC.0000000000000335",
+    "pmid": "24343323",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "fatigue.readinessStressWeight",
+      "fatigue.stressRecoveryPenalty",
+      "hypertrophy.stress"
+    ],
+    "verified": true,
+    "notes": "Higher stress: slower recovery of maximal force, energy, fatigue and soreness over 96 h."
+  },
+  {
+    "id": "suchomel2016",
+    "authors": "Suchomel, Nimphius, Stone",
+    "year": 2016,
+    "title": "The Importance of Muscular Strength in Athletic Performance",
+    "journal": "Sports Med",
+    "doi": "10.1007/s40279-016-0486-0",
+    "pmid": "26838985",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "power.f0StrengthExponent"
+    ],
+    "verified": true,
+    "notes": ""
+  },
+  {
+    "id": "syrotuikBell2004",
+    "authors": "Syrotuik, Bell",
+    "year": 2004,
+    "title": "Acute creatine monohydrate supplementation: a descriptive physiological profile of responders vs. nonresponders",
+    "journal": "J Strength Cond Res",
+    "doi": "10.1519/12392.1",
+    "pmid": "15320650",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "nutrition.creatineNonResponderRate"
+    ],
+    "verified": true,
+    "notes": "3/11 non-responders (27%), 5/11 quasi-responders to a 5-day creatine load."
+  },
+  {
+    "id": "toombs2012",
+    "authors": "Toombs RJ, Ducher G, Shepherd JA, De Souza MJ",
+    "year": 2012,
+    "title": "The impact of recent technological advances on the trueness and precision of DXA to assess body composition",
+    "journal": "Obesity (Silver Spring)",
+    "doi": "10.1038/oby.2011.211",
+    "pmid": "21799481",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "energy.dxaErrorSd",
+      "energy.biaErrorSd",
+      "energy.skinfoldErrorSd"
+    ],
+    "verified": false,
+    "notes": "DXA precision ~1-2% body fat; BIA and skinfold worse. From memory; not re-fetched."
+  },
+  {
+    "id": "trommelen2023",
+    "authors": "Trommelen, van Lieshout, Nyakayiru, Holwerda, Smeets, Hendriks, et al.",
+    "year": 2023,
+    "title": "The anabolic response to protein ingestion during recovery from exercise has no upper limit in magnitude and duration in vivo in humans",
+    "journal": "Cell Rep Med",
+    "doi": "10.1016/j.xcrm.2023.101324",
+    "pmid": "38118410",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "nutrition.proteinDistributionBonus"
+    ],
+    "verified": true,
+    "notes": "100 g protein dose: prolonged anabolic response, no upper limit within 12 h."
+  },
+  {
+    "id": "turnerRobling2003",
+    "authors": "Turner, Robling",
+    "year": 2003,
+    "title": "Designing exercise regimens to increase bone strength",
+    "journal": "Exerc Sport Sci Rev",
+    "doi": "10.1097/00003677-200301000-00009",
+    "pmid": "12562170",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "injury.bmdGainPerYear"
+    ],
+    "verified": true,
+    "notes": "Bone responds to dynamic, high-magnitude, unusual loading; saturates quickly per session."
+  },
+  {
+    "id": "usdaFdc",
+    "authors": "US Department of Agriculture, Agricultural Research Service",
+    "year": 2019,
+    "title": "FoodData Central, SR Legacy release (April 2018)",
+    "journal": "fdc.nal.usda.gov",
+    "doi": null,
+    "pmid": null,
+    "kind": "database",
+    "constantsInformed": [],
+    "verified": true,
+    "notes": "Food nutrient data extracted from the SR Legacy CSV download during the build."
+  },
+  {
+    "id": "vanDyk2019",
+    "authors": "van Dyk, Behan, Whiteley",
+    "year": 2019,
+    "title": "Including the Nordic hamstring exercise in injury prevention programmes halves the rate of hamstring injuries: a systematic review and meta-analysis of 8459 athletes",
+    "journal": "Br J Sports Med",
+    "doi": "10.1136/bjsports-2018-100045",
+    "pmid": "30808663",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "injury.nordicHamstringReduction"
+    ],
+    "verified": true,
+    "notes": "Nordic hamstring exercise programmes: injury risk ratio 0.49 (about halved)."
+  },
+  {
+    "id": "videbaek2015",
+    "authors": "Videbæk, Bueno, Nielsen, Rasmussen",
+    "year": 2015,
+    "title": "Incidence of Running-Related Injuries Per 1000 h of running in Different Types of Runners: A Systematic Review and Meta-Analysis",
+    "journal": "Sports Med",
+    "doi": "10.1007/s40279-015-0333-8",
+    "pmid": "25951917",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "injury.rateNoviceRunning",
+      "injury.rateRecreationalRunning"
+    ],
+    "verified": true,
+    "notes": "Novice runners 17.8 injuries/1000 h (CI 16.7-19.1); recreational 7.7."
+  },
+  {
+    "id": "wang2010",
+    "authors": "Wang, Ying, Bosy-Westphal, Zhang, Heller, Later, et al.",
+    "year": 2011,
+    "title": "Evaluation of specific metabolic rates of major organs and tissues: comparison between men and women",
+    "journal": "Am J Hum Biol",
+    "doi": "10.1002/ajhb.21137",
+    "pmid": "21484913",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "energy.rmrMuscle",
+      "energy.rmrAdipose",
+      "energy.rmrOrganRefKcal"
+    ],
+    "verified": true,
+    "notes": "Specific metabolic rates: skeletal muscle 13, adipose 4.5, liver 200, brain 240, heart/kidneys 440, residual 12 kcal/kg/day (Elia 1992 constants evaluated)."
+  },
+  {
+    "id": "watson2018",
+    "authors": "Watson, Weeks, Weis, Harding, Horan, Beck, et al.",
+    "year": 2018,
+    "title": "High-Intensity Resistance and Impact Training Improves Bone Mineral Density and Physical Function in Postmenopausal Women With Osteopenia and Osteoporosis: The LIFTMOR Randomized Controlled Trial",
+    "journal": "J Bone Miner Res",
+    "doi": "10.1002/jbmr.3284",
+    "pmid": "28975661",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "injury.bmdGainPerYear",
+      "model.bmdPerTrainingYear",
+      "model.bmdAgeLossPerYear"
+    ],
+    "verified": true,
+    "notes": "LIFTMOR: lumbar spine BMD +2.9% vs -1.2% over 8 months with HiRIT."
+  },
+  {
+    "id": "webb1988",
+    "authors": "Webb, Kline, Holick",
+    "year": 1988,
+    "title": "Influence of season and latitude on the cutaneous synthesis of vitamin D3: exposure to winter sunlight in Boston and Edmonton will not promote vitamin D3 synthesis in human skin",
+    "journal": "J Clin Endocrinol Metab",
+    "doi": "10.1210/jcem-67-2-373",
+    "pmid": "2839537",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "nutrition.vitDNoSynthesisStartMonth",
+      "nutrition.vitDNoSynthesisEndMonth"
+    ],
+    "verified": true,
+    "notes": "Boston (42.2 N): no cutaneous previtamin D3 synthesis November-February."
+  },
+  {
+    "id": "westerterp2004",
+    "authors": "Westerterp",
+    "year": 2004,
+    "title": "Diet induced thermogenesis",
+    "journal": "Nutr Metab (Lond)",
+    "doi": "10.1186/1743-7075-1-5",
+    "pmid": "15507147",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "energy.tefProtein",
+      "energy.tefCarb",
+      "energy.tefFat",
+      "energy.tefAlcohol",
+      "nutrition.proteinHungerReduction"
+    ],
+    "verified": true,
+    "notes": "DIT 5-15% of daily EE on a mixed diet; protein > carbohydrate > fat."
+  },
+  {
+    "id": "westPhillips2012",
+    "authors": "West, Phillips",
+    "year": 2012,
+    "title": "Associations of exercise-induced hormone profiles and gains in strength and hypertrophy in a large cohort after weight training",
+    "journal": "Eur J Appl Physiol",
+    "doi": "10.1007/s00421-011-2246-z",
+    "pmid": "22105707",
+    "kind": "peer-reviewed",
+    "constantsInformed": [],
+    "verified": true,
+    "notes": "CORRECTION vs spec: journal is Eur J Appl Physiol. Acute post-exercise hormone elevations were not associated with hypertrophy or strength gains in 56 men."
+  },
+  {
+    "id": "weyand2000",
+    "authors": "Weyand, Sternlight, Bellizzi, Wright",
+    "year": 2000,
+    "title": "Faster top running speeds are achieved with greater ground forces not more rapid leg movements",
+    "journal": "J Appl Physiol (1985)",
+    "doi": "10.1152/jappl.2000.89.5.1991",
+    "pmid": "11053354",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "power.vmaxRef",
+      "power.vmaxStrengthExponent"
+    ],
+    "verified": true,
+    "notes": "Top speed determined by ground force per unit mass, not leg turnover."
+  },
+  {
+    "id": "wilson2012",
+    "authors": "Wilson, Marin, Rhea, Wilson, Loenneke, Anderson, et al.",
+    "year": 2012,
+    "title": "Concurrent training: a meta-analysis examining interference of aerobic and resistance exercises",
+    "journal": "J Strength Cond Res",
+    "doi": "10.1519/JSC.0b013e31823a3e2d",
+    "pmid": "22002517",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "hypertrophy.interferenceHypertrophy",
+      "strength.interferenceStrength",
+      "power.interferencePower",
+      "aerobic.interferenceRunning",
+      "aerobic.interferenceCycling"
+    ],
+    "verified": true,
+    "notes": "Concurrent training ES: hypertrophy 1.23->0.85, strength 1.76->1.44, power 0.91->0.55; running worse than cycling; frequency/duration negatively correlated."
+  },
+  {
+    "id": "winter2009",
+    "authors": "Winter DA",
+    "year": 2009,
+    "title": "Biomechanics and Motor Control of Human Movement (4th ed.)",
+    "journal": "Wiley",
+    "doi": "10.1002/9780470549148",
+    "pmid": null,
+    "kind": "book",
+    "constantsInformed": [
+      "genetics.thighFraction",
+      "genetics.shankFraction",
+      "genetics.upperArmFraction",
+      "genetics.forearmFraction",
+      "genetics.torsoFraction",
+      "genetics.footHeightFraction",
+      "genetics.segmentSd",
+      "genetics.momentArmSd"
+    ],
+    "verified": false,
+    "notes": "Segment lengths as fractions of height (e.g., thigh 0.245, shank 0.246, upper arm 0.186, forearm 0.146, trunk 0.288)."
+  },
+  {
+    "id": "wolf2023",
+    "authors": "Wolf M, Androulakis-Korakakis P, Fisher J, Schoenfeld BJ, Steele J",
+    "year": 2023,
+    "title": "Partial vs full range of motion resistance training: a systematic review and meta-analysis",
+    "journal": "Int J Strength Cond",
+    "doi": "10.47206/ijsc.v3i1.182",
+    "pmid": null,
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "training.lengthBiasMax"
+    ],
+    "verified": true,
+    "notes": ""
+  },
+  {
+    "id": "yang2003",
+    "authors": "Yang, MacArthur, Gulbin, Hahn, Beggs, Easteal, et al.",
+    "year": 2003,
+    "title": "ACTN3 genotype is associated with human elite athletic performance",
+    "journal": "Am J Hum Genet",
+    "doi": "10.1086/377590",
+    "pmid": "12879365",
+    "kind": "peer-reviewed",
+    "constantsInformed": [
+      "genetics.actn3XxFrequency",
+      "genetics.actn3XxPowerPenalty"
+    ],
+    "verified": true,
+    "notes": "ACTN3 R577X: XX genotype underrepresented in elite sprint/power athletes; small effect."
+  },
+  {
+    "id": "zourdos2016",
+    "authors": "Zourdos, Klemp, Dolan, Quiles, Schau, Jo, et al.",
+    "year": 2016,
+    "title": "Novel Resistance Training-Specific Rating of Perceived Exertion Scale Measuring Repetitions in Reserve",
+    "journal": "J Strength Cond Res",
+    "doi": "10.1519/JSC.0000000000001049",
+    "pmid": "26049792",
+    "kind": "peer-reviewed",
+    "constantsInformed": [],
+    "verified": true,
+    "notes": "RIR-based RPE scale validated against velocity; RPE 10 = RIR 0."
+  }
+]
