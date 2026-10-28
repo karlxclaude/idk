@@ -5,7 +5,7 @@ How to add exercises to PHENOTYPE's database. Every exercise is declared with `e
 ## Files
 
 - `data/exercises/core.ts`: benchmark set (do not duplicate these ids).
-- `data/exercises/upper.ts`, `lower.ts`, `athletic.ts`: the Phase 2 library, each exporting one `Exercise[]` built with `ex()`.
+- `data/exercises/lib/*.ts`: the Phase 2 library, one module per category, each exporting one `Exercise[]` built with `ex()`; `library.ts` aggregates them. Validate a module with `npx vite-node scripts/check-exercises.ts data/exercises/lib/<file>.ts`.
 - Muscle region ids, movement patterns: `data/muscles.ts`. Categories, gym tiers, cardio modalities: `data/exercises/schema.ts`.
 
 ## Field conventions

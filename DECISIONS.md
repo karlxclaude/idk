@@ -44,3 +44,19 @@ Non-obvious choices made while building PHENOTYPE, in rough chronological order.
 - **Hypertrophy benchmark diet = "lean bulk" controller** (`bodyFatTargetDiet`): +300 kcal at ≤15% body fat, shrinking 120 kcal per % above. A constant surplus for four years ends at 40% body fat, which isn't "good conditions"; bulk/cut cycling makes yearly numbers depend on phase timing.
 - **Model shape constants live in `data/constants/model.ts`** (sampling bounds, mixing weights, initial-state heuristics), and unit conversions and published formula coefficients (Brzycki, Epley, Mifflin, Concept2) live in `engine/units.ts`. `tests/no-magic-numbers.test.ts` fails if a numeric literal outside a small structural allow-list appears in engine code.
 - **Paired benchmark comparisons clone one character** (`structuredClone`), so anthropometry and moment arms are identical between arms of a comparison.
+
+## Phase 2 exercise database decisions
+
+- **Library authored per category by parallel agents, validated mechanically.** Each `data/exercises/lib/*.ts` module passes `scripts/check-exercises.ts` (schema, reference 1RM within 5% of `refLoad`, reps at 75% in 6–18) before merge. Activation and length-bias values are anatomical estimates unless `verified: true` names a study.
+- **`legDrive` field** (0–1) for upper-body presses: competition bench 0.6, Larsen press 0. It feeds the spot check and future leg-drive skill transfer.
+- **Strongman events use `movementPattern: 'strongman'`** (keg toss, Conan's wheel included), and their ballistic or carry character is expressed through `adaptationBias` and `peakPowerLoadPct`. Carries use `repsModifier` 0.75 and `secondsPerRep` 15–25, so one "rep" equals one carry.
+- **Axle press sits in the `strongman` gym tier** (axles mostly appear in strongman gyms), even though the authoring guide lists axle under `powerlifting`.
+- **Cardio library entries set `muscularEndurance: 0`.** The engine routes cardio stimulus through the aerobic model, not the lifting endurance bias.
+- **Jump rope (impact 0.7) uses running injury rates** because the engine's running-impact threshold is 0.6.
+- **Transfer matrix is generated, not hand-entered**: pattern similarity × muscle-overlap cosine × equipment factor (`exerciseTransfer`). `npm run transfer` exports it sparsely to `docs/transfer-matrix.json`.
+
+## Phase 4 food database decisions
+
+- **Foods come from USDA SR Legacy (April 2018 CSV)** through `scripts/build-foods.mjs` and per-group spec files. Seven powder supplements (whey isolate, casein, pea protein, maltodextrin, electrolyte mix, beet shot, mass gainer) are manual label-basis entries with `fdcId: null`, because SR Legacy lacks matching rows.
+- **Prices are per unit as sold.** Dry legumes are priced per 454 g dry, while their nutrient rows are cooked, so cost per 100 g cooked is understated. The grocery layer in Phase 4 must apply a cooked-yield factor (~2.5×).
+- **Satiety index** uses Holt 1995 values where the food matches and is otherwise `estimated`. DIAAS uses FAO 2013, Rutherfurd 2015 and Mathai 2017 where available.

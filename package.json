@@ -14,7 +14,8 @@
     "sim": "vite-node scripts/sim.ts",
     "balance": "vite-node scripts/balance.ts",
     "sources:md": "vite-node scripts/sources-md.ts",
-    "validate": "vite-node scripts/validate-data.ts"
+    "validate": "vite-node scripts/validate-data.ts",
+    "transfer": "vite-node scripts/export-transfer.ts"
   },
   "dependencies": {
     "dexie": "^4.0.10",
