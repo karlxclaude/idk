@@ -71,7 +71,8 @@ export interface GameState {
   best: number | null;
 }
 
-export const DEFAULT_CHOICE: PlanChoice = { days: 3, template: 'full_body', sets: 'medium', intensity: { mode: 'rir', rir: 2 }, cardio: 0, balanceKcal: 0 };
+/** Deliberately mediocre starting point: low volume, easy effort, maintenance calories, no cardio. */
+export const DEFAULT_CHOICE: PlanChoice = { days: 3, template: 'custom_volume', sets: 'low', intensity: { mode: 'rir', rir: 4 }, cardio: 0, balanceKcal: 0 };
 
 let sharedCtx: SimContext | null = null;
 function ctx(): SimContext {

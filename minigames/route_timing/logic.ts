@@ -51,14 +51,14 @@ const lerp = (a: number, b: number, k: number) => a + (b - a) * k;
 
 export const isRoad = (x: number, y: number) =>
   x >= 0 && y >= 0 && x < GRID && y < GRID && (x % 2 === 0 || y % 2 === 0);
-export const isIntersection = (x: number, y: number) => x % 2 === 0 && y % 2 === 0;
+export const isIntersection = (x: number, y: number) => x % 4 === 0 && y % 4 === 0; // signalised crossings
 const dist = (a: Cell, b: Cell) => Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
 
 export function createGame(seed: string, difficulty: number, durationSec = 55): GameState {
   const d = clamp01(difficulty);
   const rng = makeRng(`${seed}|route_timing|level`);
   const lights: Light[] = [];
-  for (let y = 0; y < GRID; y += 2) for (let x = 0; x < GRID; x += 2) lights.push({ x, y, offset: rng.uniform(0, 10) });
+  for (let y = 0; y < GRID; y += 4) for (let x = 0; x < GRID; x += 4) lights.push({ x, y, offset: rng.uniform(0, 10) });
   const nCars = 3 + Math.round((1 - d) * 7);
   const cars: Car[] = [];
   for (let i = 0; i < nCars; i++) {
@@ -66,7 +66,7 @@ export function createGame(seed: string, difficulty: number, durationSec = 55): 
   }
   const s: GameState = {
     seed, difficulty: d, duration: durationSec, t: 0,
-    lightPeriod: lerp(8, 5, d), turnLag: (1 - d) * 0.6, slack: lerp(1.5, 2.4, d),
+    lightPeriod: lerp(7, 4, d), turnLag: (1 - d) * 0.6, slack: lerp(1.5, 2.4, d),
     lights, cars, player: { x: 4, y: 4 }, move: null, lastDir: { dx: 0, dy: 0 }, lagDir: null, lagLeft: 0,
     stall: 0, stallReason: '', order: null, orderIdx: 0, points: 0, delivered: 0, missed: 0, redRuns: 0, crashes: 0,
     moves: 0, done: false, rng: makeRng(`${seed}|route_timing|events`),
@@ -219,6 +219,6 @@ export function botInput(s: GameState): Input {
   const turning = (s.lastDir.dx !== 0 || s.lastDir.dy !== 0) && (s.lastDir.dx !== dir.dx || s.lastDir.dy !== dir.dy);
   const arrival = s.t + (s.lagDir ? Math.max(0, s.lagLeft) : turning ? s.turnLag : 0) + MOVE_SEC;
   if (isIntersection(n.x, n.y) && isRed(s, n.x, n.y, dir.dx !== 0, arrival)) return null;
-  if (carNear(s, n.x, n.y, arrival, 1)) return null;
+  if (carNear(s, n.x, n.y, arrival, 0) || carNear(s, n.x, n.y, arrival + 0.3, 0)) return null;
   return dir;
 }
