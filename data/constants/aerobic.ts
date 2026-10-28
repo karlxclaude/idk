@@ -44,9 +44,11 @@ export const aerobicDefs = {
   detrainFastFraction: k(0.5, 'ratio', [0.4, 0.7], 'M', ['coyle1984'], true, 'Early loss from stroke volume.'),
   detrainFastTauDays: k(18, 'days', [12, 30], 'M', ['coyle1984'], true, '-7% at 21 d.'),
   detrainSlowTauDays: k(200, 'days', [120, 400], 'M', ['coyle1984'], true, 'Stabilised ~-16% at 56 d; capillaries persist.'),
-  /** Maintenance: weekly weighted minutes keeping VO2max if intensity preserved. */
-  maintenanceFraction: k(0.33, 'ratio', [0.25, 0.5], 'M', ['hickson1985', 'hickson1981', 'hickson1982', 'spiering2021'], false,
-    'Frequency/duration cut by up to 2/3 maintained VO2max if intensity kept.'),
+  /** Weekly aerobic response R at or above which the full VO2max target is sustained (maintenance dose). */
+  targetSaturationResponse: k(0.5, 'ratio', [0.3, 0.7], 'M', ['hickson1985', 'hickson1981', 'hickson1982', 'spiering2021'], false,
+    'Cutting frequency/duration by up to 2/3 at constant intensity keeps R above this, so VO2max is maintained; cutting intensity lowers weighted minutes faster.'),
+  /** Weekly running km at which economy stimulus saturates. */
+  economyRunVolumeKm: design(25, 'km/week', [10, 60], 'Economy improves with running volume.'),
   /** Glycogen capacity per kg skeletal muscle (g). */
   glycogenPerKgMuscle: k(15, 'g/kg', [12, 20], 'M', ['burke2011', 'fernandezElias2015'], false, '~400-500 g whole body in trained adults.'),
   liverGlycogenG: design(100, 'g', [80, 120], 'Liver store.'),

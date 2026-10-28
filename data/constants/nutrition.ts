@@ -68,6 +68,7 @@ export const nutritionDefs = {
   idnaPerformancePenalty: k(0.03, 'ratio', [0.01, 0.06], 'M', ['burden2015'], true, 'Non-anaemic deficiency: small aerobic effect (treatment g=0.61).'),
   /** Vitamin D: serum 25(OH)D (ng/mL) dynamics. */
   vitDDeficient: k(20, 'ng/mL', [20, 20], 'H', ['ross2011', 'iom2011'], true, 'IOM: <20 ng/mL deficient.'),
+  vitDBaselineNgMl: design(10, 'ng/mL', [5, 15], 'Serum 25(OH)D sustained by body stores with no sun or intake (winter trough floor).'),
   vitDSufficient: design(30, 'ng/mL', [25, 40], 'Target.'),
   vitDPerIuPerDay: k(0.007, 'ng/mL per IU/day', [0.005, 0.01], 'M', ['heaney2003'], true, '~0.7 ng/mL per 100 IU/day at steady state.'),
   vitDHalfLifeDays: design(45, 'days', [30, 60], '25(OH)D half-life 2-3 weeks; body stores longer. Game uses 45 d for the pool.'),

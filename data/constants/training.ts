@@ -45,24 +45,39 @@ export const trainingDefs = {
   /** Eccentric/lengthened emphasis raises damage by this fraction at lengthBias=1. */
   lengthenedDamageBonus: design(0.3, 'ratio', [0.1, 0.6], 'More damage from lengthened positions.'),
   /** Within-session rep loss: reps fall by this fraction per unit local fatigue. */
-  sessionFatigueRepLoss: design(0.35, 'ratio', [0.2, 0.6], 'Mechanical rep-loss model within a session.'),
+  sessionFatigueRepLoss: design(0.15, 'ratio', [0.08, 0.3], 'Force-capacity drop right after a set to failure (mechanical rep-loss model).'),
   /** Local fatigue recovered per minute of rest within a session (fraction of the accumulated set fatigue). */
-  intraSetRecoveryPerMin: design(0.28, '1/min', [0.15, 0.45], 'Rest-dependent recovery between sets; 3 min recovers ~60%.'),
+  intraSetRecoveryPerMin: design(0.4, '1/min', [0.2, 0.6], 'Rest-dependent recovery between sets: 10RM sets lose ~1.5 reps at 3 min rest, ~3.5 at 1 min.'),
+  /** Non-recovering session fatigue per hard set (fraction of force capacity, applied to all trained muscles). */
+  sessionSlowFatiguePerSet: design(0.008, 'ratio/set', [0.0, 0.02], 'Accumulating fatigue across a long session.'),
+  /** Velocity loss at failure (%) and curvature of VL vs reps/maxReps. */
+  velocityLossAtFailure: k(55, '%', [40, 70], 'M', ['parejaBlanco2017'], false, 'VL20 ~ half of possible reps; VL40 ~ 80%.'),
+  velocityLossExponent: design(1.3, 'exponent', [1.0, 2.0], 'VL = VLfail * (reps/maxReps)^exp.'),
+  /** Weekly power-stimulus saturation (power sets). */
+  v0Power: design(10, 'sets/week', [5, 20], 'Power adaptations saturate at moderate weekly volume.'),
+  /** Fraction of force lost per unit local damage (EIMD strength loss). */
+  damageForceLoss: k(0.25, 'ratio', [0.1, 0.4], 'M', ['hyldahlHubal2014', 'maeo2021'], true, 'Novel eccentric work: 1RM -12 to -24% at 24 h.'),
+  /** Damage increment per hard set at full exercise.localDamage and activation 1. */
+  damagePerSet: design(0.12, 'damage/set', [0.05, 0.25], 'Local damage scale; ~1 after a novel high-volume session.'),
   /** Systemic fatigue per hard set (impulse units) for a high-systemic exercise. */
   systemicFatiguePerSet: design(1.0, 'impulse/set', [0.5, 2], 'Scales exercise.systemicFatigue; feeds the Banister model.'),
   /** Minimum skill at which a novel exercise starts (relative to 1). */
   skillStart: design(0.3, 'ratio', [0.1, 0.5], 'Novel exercise skill at first exposure.'),
+  /** Between-person SD of starting technique on an unfamiliar lift. */
+  noviceSkillSd: k(0.12, 'ratio', [0.05, 0.2], 'L', ['hubal2005'], false, 'Some novices express far less of their capacity on a new lift; drives the long right tail of 1RM gains (0 to +250%).'),
   /** Skill time constant: sessions to reach ~63% of the remaining skill gap at learningRate 1. */
   skillSessionsTau: k(8, 'sessions', [5, 14], 'HEUR', ['moritaniDeVries1979'], true, '2-4 weeks at 2-3 sessions/week.'),
   /** Skill decay time constant (days) without practice. */
   skillDecayTauDays: design(240, 'days', [120, 500], 'Skill decays much slower than muscle.'),
-  /** Neural adaptation time constant (days) toward saturation under full strength stimulus. */
-  neuralTauDays: k(24, 'days', [14, 35], 'M', ['moritaniDeVries1979'], true, 'Neural factors dominate first 3-5 weeks.'),
-  /** Max neural contribution to 1RM (factor = 1 + neuralGain * neuralLevel). */
-  neuralGainMax: k(0.3, 'ratio', [0.2, 0.45], 'HEUR', ['moritaniDeVries1979', 'hubal2005'], false,
-    'Sized so 12-week beginner gains of +20-50% emerge from neural + skill + hypertrophy.'),
   /** Fraction of a trained exercise's neural stimulus transferred to a different exercise of the same pattern at transfer=1. */
   neuralTransferScale: design(1.0, 'ratio', [0.5, 1.0], 'Transfer matrix coefficient scales neural transfer.'),
+  /** Generated transfer matrix (HEUR): same pattern = base + overlap x cosine(muscle vectors); cross-pattern = patternTransfer x cosine x scale. */
+  transferSamePatternBase: design(0.35, 'ratio', [0.1, 0.6], 'Transfer floor within a movement pattern.'),
+  transferSamePatternOverlap: design(0.5, 'ratio', [0.2, 0.8], 'Transfer added by full muscle overlap within a pattern.'),
+  transferCrossPatternScale: design(0.6, 'ratio', [0.2, 1], 'Scale for cross-pattern transfer.'),
+  transferOtherEquipment: design(0.85, 'ratio', [0.6, 1], 'Different equipment lowers transfer.'),
+  transferMax: design(0.95, 'ratio', [0.8, 1], 'Cap on transfer between distinct exercises.'),
+  transferMin: design(0.05, 'ratio', [0, 0.2], 'Transfers below this are ignored.'),
 } as const;
 
 export const trainingCurves = {
@@ -92,7 +107,4 @@ export const trainingCurves = {
     [[0, 1.0, 0.9, 1.0], [20, 1.0, 0.85, 1.0], [30, 0.8, 0.6, 0.95], [40, 0.6, 0.4, 0.8], [60, 0.45, 0.25, 0.7]],
     'M', ['parejaBlanco2017'], true, '20% VL favours jump/power; 40% favours hypertrophy.'),
   /** Hypertrophy stimulus vs within-set velocity loss (%). */
-  hypVelocityLoss: curve('training.hypVelocityLoss', '%', 'multiplier',
-    [[0, 0.6, 0.4, 0.8], [20, 0.85, 0.7, 1.0], [40, 1.0, 0.9, 1.0], [60, 1.0, 0.9, 1.0]],
-    'M', ['parejaBlanco2017'], true, 'VL40 produced more hypertrophy than VL20.'),
 } as const;

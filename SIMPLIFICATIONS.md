@@ -16,7 +16,8 @@ Every place the physiology is simplified: what the game does, why, and what a fu
 
 - **1RM = force index × neural × skill × leverage × fiber × readiness × modifiers.** No joint torque model, no moment-arm curves through range of motion. The "resistance profile" field in the exercise database is used only for stimulus (length bias), not for sticking points.
 - **Reps at %1RM from an Epley/Brzycki blend** with exercise, fiber-type, sex and fatigue modifiers. Real rep ability depends on the load–velocity profile of the individual lift; velocity-based modelling is out of scope.
-- **Neural adaptation is per movement pattern; skill is per exercise.** Transfer between exercises uses a generated matrix of similarity coefficients, not motor-learning theory.
+- **Neural adaptation is per movement pattern; skill is per exercise.** Two pattern-level pools: a fast early-neural pool (weeks; voluntary activation and coordination) and a slow neuromuscular-quality pool (years; lumps specific tension, intermuscular coordination and architecture, i.e. everything that makes strength rise 2–5× faster than CSA). A fuller model would separate voluntary activation, antagonist co-activation, fascicle angle and lateral force transmission. Transfer between exercises uses a generated matrix (pattern similarity × muscle-overlap cosine), not motor-learning theory.
+- **Strength scaling is anchored to a reference man.** Each exercise has a `refLoad` (expected 1RM of a reference untrained 75 kg, 175 cm man). Characters scale from it by muscle force index (mass × moment arm / segment length), skill, neural pools, leverage and fiber type. A musculoskeletal model would compute joint torques through the range of motion.
 - **Cross-education is a flat fraction** (10%) of unilateral strength gain applied to the untrained side.
 
 ## Power, sprint, jump
@@ -24,6 +25,8 @@ Every place the physiology is simplified: what the game does, why, and what a fu
 - **Jump uses Samozino 2008 with a linear F–v relationship evaluated at mean push-off velocity.** No simulation of the countermovement itself; the SSC bonus and arm-swing bonus are multipliers.
 - **Sprint uses the mono-exponential velocity model (Samozino 2016).** No reaction time, air resistance optional (off by default), no stride-level mechanics. vmax and τ come from F0h, technique and sprint-specific adaptation.
 - **F0 and V0 are derived from relative lower-body strength and fiber type**, not measured per joint.
+
+- **Hubal 2005 is reproduced in distribution shape, not in mean.** The model's arm-only program gives median biceps CSA +7.5% (Hubal mean ~+19%). The spread (CV 0.7, range −4 to +40% with MRI noise) and 1RM range (+2 to +157%) match qualitatively. A fuller model would give arm muscles a higher relative headroom/rate than legs.
 
 ## Fatigue and recovery
 
@@ -37,11 +40,12 @@ Every place the physiology is simplified: what the game does, why, and what a fu
 - **VO2max is one scalar in mL/kg/min with a genetic ceiling.** Central (stroke volume, Hb mass) and peripheral (capillaries, mitochondria) components are collapsed except for detraining (two-pool decay) and the Hb-mass link used for anaemia.
 - **Three-zone model anchored on LT1/LT2 fractions of VO2max.** No lactate kinetics; thresholds drift toward trainable maxima at a slow rate.
 - **Economy is a single value per modality** that improves with volume and strength/plyo stimulus.
-- **Glycogen is a whole-body store** (muscle + liver) depleted by exercise kcal at zone-dependent rates and refilled by carbohydrate.
+- **Glycogen is a whole-body store** (muscle + liver) depleted by exercise kcal at zone-dependent rates and refilled by carbohydrate. Its effective capacity falls in a sustained energy deficit (the early water drop of a diet) and rises ~30% with training status.
 
 ## Energy balance and body composition
 
 - **BMR is tissue-based** (muscle 13, adipose 4.5 kcal/kg/day, organs scaled sub-linearly from non-muscle lean mass) and cross-checked against Mifflin–St Jeor in tests. Organ masses are not tracked individually.
+- **Lean change in a surplus without training** goes to non-muscle lean (adipose-associated lean tissue), and is lost first in a deficit. Real overfeeding also adds some skeletal muscle.
 - **Partitioning uses Hall's Forbes extension** for the composition of weight change, with lean sparing from training, protein and sleep layered on top. The energy cost of muscle gain is a single constant (~2000 kcal/kg).
 - **Adaptive thermogenesis is a single pool** (max ~7% of TDEE, τ 30 days) acting mostly through NEAT.
 - **Water weight** = glycogen × 3 + sodium shift + creatine water. No menstrual-cycle water changes unless the optional small effect is on.

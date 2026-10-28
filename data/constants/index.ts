@@ -12,6 +12,7 @@ import { injuryDefs } from './injury';
 import { nutritionDefs, nutritionCurves } from './nutrition';
 import { geneticsDefs } from './genetics';
 import { economyDefs } from './economy';
+import { modelDefs } from './model';
 
 export const constantGroups = {
   training: trainingDefs,
@@ -25,6 +26,7 @@ export const constantGroups = {
   nutrition: nutritionDefs,
   genetics: geneticsDefs,
   economy: economyDefs,
+  model: modelDefs,
 } as const;
 
 export const curveGroups = {

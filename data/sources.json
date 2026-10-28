@@ -10,7 +10,8 @@
     "kind": "book",
     "constantsInformed": [
       "aerobic.vo2BaseMen20s",
-      "aerobic.vo2BaseWomen20s"
+      "aerobic.vo2BaseWomen20s",
+      "model.vo2IndividualSd"
     ],
     "verified": false,
     "notes": "Age/sex VO2max norms (approx.: men 20-29 50th percentile ~43-45, women ~36-38 mL/kg/min)."
@@ -100,6 +101,7 @@
     "pmid": "21131862",
     "kind": "peer-reviewed",
     "constantsInformed": [
+      "hypertrophy.maintenanceResponse",
       "hypertrophy.atrophyTauDays",
       "strength.maintenanceStimulusFraction"
     ],
@@ -258,6 +260,7 @@
     "pmid": "21660838",
     "kind": "peer-reviewed",
     "constantsInformed": [
+      "hypertrophy.trainedGlycogenBonus",
       "aerobic.glycogenPerKgMuscle",
       "aerobic.glycogenPerformancePenalty",
       "nutrition.carbLightGkg",
@@ -311,7 +314,8 @@
     "pmid": "24692140",
     "kind": "peer-reviewed",
     "constantsInformed": [
-      "nutrition.dehydrationAerobicThreshold"
+      "nutrition.dehydrationAerobicThreshold",
+      "model.waterNeedBaseL"
     ],
     "verified": true,
     "notes": "Compr Physiol review: >2% body-mass hypohydration impairs aerobic performance, worse in heat."
@@ -409,6 +413,7 @@
     "pmid": null,
     "kind": "peer-reviewed",
     "constantsInformed": [
+      "power.f0hTrainableMax",
       "power.sledF0hBias"
     ],
     "verified": true,
@@ -437,7 +442,8 @@
     "pmid": "27219125",
     "kind": "peer-reviewed",
     "constantsInformed": [
-      "hypertrophy.earlyWaterGainKg"
+      "hypertrophy.earlyWaterGainKg",
+      "hypertrophy.edemaPerDamage"
     ],
     "verified": true,
     "notes": "Fibre CSA increase only significant at 10 wk; MyoPS at 3 wk and 10 wk (not week 1) correlated with hypertrophy."
@@ -458,20 +464,37 @@
       "training.lengthenedDamageBonus",
       "training.sessionFatigueRepLoss",
       "training.intraSetRecoveryPerMin",
+      "training.sessionSlowFatiguePerSet",
+      "training.velocityLossExponent",
+      "training.v0Power",
+      "training.damagePerSet",
       "training.systemicFatiguePerSet",
       "training.skillStart",
       "training.skillDecayTauDays",
       "training.neuralTransferScale",
+      "training.transferSamePatternBase",
+      "training.transferSamePatternOverlap",
+      "training.transferCrossPatternScale",
+      "training.transferOtherEquipment",
+      "training.transferMax",
+      "training.transferMin",
       "hypertrophy.ceilingExponent",
-      "hypertrophy.untrainedCeilingFraction",
       "hypertrophy.ffmiCeilingSdMen",
       "hypertrophy.ffmiCeilingSdWomen",
+      "hypertrophy.regionHeadroomUpper",
+      "hypertrophy.regionHeadroomLegs",
+      "hypertrophy.regionHeadroomCalves",
+      "hypertrophy.regionHeadroomCore",
       "hypertrophy.earlyWaterTauDays",
+      "hypertrophy.mrvPenalty",
       "strength.skillFloor",
+      "strength.neuralFastQualitySaturation",
+      "strength.skillResponderExponent",
+      "strength.skillLoadSpecificity",
       "strength.epleyWeight",
-      "power.f0StrengthExponent",
       "power.v0TauDays",
       "power.sscTauDays",
+      "power.v0LegLengthExponent",
       "power.vmaxTauDays",
       "power.rfTrainableMax",
       "power.rfTauSessions",
@@ -499,6 +522,7 @@
       "aerobic.zone2Weight",
       "aerobic.kThresholdPerDay",
       "aerobic.kEconomyPerDay",
+      "aerobic.economyRunVolumeKm",
       "aerobic.liverGlycogenG",
       "aerobic.glycogenUseZ1PerKcal",
       "aerobic.glycogenUseZ3PerKcal",
@@ -507,9 +531,11 @@
       "aerobic.interferenceSwimming",
       "energy.rmrOrganRefNonMuscleLeanKg",
       "energy.rmrOrganScalingExponent",
-      "energy.neatBase",
       "energy.adaptiveThermogenesisTauDays",
       "energy.constrainedTeeThresholdKcal",
+      "energy.carbBaselineUseG",
+      "energy.glycogenRefillTauDays",
+      "energy.organShareOfLeanLoss",
       "energy.fastLossLeanPenalty",
       "energy.waterPerSodiumG",
       "energy.sodiumRefG",
@@ -557,6 +583,7 @@
       "nutrition.hbLossPerDayAnemic",
       "nutrition.hbRegainPerDay",
       "nutrition.hbMinFraction",
+      "nutrition.vitDBaselineNgMl",
       "nutrition.vitDSufficient",
       "nutrition.vitDHalfLifeDays",
       "nutrition.vitDSunIuPerMinSummer",
@@ -642,7 +669,312 @@
       "economy.wageConstruction",
       "economy.wagePersonalTrainer",
       "economy.minigameReadinessPenalty",
-      "economy.acceleratedGainMultiplier"
+      "economy.acceleratedGainMultiplier",
+      "model.segmentClampSd",
+      "model.heightMinCm",
+      "model.heightMaxCm",
+      "model.wristMinCm",
+      "model.wristMaxCm",
+      "model.ffmiCeilingMinMen",
+      "model.ffmiCeilingMaxMen",
+      "model.ffmiCeilingMinWomen",
+      "model.ffmiCeilingMaxWomen",
+      "model.ffmiUntrainedMin",
+      "model.ffmiUntrainedMax",
+      "model.bmrFactorMin",
+      "model.bmrFactorMax",
+      "model.neatRespMin",
+      "model.neatRespMax",
+      "model.fitnessTauMin",
+      "model.fitnessTauMax",
+      "model.fatigueTauMin",
+      "model.fatigueTauMax",
+      "model.tendonStiffMin",
+      "model.tendonStiffMax",
+      "model.caffeineHalfLifeMinH",
+      "model.caffeineHalfLifeMaxH",
+      "model.noviceSkillMin",
+      "model.noviceSkillMax",
+      "model.sweatRateMin",
+      "model.sweatRateMax",
+      "model.sweatSodiumMin",
+      "model.sweatSodiumMax",
+      "model.androidFatSd",
+      "model.androidFatMin",
+      "model.androidFatMax",
+      "model.bodyFatMin",
+      "model.bodyFatMax",
+      "model.typeIIMin",
+      "model.typeIIMax",
+      "model.momentArmMin",
+      "model.momentArmMax",
+      "model.vo2IndividualMin",
+      "model.vo2IndividualMax",
+      "model.bmdSd",
+      "model.bmdMinStart",
+      "model.bmdMaxStart",
+      "model.initialGlycogenFraction",
+      "model.glycogenDeficitMinFraction",
+      "model.ceilingGlycogenMassFactor",
+      "model.minHeadroom",
+      "model.historyTrainingResponse",
+      "model.historyRecentPastYears",
+      "model.knownSkillRbe",
+      "model.sessionsPerYear",
+      "model.historyNeuralPerformance",
+      "model.typicalLeanFractionMen",
+      "model.typicalLeanFractionWomen",
+      "model.aerResponderCeilingExponent",
+      "model.aerResponderRateExponent",
+      "model.aerHistoryResponse",
+      "model.aerHistoryThresholdShare",
+      "model.aerHistoryEconomyShare",
+      "model.economyBikeStart",
+      "model.economyRowStart",
+      "model.economyHistoryGain",
+      "model.runHoursPerEnduranceYear",
+      "model.historyPowerShare",
+      "model.historyRfdShare",
+      "model.historyF0hShare",
+      "model.historyPowerTauMultiplier",
+      "model.bmdHistoryMaxYears",
+      "model.startStress",
+      "model.startMagnesiumStatus",
+      "model.startCalciumStatus",
+      "model.startHunger",
+      "model.startEa",
+      "model.fastPoolMaxStep",
+      "model.neuralMaxStep",
+      "model.memoryThreshold",
+      "model.neuralMemoryThreshold",
+      "model.lightTrainingDriftFactor",
+      "model.minSetsForQuality",
+      "model.skillDecayGraceDays",
+      "model.powerGraceDays",
+      "model.v0FromPlyo",
+      "model.v0FromSprint",
+      "model.sscFromSprint",
+      "model.v0DownTauMultiplier",
+      "model.sscDownTauMultiplier",
+      "model.rfDaysPerSession",
+      "model.rfDecayTauDays",
+      "model.thresholdDetrainFactor",
+      "model.economyStimMin",
+      "model.economyDetrainFactor",
+      "model.thresholdMinResponse",
+      "model.bikeRowEconomyRate",
+      "model.tendonFloor",
+      "model.tendonMinResponse",
+      "model.tendonDownTauMultiplier",
+      "model.tendonResponseOffset",
+      "model.bmdTaperCeiling",
+      "model.bmdMin",
+      "model.bmdMax",
+      "model.boneLoadingNorm",
+      "model.boneRunKmPerUnit",
+      "model.economyStrengthPlyoNorm",
+      "model.damageCap",
+      "model.maxSessionFatigue",
+      "model.neatJobOffset",
+      "model.wakingHours",
+      "model.neatMinFraction",
+      "model.neatTauDays",
+      "model.balanceEmaDays",
+      "model.adaptiveThermoFullDeficit",
+      "model.forbesReferenceFatKg",
+      "model.surplusLeanMax",
+      "model.proteinAdequacyStart",
+      "model.proteinAdequacySpan",
+      "model.maxLeanSparing",
+      "model.shortSleepMaxFactor",
+      "model.leanShareMin",
+      "model.leanShareMax",
+      "model.nonMuscleLeanFloor",
+      "model.carbRefillEfficiency",
+      "model.lowCarbGlycogenDrain",
+      "model.glycogenFloorG",
+      "model.jobSweatMetThreshold",
+      "model.jobSweatFraction",
+      "model.illCardioFraction",
+      "model.prelimTdee",
+      "model.warmupMinutes",
+      "model.restAfterLastSetS",
+      "model.defaultTargetReps",
+      "model.maxPctFresh",
+      "model.systemicEffortBase",
+      "model.powerLoadPerBallisticSet",
+      "model.ballisticBiasThreshold",
+      "model.powerBiasThreshold",
+      "model.nonBallisticPowerLoadFactor",
+      "model.gaussianLoadCoefficient",
+      "model.injuryIntensityRef",
+      "model.injuryIntensityFloor",
+      "model.plyoEffortBase",
+      "model.plyoEffortPer5Reps",
+      "model.plyoVlBase",
+      "model.plyoVlPerRep",
+      "model.sprintRefDistanceM",
+      "model.sprintDistFactorMin",
+      "model.sprintDistFactorMax",
+      "model.sprintMeanSpeed",
+      "model.unloadedPowerLoadFactor",
+      "model.unloadedImpactBonus",
+      "model.slowIntentPowerFactor",
+      "model.skillTransferRate",
+      "model.skillMaxStep",
+      "model.skillTransferMaxStep",
+      "model.skillFullSets",
+      "model.rbeGainPerCardio",
+      "model.liftSweatFraction",
+      "model.glycogenPerHardSetG",
+      "model.glycogenPerLiftKcal",
+      "model.noneLoadHypFactor",
+      "model.hardStimForLastDay",
+      "model.sessionFatigueExponent",
+      "model.damageEffortExponent",
+      "model.primaryActivation",
+      "model.creditPrimaryThreshold",
+      "model.minStrStimForPatternDay",
+      "model.nonHardSetQualityWeight",
+      "model.zone1Offset",
+      "model.zone2Offset",
+      "model.zone3Offset",
+      "model.zone3Max",
+      "model.zone3WorkShare",
+      "model.zone3RecoveryOffset",
+      "model.interferenceZone2Mult",
+      "model.interferenceZone3Mult",
+      "model.interferenceWalkFactor",
+      "model.impactRunningThreshold",
+      "model.runInjuryRiskRef",
+      "model.liftInjuryRiskRef",
+      "model.strongmanInjuryRiskRef",
+      "model.plyoInjuryFactor",
+      "model.noviceRunHours",
+      "model.cardioIntensityHazardZ2",
+      "model.cardioIntensityHazardZ3",
+      "model.cardioDamagePerHalfHour",
+      "model.cardioDamageZ3Mult",
+      "model.cardioSweatOffset",
+      "model.alcoholSleepLossPerDrink",
+      "model.alcoholSleepLossMax",
+      "model.stressSleepThreshold",
+      "model.stressSleepLoss",
+      "model.sleepDebtMemoryDays",
+      "model.chronicSleepDebtDivisor",
+      "model.sleepDeficitSpanH",
+      "model.recoveryAgeStart",
+      "model.recoveryAgeSpan",
+      "model.recoveryAgeMaxFactor",
+      "model.strainCapacityMult",
+      "model.strainFitnessWeight",
+      "model.strainMaxWeight",
+      "model.strainMeanWeight",
+      "model.strainConcurrentWeight",
+      "model.strainConcurrentMin",
+      "model.stressBase",
+      "model.stressJobWeight",
+      "model.stressMoneyWeight",
+      "model.stressSleepWeight",
+      "model.stressSleepDebtSpanH",
+      "model.stressNforBonus",
+      "model.stressOtsBonus",
+      "model.overreachPoorRecoveryRate",
+      "model.overreachLowStrainRecovery",
+      "model.overreachModerateRecovery",
+      "model.overreachEasyFraction",
+      "model.forEntryDays",
+      "model.winterIllnessMultiplier",
+      "model.lowEaIllnessMultiplier",
+      "model.illnessDurationMin",
+      "model.illnessDurationMax",
+      "model.readinessMin",
+      "model.readinessMax",
+      "model.otsReadinessMultiplier",
+      "model.poorRecoverySleepDebtH",
+      "model.poorRecoveryStress",
+      "model.acwrMinChronic",
+      "model.acwrNoviceAcute",
+      "model.acwrNoviceBase",
+      "model.acwrNoviceSlope",
+      "model.injurySleepSpanH",
+      "model.injuryAgeStart",
+      "model.injuryAgeSpan",
+      "model.injuryAgeMaxFactor",
+      "model.bmdZScoreSd",
+      "model.tissueGapRef",
+      "model.boneImpactOffset",
+      "model.minInjuryDays",
+      "model.severityMin",
+      "model.rehabDailyFraction",
+      "model.leucineShortfallPenalty",
+      "model.ironStoreFracMax",
+      "model.ironUpregulationBase",
+      "model.ironStoreMinMg",
+      "model.ironStoreMaxMg",
+      "model.hepcidinTrainingDayShare",
+      "model.magnesiumSupplementMg",
+      "model.b12SupplementUg",
+      "model.b12SupplementAbsorption",
+      "model.b12RepletionDays",
+      "model.b12DeficientShare",
+      "model.calciumStatusDays",
+      "model.statusIntakeCap",
+      "model.magnesiumDeficientStatus",
+      "model.b12DeficientStatus",
+      "model.b12AnemicStatus",
+      "model.b12HbLossFactor",
+      "model.calciumLowStatus",
+      "model.anemicHbFraction",
+      "model.waterFromFoodL",
+      "model.hydrationCarryover",
+      "model.hydrationDeficitShare",
+      "model.hydrationMax",
+      "model.creatineNonResponderMax",
+      "model.creatineLoadingUntil",
+      "model.creatineWashoutDays",
+      "model.betaAlanineWashoutDays",
+      "model.caffeineHabitDays",
+      "model.caffeineFullDoseMgKg",
+      "model.hungerSatietySpan",
+      "model.hungerProteinSpanGkg",
+      "model.hungerFiberSpanG",
+      "model.hungerSleepDebtPerH",
+      "model.hungerSleepDebtCapH",
+      "model.dehydrationRefFraction",
+      "model.dehydrationAerobicSpan",
+      "model.jumpPoolSquat",
+      "model.jumpPoolHinge",
+      "model.jumpPoolLunge",
+      "model.jumpPoolOlympic",
+      "model.jumpPoolSprint",
+      "model.v0ReadinessShare",
+      "model.broadJumpVelocityFactor",
+      "model.broadJumpAngleDeg",
+      "model.broadJumpReachFraction",
+      "model.sprintRelForceMin",
+      "model.sprintRelForceMax",
+      "model.vmaxV0Exponent",
+      "model.vmaxLegExponent",
+      "model.vmaxTechniqueShare",
+      "model.raceVo2maxMinutes",
+      "model.raceAnaerobicBonus",
+      "model.raceAnaerobicSpanMin",
+      "model.raceLt2Minutes",
+      "model.raceLt1Minutes",
+      "model.raceLt2Offset",
+      "model.raceLt1Offset",
+      "model.raceUltraCap",
+      "model.raceInitialFraction",
+      "model.rowEfficiencyTrainable",
+      "model.rowAnaerobicBase",
+      "model.rowAnaerobicRfd",
+      "model.minRepsPct",
+      "model.maxReps",
+      "model.failPctTolerance",
+      "model.loadStepBarbell",
+      "model.loadStepMachine",
+      "model.loadStepDumbbell"
     ],
     "verified": true,
     "notes": "Constants tagged with this source are gameplay/tuning choices."
@@ -717,9 +1049,11 @@
     "kind": "peer-reviewed",
     "constantsInformed": [
       "hypertrophy.earlyWaterGainKg",
+      "hypertrophy.trainedGlycogenBonus",
       "aerobic.glycogenPerKgMuscle",
       "energy.waterPerGlycogen",
-      "energy.scaleNoiseSd"
+      "energy.scaleNoiseSd",
+      "model.glycogenDeficitScaleKcal"
     ],
     "verified": true,
     "notes": "CORRECTION vs spec: journal is Eur J Appl Physiol. ~3 g water per g glycogen during recovery."
@@ -912,7 +1246,8 @@
     "constantsInformed": [
       "energy.kcalPerKgFat",
       "energy.kcalPerKgLean",
-      "energy.kcalPerKgMuscleGain"
+      "energy.kcalPerKgMuscleGain",
+      "model.glycogenDeficitScaleKcal"
     ],
     "verified": true,
     "notes": "Energy densities ~9,440 kcal/kg fat and ~1,816 kcal/kg lean (in paper body); 3,500 kcal/lb rule only matches obese subjects."
@@ -926,7 +1261,10 @@
     "doi": "10.1016/S0140-6736(11)60812-X",
     "pmid": "21872751",
     "kind": "peer-reviewed",
-    "constantsInformed": [],
+    "constantsInformed": [
+      "energy.neatBase",
+      "energy.neatMassExponent"
+    ],
     "verified": true,
     "notes": "Dynamic model: ~10 kcal/day per lb of eventual weight change, half reached after ~1 year."
   },
@@ -1074,7 +1412,7 @@
     "pmid": "7253867",
     "kind": "peer-reviewed",
     "constantsInformed": [
-      "aerobic.maintenanceFraction"
+      "aerobic.targetSaturationResponse"
     ],
     "verified": false,
     "notes": "Frequency cut by up to 2/3 maintained VO2max for 15 weeks when intensity kept. From memory."
@@ -1089,7 +1427,7 @@
     "pmid": "7118435",
     "kind": "peer-reviewed",
     "constantsInformed": [
-      "aerobic.maintenanceFraction"
+      "aerobic.targetSaturationResponse"
     ],
     "verified": false,
     "notes": "Duration cut by up to 2/3 maintained VO2max. From memory."
@@ -1104,7 +1442,7 @@
     "pmid": "3156841",
     "kind": "peer-reviewed",
     "constantsInformed": [
-      "aerobic.maintenanceFraction"
+      "aerobic.targetSaturationResponse"
     ],
     "verified": true,
     "notes": "This paper shows that cutting INTENSITY by 1/3 or 2/3 loses VO2max. The frequency and duration reductions (up to 2/3 with intensity kept) come from the companion Hickson studies (1981 frequency; 1982 duration), not retrieved here; the combined claim is marked partially verified."
@@ -1150,9 +1488,12 @@
     "pmid": "15947721",
     "kind": "peer-reviewed",
     "constantsInformed": [
-      "training.neuralGainMax",
+      "training.noviceSkillSd",
       "hypertrophy.kHypPerDay",
       "hypertrophy.responderSigma",
+      "strength.neuralQualityGainMax",
+      "strength.neuralFastGainSigma",
+      "strength.neuralQualityTauDays",
       "genetics.responderSigmaStrength"
     ],
     "verified": true,
@@ -1216,7 +1557,8 @@
     "kind": "peer-reviewed",
     "constantsInformed": [
       "training.damageHalfLifeH",
-      "training.noveltyDamageMultiplier"
+      "training.noveltyDamageMultiplier",
+      "training.damageForceLoss"
     ],
     "verified": true,
     "notes": "EIMD time course 24-96 h; repeated bout protection."
@@ -1262,7 +1604,8 @@
     "pmid": null,
     "kind": "practitioner",
     "constantsInformed": [
-      "training.sessionSaturationSets"
+      "training.sessionSaturationSets",
+      "hypertrophy.mrvSets"
     ],
     "verified": false,
     "notes": "Practitioner heuristic; SFR is computed from fields rather than labelled."
@@ -1341,7 +1684,8 @@
       "aerobic.lt2StartFraction",
       "aerobic.lt1MaxFraction",
       "aerobic.lt2MaxFraction",
-      "aerobic.economyRunBest"
+      "aerobic.economyRunBest",
+      "model.rowEfficiencyBase"
     ],
     "verified": true,
     "notes": "Endurance performance = VO2max x fractional utilisation x economy."
@@ -1423,6 +1767,7 @@
     "kind": "consensus",
     "constantsInformed": [
       "hypertrophy.creatineHypertrophyBonus",
+      "strength.creatineAcuteStrength",
       "nutrition.creatineWaterGainKg"
     ],
     "verified": true,
@@ -1484,6 +1829,7 @@
     "pmid": "9880251",
     "kind": "peer-reviewed",
     "constantsInformed": [
+      "energy.neatBase",
       "energy.neatResponsivenessMean",
       "energy.neatResponsivenessSd"
     ],
@@ -1534,7 +1880,8 @@
     "pmid": "33009197",
     "kind": "peer-reviewed",
     "constantsInformed": [
-      "training.lengthBiasMax"
+      "training.lengthBiasMax",
+      "training.damageForceLoss"
     ],
     "verified": true,
     "notes": "Seated (long length) vs prone leg curl: whole hamstrings +14% vs +9% (ratio ~1.55) in biarticular heads; monoarticular head unaffected."
@@ -1596,6 +1943,7 @@
     "pmid": "17347316",
     "kind": "peer-reviewed",
     "constantsInformed": [
+      "power.v0TrainableMax",
       "power.cmjBonusBase",
       "power.cmjBonusTrainable",
       "power.armSwingBonus"
@@ -1657,7 +2005,8 @@
     "pmid": null,
     "kind": "practitioner",
     "constantsInformed": [
-      "hypertrophy.kHypPerDay"
+      "hypertrophy.kHypPerDay",
+      "hypertrophy.ffmiCeilingMeanMen"
     ],
     "verified": false,
     "notes": "Not peer-reviewed. Year 1: 20-25 lb (McDonald) / 1-1.5% BM per month (Aragon); halving each year."
@@ -1673,7 +2022,8 @@
     "kind": "peer-reviewed",
     "constantsInformed": [
       "training.noveltyDamageMultiplier",
-      "training.repeatedBoutProtection"
+      "training.repeatedBoutProtection",
+      "model.rbeGainPerBout"
     ],
     "verified": true,
     "notes": "Repeated bout effect: substantial protection from EIMD after a single prior bout."
@@ -1739,7 +2089,8 @@
       "aerobic.vo2BaseMen20s",
       "aerobic.kAerPerDay",
       "aerobic.v0AerobicLoad",
-      "aerobic.zone3Weight"
+      "aerobic.zone3Weight",
+      "model.vo2IndividualSd"
     ],
     "verified": true,
     "notes": "Endurance training +4.9 mL/kg/min vs controls; HIT slightly larger (+5.5 in paper body)."
@@ -1772,6 +2123,7 @@
     "constantsInformed": [
       "hypertrophy.sarcopeniaOnsetAge",
       "hypertrophy.sarcopeniaRatePerYear",
+      "model.bmdAgeOnset",
       "strength.ageNeural"
     ],
     "verified": true,
@@ -1821,6 +2173,7 @@
     "pmid": "27834560",
     "kind": "peer-reviewed",
     "constantsInformed": [
+      "power.f0hTrainableMax",
       "power.sledF0hBias"
     ],
     "verified": true,
@@ -1837,8 +2190,10 @@
     "kind": "peer-reviewed",
     "constantsInformed": [
       "training.skillSessionsTau",
-      "training.neuralTauDays",
-      "training.neuralGainMax"
+      "strength.neuralQualityGainMax",
+      "strength.neuralFastGainMedian",
+      "strength.neuralFastTauDays",
+      "strength.neuralQualityTauDays"
     ],
     "verified": true,
     "notes": "Neural factors dominate the first 3-4 weeks of strength gain; hypertrophy thereafter."
@@ -1892,6 +2247,7 @@
     "constantsInformed": [
       "hypertrophy.atrophyGraceDays",
       "hypertrophy.atrophyTauDays",
+      "strength.neuralMemoryMultiplier",
       "strength.neuralDecayTauDays"
     ],
     "verified": true,
@@ -1924,7 +2280,7 @@
     "kind": "peer-reviewed",
     "constantsInformed": [
       "energy.sleepLeanLossMultiplier",
-      "energy.sleepFatLossMultiplier",
+      "energy.shortSleepH",
       "hypertrophy.sleep",
       "energy.hungerBalance"
     ],
@@ -1941,7 +2297,8 @@
     "pmid": "23053130",
     "kind": "peer-reviewed",
     "constantsInformed": [
-      "hypertrophy.muscleMemoryMultiplier"
+      "hypertrophy.muscleMemoryMultiplier",
+      "strength.neuralMemoryMultiplier"
     ],
     "verified": true,
     "notes": "6-wk-on/3-wk-off cycles matched continuous training for CSA and 1RM over 24 weeks."
@@ -1955,7 +2312,9 @@
     "doi": null,
     "pmid": null,
     "kind": "database",
-    "constantsInformed": [],
+    "constantsInformed": [
+      "strength.neuralQualityGainMax"
+    ],
     "verified": false,
     "notes": "Tested raw totals by bodyweight class used as sanity bands; not fetched, approximate percentiles from memory."
   },
@@ -1969,8 +2328,8 @@
     "pmid": "27038416",
     "kind": "peer-reviewed",
     "constantsInformed": [
-      "training.powVelocityLoss",
-      "training.hypVelocityLoss"
+      "training.velocityLossAtFailure",
+      "training.powVelocityLoss"
     ],
     "verified": true,
     "notes": "VL20 vs VL40: similar strength; CMJ +9.5% vs +3.5%; more hypertrophy with VL40; IIX preserved with VL20."
@@ -2034,7 +2393,8 @@
       "training.synergistCredit",
       "training.hardSetRir",
       "training.v0Hypertrophy",
-      "training.v0Strength"
+      "training.v0Strength",
+      "hypertrophy.mrvSets"
     ],
     "verified": true,
     "notes": "Published online 2025 (print 2026) in Sports Med. Fractional (0.5) credit for indirect sets fit best; diminishing returns stronger for strength; frequency compatible with negligible hypertrophy effect."
@@ -2111,7 +2471,8 @@
     "kind": "peer-reviewed",
     "constantsInformed": [
       "hypertrophy.creatineHypertrophyBonus",
-      "strength.creatineStrengthBonus",
+      "strength.creatineAcuteStrength",
+      "strength.creatineAdaptationBonus",
       "strength.creatineRepsBonus"
     ],
     "verified": true,
@@ -2307,7 +2668,8 @@
       "aerobic.hbMassSexDiff",
       "aerobic.hbMassPerKgMen",
       "aerobic.hbMassPerKgWomen",
-      "aerobic.vo2HbElasticity"
+      "aerobic.vo2HbElasticity",
+      "model.hbTrainedGain"
     ],
     "verified": true,
     "notes": "VO2max rises ~4 mL/min per g haemoglobin mass; r ~0.8."
@@ -2514,8 +2876,8 @@
     "pmid": "25059334",
     "kind": "peer-reviewed",
     "constantsInformed": [
-      "power.vmaxStrengthExponent",
-      "power.relStrengthTransfer"
+      "power.f0StrengthExponent",
+      "power.vmaxStrengthExponent"
     ],
     "verified": true,
     "notes": "Squat-strength ES strongly correlated with sprint ES (r = -0.77); mean sprint improvement in the pooled studies was ~3%. Effect on sprint per unit squat gain remains modest."
@@ -2530,7 +2892,8 @@
     "pmid": "17053104",
     "kind": "peer-reviewed",
     "constantsInformed": [
-      "hypertrophy.earlyWaterGainKg"
+      "hypertrophy.earlyWaterGainKg",
+      "strength.neuralFastGainMedian"
     ],
     "verified": true,
     "notes": "Quadriceps CSA +3.5-5.2% at 20 days, +6.5-7.4% at 35 days (flywheel)."
@@ -2611,9 +2974,10 @@
     "pmid": "33629972",
     "kind": "peer-reviewed",
     "constantsInformed": [
+      "hypertrophy.maintenanceResponse",
       "strength.neuralGraceDays",
       "strength.maintenanceStimulusFraction",
-      "aerobic.maintenanceFraction"
+      "aerobic.targetSaturationResponse"
     ],
     "verified": true,
     "notes": "Strength/size maintained up to 32 wk with 1 session/wk and 1 set/exercise if intensity kept (young); older need ~2 sessions, 2-3 sets."
@@ -2660,8 +3024,7 @@
     "pmid": "26838985",
     "kind": "peer-reviewed",
     "constantsInformed": [
-      "strength.transferSaturationSquatBw",
-      "power.relStrengthTransfer"
+      "power.f0StrengthExponent"
     ],
     "verified": true,
     "notes": ""
@@ -2799,7 +3162,9 @@
     "pmid": "28975661",
     "kind": "peer-reviewed",
     "constantsInformed": [
-      "injury.bmdGainPerYear"
+      "injury.bmdGainPerYear",
+      "model.bmdPerTrainingYear",
+      "model.bmdAgeLossPerYear"
     ],
     "verified": true,
     "notes": "LIFTMOR: lumbar spine BMD +2.9% vs -1.2% over 8 months with HiRIT."

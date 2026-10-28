@@ -48,7 +48,7 @@ export const geneticsDefs = {
   bodyFatMeanWomen: design(0.3, 'ratio', [0.25, 0.35], 'Untrained young women.'),
   bodyFatSdWomen: design(0.05, 'ratio', [0.03, 0.07], 'Spread.'),
   /** Untrained FFMI distribution (men/women) mean and SD. */
-  ffmiUntrainedMeanMen: k(19.0, 'kg/m2', [18, 20], 'M', ['schutz2002'], true, 'Schutz: ~18.9.'),
+  ffmiUntrainedMeanMen: k(18.5, 'kg/m2', [18, 20], 'M', ['schutz2002'], true, 'Schutz population median ~18.9 includes heavier adults; lean untrained beginners ~18.5.'),
   ffmiUntrainedSdMen: design(1.1, 'kg/m2', [0.8, 1.5], 'Spread.'),
   ffmiUntrainedMeanWomen: k(15.4, 'kg/m2', [14.5, 16.5], 'M', ['schutz2002'], true, 'Schutz: ~15.4.'),
   ffmiUntrainedSdWomen: design(1.0, 'kg/m2', [0.7, 1.4], 'Spread.'),
