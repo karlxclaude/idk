@@ -126,7 +126,8 @@ export function simulateDay(ctx: SimContext, s: CharacterState, inputs: DayInput
       day: s.day, readiness, acute, creatineSat: cre, ambientTempC: temp,
       caffeinePowerMult: caf.power * dehyd.power,
       caffeineEnduranceMult: caf.endurance,
-      aerobicPerfMult: dehyd.endurance * eaPerf * mgPerf * ironPerf * glycPerf * caf.endurance,
+      aerobicPerfMult: dehyd.endurance * eaPerf * ironPerf * glycPerf * caf.endurance,
+      economyMult: mgPerf,
     };
     const r = resolveSession(ctx, s, sess, dc);
     results.push(r);
@@ -141,6 +142,8 @@ export function simulateDay(ctx: SimContext, s: CharacterState, inputs: DayInput
   const exerciseKcal = results.reduce((a, r) => a + r.kcal, 0);
   const loads = results.reduce((a, r) => ({ str: a.str + r.load.str, pow: a.pow + r.load.pow, aer: a.aer + r.load.aer }), { str: 0, pow: 0, aer: 0 });
   s.fatigue.acuteLoadHist[d] = loads.str + loads.pow + loads.aer;
+  // Physical work adds systemic fatigue (not counted in the training ACWR).
+  loads.str += inputs.jobHours * inputs.jobStrain * M.jobFatigueLoadPerStrainHour;
   for (const r of results) for (const set of r.sets) {
     const e = exerciseOf(ctx, set.exerciseId);
     for (const tag of e.prevention) {
@@ -249,6 +252,9 @@ export function simulateDay(ctx: SimContext, s: CharacterState, inputs: DayInput
     const prevention: Record<string, number> = {};
     for (const k in s.fatigue.preventionHist) prevention[k] = sumLast(s.fatigue.preventionHist[k] as number[], s.day, 7);
     const hz = results.flatMap((r) => r.hazards);
+    if (inputs.jobHours > 0 && inputs.jobStrain > 0) {
+      hz.push({ exerciseId: 'job', hazard: (P.injury.occupationalRatePer1000h / 1000) * inputs.jobHours * (inputs.jobStrain / M.jobStrainReference), tissues: inputs.jobTissues ?? ['lowBack'], muscles: [], kind: 'job', impact: 0 });
+    }
     for (const inj of injuryCheck(ctx, s, hz, { sleepH: effSleep, eaSeverity: eaRes.severity, readiness }, streamRng(s.seed, s.day, 'injury'), prevention)) {
       injuries.push(`${inj.type} (${inj.tissue}), ~${inj.durationDays} days`);
     }

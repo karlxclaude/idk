@@ -17,7 +17,7 @@ export interface Hazard {
   hazard: number;
   tissues: string[];
   muscles: MuscleId[];
-  kind: 'lift' | 'olympic' | 'strongman' | 'run' | 'plyo' | 'sprint' | 'cardio';
+  kind: 'lift' | 'olympic' | 'strongman' | 'run' | 'plyo' | 'sprint' | 'cardio' | 'job';
   impact: number;
 }
 
@@ -31,6 +31,8 @@ export interface SessionDayCtx {
   caffeineEnduranceMult: number;
   /** Multiplier on aerobic work capacity (dehydration, low glycogen, Mg). */
   aerobicPerfMult: number;
+  /** Movement economy (1 = normal). Magnesium deficiency raises the O2 cost of a given pace: same kcal per minute, less distance. */
+  economyMult?: number;
 }
 
 export interface SessionResult {
@@ -396,7 +398,7 @@ export function resolveCardio(ctx: SimContext, s: CharacterState, sess: CardioSe
   a.aeroMinutesHist[d] = (a.aeroMinutesHist[d] as number) + res.interferenceMinutes;
   if (e.cardio?.modality === 'running') {
     const rel = (grossL * 1000) / bw; // mL/kg/min
-    const speed = rel / (a.economyRun / 1000); // m/min
+    const speed = (rel / (a.economyRun / 1000)) * (dc.economyMult ?? 1); // m/min
     res.runKm = (speed * minutes) / 1000;
     a.runKmHist[d] = (a.runKmHist[d] as number) + res.runKm;
     a.runHours += minutes / 60;

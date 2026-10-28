@@ -110,13 +110,15 @@ export function injuryCheck(ctx: SimContext, s: CharacterState, hazards: Hazard[
   const bmdZ = (s.body.bmd - 1) / M.bmdZScoreSd;
   for (const h of hazards) {
     const tissues = h.tissues.length ? h.tissues : ['muscle'];
-    const perTissue = h.hazard / tissues.length;
+    const weightOf = (t: string) => (BONE_TISSUES.has(t) ? M.boneTissueWeight : 1);
+    const weightSum = tissues.reduce((a, t) => a + weightOf(t), 0);
     for (const tissue of tissues) {
+      const perTissue = (h.hazard * weightOf(tissue)) / weightSum;
       let m = dayMult * priorMultiplier(ctx, s, tissue) * preventionMultiplier(ctx, s, tissue, preventionSets);
       const tm = TENDON_TISSUES[tissue];
       if (tm) m *= 1 + (I.tissueGapHazardPer30pct - 1) * (tissueGap(ctx, s, tm) / M.tissueGapRef);
       if (BONE_TISSUES.has(tissue)) {
-        m *= (bmdZ < 0 ? I.stressFractureBmdHazardPerSd ** -bmdZ : 1) * (1 + (I.stressFractureLowEaMultiplier - 1) * dc.eaSeverity) * (M.boneImpactOffset + h.impact);
+        m *= (bmdZ < 0 ? I.stressFractureBmdHazardPerSd ** -bmdZ : 1) * (1 + (I.stressFractureLowEaMultiplier - 1) * dc.eaSeverity) * ((M.boneImpactOffset + h.impact) / (M.boneImpactOffset + 1));
       }
       const expected = perTissue * m;
       if (rng.chance(1 - Math.exp(-expected))) {

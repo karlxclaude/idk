@@ -9,6 +9,7 @@ export const injuryDefs = {
   rateBodybuilding: k(0.6, '/1000h', [0.24, 1.0], 'M', ['keoghWinwood2017'], true, 'Bodybuilding 0.24-1.'),
   rateNoviceRunning: k(17.8, '/1000h', [16.7, 19.1], 'M', ['videbaek2015'], true, 'Novice runners.'),
   rateRecreationalRunning: k(7.7, '/1000h', [6.9, 8.7], 'M', ['videbaek2015'], true, 'Recreational runners.'),
+  occupationalRatePer1000h: design(0.05, '/1000h', [0.02, 0.15], 'Occupational injuries at reference strain. BLS SOII shows ~3-6 recordable cases per 100 FTE-years in warehousing/construction (~0.015-0.03/1000 h); set higher to include minor time-loss strains. Not verified against a source file.'),
   /** Hazard multiplier at relative intensity 1.0 vs 0.7 (per-exposure). */
   intensityHazardExponent: design(2.0, 'exponent', [1.0, 3.0], 'Hazard ~ (load/0.7)^exp above 70%.'),
   /** Hazard multiplier at zero readiness. */
@@ -37,7 +38,7 @@ export const injuryDefs = {
   bmdDeficiencyVitDPenalty: design(0.5, 'ratio', [0.2, 0.8], 'Vitamin D/calcium deficiency halves bone gain.'),
   /** Stress-fracture hazard multiplier at BMD z = -1 and at low EA. */
   stressFractureBmdHazardPerSd: k(1.6, 'multiplier/SD', [1.3, 2.2], 'M', ['mountjoy2023'], true, 'Low BMD raises fracture risk.'),
-  stressFractureLowEaMultiplier: k(2.0, 'multiplier', [1.5, 4.0], 'M', ['mountjoy2023'], true, 'REDs raises bone-stress injury risk.'),
+  stressFractureLowEaMultiplier: k(2.5, 'multiplier', [1.5, 4.0], 'M', ['mountjoy2023'], true, 'REDs raises bone-stress injury risk (~2-4x in low-EA athletes).'),
   /** Prevention: Nordic curls weekly reduce hamstring strain hazard by this fraction. */
   nordicHamstringReduction: k(0.5, 'ratio', [0.4, 0.6], 'H', ['vanDyk2019'], true, 'RR 0.49.'),
   copenhagenGroinReduction: k(0.4, 'ratio', [0.3, 0.5], 'M', ['haroy2019'], true, '41% lower risk.'),

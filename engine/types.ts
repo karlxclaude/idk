@@ -273,6 +273,8 @@ export interface DayInputs {
   jobMet: number;
   /** Occupational injury/fatigue exposure 0..1. */
   jobStrain: number;
+  /** Tissues loaded by the job (occupational injury hazard). Defaults to low back. */
+  jobTissues?: string[];
   stressEvents: number; // 0..1 added stress
   socialHours: number;
   sunMinutes: number;

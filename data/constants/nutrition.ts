@@ -25,6 +25,7 @@ export const nutritionDefs = {
   fatLowPenalty: design(0.05, 'ratio', [0.02, 0.1], 'Mild penalty on recovery/hormonal health.'),
   /** Energy availability threshold (kcal/kg FFM/day). */
   eaThreshold: k(30, 'kcal/kg FFM', [25, 35], 'M', ['loucks2003', 'mountjoy2023'], true, 'LH pulsatility disrupted below 30.'),
+  eaSevereThreshold: k(15, 'kcal/kg FFM/day', [10, 20], 'L', ['loucks2003'], false, 'EA at which REDs severity is maximal; Loucks 2003 showed graded bone-formation suppression at 30, 20 and 10.'),
   eaOptimal: k(45, 'kcal/kg FFM', [40, 50], 'M', ['loucks2003'], true, 'Healthy EA ~45.'),
   /** Low-EA effects at EA = 15: adaptation multiplier, injury multiplier, performance. */
   lowEaAdaptationPenalty: k(0.4, 'ratio', [0.2, 0.6], 'M', ['mountjoy2023'], true, 'Hormonal disruption blunts adaptation.'),
@@ -103,7 +104,18 @@ export const nutritionDefs = {
   nitrateEliteAttenuation: design(0.4, 'ratio', [0.2, 0.7], 'Elite benefit fraction.'),
   bicarbEffect: k(0.02, 'ratio', [0.01, 0.03], 'M', ['grgic2021bicarb'], true, '1-7 min efforts.'),
   bicarbGutDistressProb: k(0.3, 'ratio', [0.1, 0.5], 'M', ['grgic2021bicarb'], true, 'GI side effects common.'),
+  betaAlanineMinEffortMin: k(0.5, 'min', [0.5, 1], 'M', ['saunders2017'], true, 'Lower bound of effort duration that benefits (0.5-10 min).'),
+  betaAlanineMaxEffortMin: k(10, 'min', [4, 10], 'M', ['saunders2017'], true, 'Upper bound of effort duration that benefits.'),
+  bicarbMinEffortMin: k(1, 'min', [0.5, 1], 'M', ['grgic2021bicarb'], true, 'Bicarbonate helps 1-7 min efforts.'),
+  bicarbMaxEffortMin: k(7, 'min', [4, 10], 'M', ['grgic2021bicarb'], true, 'Bicarbonate helps 1-7 min efforts.'),
+  bicarbGutDistressPenalty: design(0.03, 'ratio', [0.01, 0.08], 'Performance lost when GI distress strikes; applied as an expected value in headless event estimates.'),
+  nitrateMinEffortMin: k(5, 'min', [2, 10], 'L', ['jones2014'], false, 'Nitrate benefit shown mainly for ~5-30+ min endurance efforts.'),
+  nitrateEliteVo2: k(60, 'mL/kg/min', [55, 65], 'L', ['jones2014'], false, 'Above this VO2max the benefit is attenuated (well-trained athletes respond less).'),
   hmbTrainedEffect: design(0.0, 'ratio', [0.0, 0.01], 'Trivial in trained people (Maughan 2018).'),
+  /** Meals / groceries (engine/meals.ts, engine/groceries.ts). */
+  gramsEthanolPerDrink: design(14, 'g', [10, 14], 'US standard drink = 14 g ethanol (NIAAA definition); converts food alcoholG to drinks.'),
+  cookedYieldDryPriced: design(2.5, 'g cooked per g dry', [2, 3.5], 'Boiled legumes/rice/pasta/oats are priced per dry weight but their nutrient rows are cooked; ~2.5x is a mid value (lentils ~2.3, beans ~2.5, rice ~3, pasta ~2.3, oats ~4). HEUR single factor.'),
+  mealPrepMinPerItem: design(2, 'min', [0, 5], 'Extra handling time per distinct ingredient on top of the longest single prep time.'),
 } as const;
 
 export const nutritionCurves = {

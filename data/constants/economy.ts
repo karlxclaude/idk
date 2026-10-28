@@ -70,6 +70,22 @@ export const economyDefs = {
   metSleep: k(0.95, 'MET', [0.9, 1.0], 'H', ['herrmann2024'], false, 'Sleeping 0.95.'),
   metSedentary: k(1.3, 'MET', [1.2, 1.5], 'H', ['herrmann2024'], false, 'Sitting quietly 1.3.'),
   metLightActivity: k(2.0, 'MET', [1.8, 2.5], 'H', ['herrmann2024'], false, 'Light household 2.0-2.5.'),
+  /** Time budget (phase 4): schedule defaults. Daylight is approximate for ~42 N and is a design simplification. */
+  sleepMinHours: design(6, 'h', [4, 8], 'Below this a schedule is flagged as under-slept.'),
+  daylightStartHourWinter: design(7, 'h', [6, 8], 'Approximate winter sunrise, New England.'),
+  daylightEndHourWinter: design(16.5, 'h', [15.5, 17.5], 'Approximate winter sunset, New England.'),
+  daylightStartHourSummer: design(5.25, 'h', [4.5, 6], 'Approximate summer sunrise, New England.'),
+  daylightEndHourSummer: design(20, 'h', [19, 21], 'Approximate summer sunset, New England.'),
+  daylightSolsticeMonthWinter: design(12, 'month', [12, 12], 'Month of shortest days; summer is 6 months away.'),
+  cookStartHour: design(18, 'h', [16, 20], 'Default dinner prep start.'),
+  shoppingStartHour: design(10, 'h', [8, 18], 'Default grocery trip start.'),
+  shoppingDay: design(5, 'day index', [0, 6], 'Day of week (0 = first day) with the grocery trip.'),
+  socialStartHour: design(19, 'h', [17, 21], 'Default social block start.'),
+  socialBlocksPerDay: design(2, 'blocks', [0, 6], 'Default social blocks per day.'),
+  recoveryStartHour: design(13, 'h', [12, 20], 'Default nap/mobility block start.'),
+  recoveryBlocksPerDay: design(1, 'blocks', [0, 4], 'Default recovery blocks per day.'),
+  outdoorStartHour: design(12, 'h', [8, 18], 'Default outdoor (sun) block start.'),
+  outdoorBlocksPerDay: design(1, 'blocks', [0, 4], 'Default outdoor blocks per day.'),
   /** Mini-game performance scaling with readiness (fraction of max penalty). */
   minigameReadinessPenalty: design(0.4, 'ratio', [0.2, 0.6], 'Sleep-deprived characters play worse and earn less.'),
   /** Accelerated mode multiplier (clearly labelled unrealistic). */

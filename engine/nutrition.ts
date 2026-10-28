@@ -43,7 +43,7 @@ export function eaStep(ctx: SimContext, s: CharacterState, ea: number): { mod: n
   n.lowEaDays = low ? n.lowEaDays + 1 : Math.max(0, n.lowEaDays - 2);
   const ramp = clamp(n.lowEaDays / N.lowEaDaysToEffect, 0, 1);
   const mod = 1 - (1 - interp(ctx.C.nutrition.eaAdaptation, n.eaEma)) * ramp;
-  const severity = clamp((N.eaThreshold - n.eaEma) / (N.eaThreshold - 10), 0, 1) * ramp;
+  const severity = clamp((N.eaThreshold - n.eaEma) / (N.eaThreshold - N.eaSevereThreshold), 0, 1) * ramp;
   return { mod, severity, low };
 }
 
@@ -199,4 +199,18 @@ export function dehydrationEffects(ctx: SimContext, fraction: number): { strengt
     power: 1 - N.dehydrationPowerAt3pct * r,
     endurance: 1 - N.dehydrationEnduranceAt3pct * Math.max(r * 0.5, aer),
   };
+}
+
+/**
+ * Event-performance multiplier (>= 1 means faster/stronger) from ergogenic aids for an all-out effort of `minutes`:
+ * beta-alanine (0.5-10 min, scaled by muscle carnosine load), bicarbonate (1-7 min, minus expected GI distress),
+ * dietary nitrate (endurance efforts, attenuated above an elite VO2max). Feeds the `perf` argument of race functions.
+ */
+export function ergogenicPerf(ctx: SimContext, s: CharacterState, supp: DayInputs['supplements'], minutes: number, vo2maxRel: number): number {
+  const N = ctx.P.nutrition;
+  let m = 1;
+  if (minutes >= N.betaAlanineMinEffortMin && minutes <= N.betaAlanineMaxEffortMin) m *= 1 + N.betaAlanineEffect * s.nutrition.betaAlanineLoad;
+  if (supp.bicarb && minutes >= N.bicarbMinEffortMin && minutes <= N.bicarbMaxEffortMin) m *= (1 + N.bicarbEffect) * (1 - N.bicarbGutDistressProb * N.bicarbGutDistressPenalty);
+  if (supp.nitrate && minutes >= N.nitrateMinEffortMin) m *= 1 + N.nitrateEnduranceEffect * (vo2maxRel >= N.nitrateEliteVo2 ? N.nitrateEliteAttenuation : 1);
+  return m;
 }
