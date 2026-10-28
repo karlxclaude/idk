@@ -60,3 +60,11 @@ Non-obvious choices made while building PHENOTYPE, in rough chronological order.
 - **Foods come from USDA SR Legacy (April 2018 CSV)** through `scripts/build-foods.mjs` and per-group spec files. Seven powder supplements (whey isolate, casein, pea protein, maltodextrin, electrolyte mix, beet shot, mass gainer) are manual label-basis entries with `fdcId: null`, because SR Legacy lacks matching rows.
 - **Prices are per unit as sold.** Dry legumes are priced per 454 g dry, while their nutrient rows are cooked, so cost per 100 g cooked is understated. The grocery layer in Phase 4 must apply a cooked-yield factor (~2.5×).
 - **Satiety index** uses Holt 1995 values where the food matches and is otherwise `estimated`. DIAAS uses FAO 2013, Rutherfurd 2015 and Mathai 2017 where available.
+
+## Phase 3 character decisions
+
+- **Archetypes are profiles, not mechanics.** Each is a `CharacterProfile` with partial genetics and anthropometry overrides; outcomes come only from the underlying variables (no somatotypes).
+- **The hidden low and high responders have identical visible stats.** Only `responderHyp`, `responderStr`, `ffmiCeiling` and `neuralFastGain` differ; 16 weeks on one program gives 1.6 vs 6.8 kg lean.
+- **DXA reveals the FFMI ceiling only after ~200 training hours.** Before that, a ceiling estimate is meaningless; the state stores training hours rather than years.
+- **The response-profile test is a game device** (`design`, noise SD 0.35 on responder multipliers): real DNA panels predict training response poorly.
+- **Creatine non-responders keep a small residual effect** (`creatineNonResponderMax`), so "no effect" is tested as < 25% of a responder's effect.

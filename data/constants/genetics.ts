@@ -56,4 +56,26 @@ export const geneticsDefs = {
   recoveryAt60: design(0.8, 'ratio', [0.65, 0.95], 'Slower recovery with age [L].'),
   /** Sex: baseline hemoglobin handled in aerobic; menstrual effect size on performance. */
   menstrualEffect: k(0.01, 'ratio', [0.0, 0.02], 'M', ['mcnulty2020'], true, 'Trivial (ES -0.06); optional and small.'),
+  // --- Character creator slider bounds (engine/creator.ts) ---
+  creatorAgeMin: design(18, 'years', [18, 18], 'Creator slider: adults only.'),
+  creatorAgeMax: design(65, 'years', [60, 70], 'Creator slider upper age.'),
+  creatorAgeDefault: design(25, 'years', [18, 40], 'Creator slider default.'),
+  creatorYearsMax: design(30, 'years', [20, 47], 'Creator slider max for lifting/endurance training history.'),
+  creatorSegmentRange: design(0.06, 'ratio', [0.03, 0.1], 'Segment-ratio multipliers span 1 +/- 6% (about 1.5 SD of segmentSd).'),
+  creatorMultStep: design(0.01, 'ratio', [0.005, 0.02], 'Slider step for ratio multipliers.'),
+  creatorBodyFatStep: design(0.005, 'ratio', [0.001, 0.01], 'Slider step for body fat fraction.'),
+  creatorMultiplierMin: design(0.4, 'ratio', [0.2, 0.6], 'Lower clamp for custom-lab responder and proneness multipliers.'),
+  creatorMultiplierMax: design(2.5, 'ratio', [2, 4], 'Upper clamp for custom-lab responder and proneness multipliers.'),
+  // --- Lab tests (engine/labTests.ts) ---
+  labBiopsyTypeISd: design(4, '%points', [2, 8], 'HEUR: single vastus lateralis needle biopsy sampling error in type I %; sampled-site variation is a few points.'),
+  labVo2ErrorSd: design(0.03, 'ratio', [0.02, 0.05], 'HEUR: laboratory VO2max test-retest error, about 3% of the value.'),
+  labDxaLeanErrorSd: design(0.02, 'ratio', [0.01, 0.03], 'HEUR: DXA lean mass relative error (fat error is energy.dxaErrorSd).'),
+  labCeilingNoiseSd: design(0.5, 'kg/m2', [0.25, 1], 'HEUR: uncertainty of the ceiling estimate read out by DXA after sufficient training.'),
+  labCeilingMinTrainingHours: design(200, 'h', [100, 400], 'HEUR: about 2 years of training (sessionsPerYear x ~1 h) before the FFMI ceiling is readable; below this only current FFMI is reported.'),
+  labFerritinMgPerNgMl: design(10, 'mg per ng/mL', [8, 12], 'Conversion implied by nutrition.ironStoreDeficientMg (300 mg ~ ferritin 30 ng/mL).'),
+  labFerritinNoiseCv: design(0.1, 'ratio', [0.05, 0.2], 'HEUR: assay plus biological day-to-day variation in ferritin.'),
+  labVitDNoiseCv: design(0.08, 'ratio', [0.04, 0.15], 'HEUR: 25(OH)D assay variation.'),
+  labResponseNoiseSd: design(0.35, 'ratio', [0.2, 0.6], 'HEUR: polygenic/DNA panels predict training response poorly; the readout has large noise around the true multiplier.'),
+  labBmrNoiseSd: design(0.05, 'ratio', [0.02, 0.1], 'HEUR: indirect calorimetry variation in the BMR factor readout.'),
+  labResponseProfileCost: design(300, 'USD', [100, 600], 'Consumer genetic + metabolic panel (no economy constant exists).'),
 } as const;

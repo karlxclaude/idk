@@ -4,7 +4,7 @@ Resume-from-here notes. Keep this current.
 
 ## Current phase
 
-**Phase 3 — characters, genetics, archetypes.** Phases 0–2 complete; Phase 4 food database prebuilt (173 foods).
+**Phase 4 — economy and nutrition.** Phases 0–3 complete.
 
 ## Done
 
@@ -26,6 +26,12 @@ Resume-from-here notes. Keep this current.
 - `tests/phase2-exercises.test.ts`: count, schema, coverage, spot checks (seated vs lying leg curl; Larsen vs competition bench), transfer matrix properties.
 - `npm run transfer` writes the sparse generated transfer matrix to `docs/transfer-matrix.json`.
 - Authoring guide: `docs/EXERCISE_AUTHORING.md`. Most library entries carry `verified: false` (activation values are anatomical estimates).
+
+### Phase 3 (characters and genetics) — complete
+- `data/archetypes.ts`: 12 archetypes with backstory and hidden summary (3 women).
+- `engine/creator.ts`: visible sliders from constants, zod `CreatorInputSchema`, random vs custom-lab mode (lab overrides clamped, all traits revealed).
+- `engine/labTests.ts`: biopsy, lab VO2max, DXA, blood panel, response profile; noisy readings and reveal flags.
+- Tests: `tests/phase3-traits.test.ts` (14 paired trait-effect tests), `tests/phase3-creator.test.ts` (archetypes, creator, lab tests).
 
 ### Phase 4 prep — food database
 - `data/foods/spec/*.json` (11 group files) -> `node scripts/build-foods.mjs <SR Legacy CSV dir>` -> `data/foods/foods.generated.json` (173 foods; 7 manual supplement entries with `fdcId: null`).
