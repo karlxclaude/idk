@@ -276,6 +276,8 @@ export interface DayInputs {
   /** Tissues loaded by the job (occupational injury hazard). Defaults to low back. */
   jobTissues?: string[];
   stressEvents: number; // 0..1 added stress
+  /** Financial stress 0..1 (cash runway), from engine/economy.ts. */
+  financialStress?: number;
   socialHours: number;
   sunMinutes: number;
   ambientTempC: number;

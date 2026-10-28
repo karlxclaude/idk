@@ -15,8 +15,7 @@
 //    purchase units, leftovers stay in the pantry). Spoiled food is thrown away (already paid for).
 //  - Money can go negative (debt) for bills and food; purchases (labs, memberships, equipment, certification) refuse.
 //  - Pay is gross (no tax model). Coaching is only a cost: no training effect is modelled.
-//  - Financial stress: sim.ts hardcodes `financial: 0` in stressStep, so it is passed through DayInputs.stressEvents,
-//    scaled by stressMoneyWeight x stressDecayPerDay so the steady state matches what the `financial` input would give.
+//  - Financial stress is passed as DayInputs.financialStress (the `financial` input of stressStep).
 //  - Access: exercises the character cannot train at (gymTier not unlocked) are dropped from the day's sessions and
 //    reported in DayReport.events.
 import { ARCHETYPES } from '../data/archetypes';
@@ -321,7 +320,7 @@ export function advanceDay(ctx: SimContext, game: GameState, opts: AdvanceOption
     if (costs[cat] > 0) post(game.ledger, day, -perDay(ctx, costs[cat]), cat, cat);
   }
   const fin = financialStress(ctx, game.ledger.cash, costs.total);
-  inputs.stressEvents += fin * P.model.stressMoneyWeight * P.fatigue.stressDecayPerDay;
+  inputs.financialStress = fin;
 
   // 7. Simulate (the character is mutated in place).
   const result = simulateDay(ctx, s, inputs);

@@ -175,7 +175,7 @@ export function simulateDay(ctx: SimContext, s: CharacterState, inputs: DayInput
   const poorRecovery = s.fatigue.sleepDebtH > M.poorRecoverySleepDebtH || s.fatigue.stress > M.poorRecoveryStress || eaRes.low;
   const orEvent = overreachStep(ctx, s, strainNow, poorRecovery);
   if (orEvent) events.push(`Training state: ${orEvent}`);
-  stressStep(ctx, s, { jobStrain: inputs.jobStrain, financial: 0, events: inputs.stressEvents, socialHours: inputs.socialHours });
+  stressStep(ctx, s, { jobStrain: inputs.jobStrain, financial: inputs.financialStress ?? 0, events: inputs.stressEvents, socialHours: inputs.socialHours });
 
   // ---- 6. adaptation ----
   const bw = bodyMass(s, P);

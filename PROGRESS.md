@@ -4,7 +4,7 @@ Resume-from-here notes. Keep this current.
 
 ## Current phase
 
-**Phase 4 — economy and nutrition.** Phases 0–3 complete.
+**Phase 5 — UI and mini-games.** Phases 0–4 complete; the 7 mini-games, coach notes and events logic are done.
 
 ## Done
 
@@ -33,17 +33,33 @@ Resume-from-here notes. Keep this current.
 - `engine/labTests.ts`: biopsy, lab VO2max, DXA, blood panel, response profile; noisy readings and reveal flags.
 - Tests: `tests/phase3-traits.test.ts` (14 paired trait-effect tests), `tests/phase3-creator.test.ts` (archetypes, creator, lab tests).
 
+### Phase 4 (economy and nutrition) — complete
+- `engine/meals.ts` (foods -> Intake, meal cost with regional multiplier and cooked yield, meal and day templates), `engine/groceries.ts` (pantry, FIFO, spoilage, weekly shopping list).
+- `data/supplements.ts` (14: evidence / conditional / useless), `engine/nutrition.ts` `ergogenicPerf` (beta-alanine, bicarbonate, nitrate in timed efforts).
+- `data/jobs.ts` + `engine/jobs.ts` (7 jobs, pay, Compendium METs, strain, stress, mini-game difficulty, auto-resolve, certification).
+- `engine/timeBudget.ts` (48 half-hour blocks, weekly templates with overrides, validation, DayInputs patch).
+- `engine/economy.ts` (gym tiers gate exercises, ledger, pro-rata bills, financial stress), `engine/game.ts` (GameState, newGame, advanceDay integrating all of the above; 365 days ~0.16 s).
+- Tests: `phase4-nutrition` (iron -> VO2max, winter vitamin D, low EA -> stress fractures, B12, magnesium economy), `phase4-supplements`, `phase4-jobs`, `phase4-time`, `phase4-game`.
+
+### Phase 5 progress
+- `minigames/` — 7 job mini-games (pure seeded logic + React component each), registry in `minigames/index.ts`; 40 logic tests.
+- `engine/events.ts` — field tests with measurement error, 9 competitions with local-field placement, fees and prizes.
+- `data/coachNotes.ts` — 88 cited coach notes with state triggers.
+
 ### Phase 4 prep — food database
 - `data/foods/spec/*.json` (11 group files) -> `node scripts/build-foods.mjs <SR Legacy CSV dir>` -> `data/foods/foods.generated.json` (173 foods; 7 manual supplement entries with `fdcId: null`).
 - Known substitutions are recorded in each food's `notes` (kefir -> buttermilk, All-Bran -> bran flakes, Mars -> Milky Way, mixed berries -> frozen blueberries, 93/7 beef -> 90/10).
 
 ## Next
 
-- Phase 3: archetypes (12), creator logic, trait-effect tests.
-- Phase 4: USDA food DB (SR Legacy CSV is downloaded to the scratchpad; re-download from fdc.nal.usda.gov if missing), groceries, jobs, time budget, micronutrient tests.
 - Phase 5: UI, mini-games, saves. Phase 6: balance report.
 
 ## Known issues
+
+- Running is too slow for a given VO2max: VO2max 40.8 gives a 31:50 5K (about 24:00 expected), and the Cooper test reads ~32. Check `economyRun` and `sustainableFraction` in Phase 6.
+- Running injuries ~13/1000 h for recreational runners vs Videbæk's 7.7; bone-stress share ~24%. Calibrate in Phase 6.
+- Anemia needs >~7 months of low iron intake from default stores (realistic, but slow for gameplay).
+- Coaching is a cost with no modelled effect.
 
 - 16 sources unresolved online (books, practitioner, reports, Hickson 1981/1982, Hobson 2012, Toombs 2012, Fryar NHANES tables): constants carry `verified: false`.
 - Arm hypertrophy in the Hubal-like run is lower in mean than Hubal (see SIMPLIFICATIONS).

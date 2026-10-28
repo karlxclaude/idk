@@ -68,3 +68,15 @@ Non-obvious choices made while building PHENOTYPE, in rough chronological order.
 - **DXA reveals the FFMI ceiling only after ~200 training hours.** Before that, a ceiling estimate is meaningless; the state stores training hours rather than years.
 - **The response-profile test is a game device** (`design`, noise SD 0.35 on responder multipliers): real DNA panels predict training response poorly.
 - **Creatine non-responders keep a small residual effect** (`creatineNonResponderMax`), so "no effect" is tested as < 25% of a responder's effect.
+
+## Phase 4 economy and nutrition decisions
+
+- **Meals drive intake in the game loop.** `advanceDay` consumes the weekday's meals from the pantry (auto-buying missing items), converts them with `intakeFromMeals`, and only counts beverage water, because `hydrationStep` credits food water separately. Plain tap water is free.
+- **Magnesium deficiency acts on movement economy** (Lukaski & Nielsen-style higher O2 cost): kcal per minute at a zone are unchanged but distance falls, so kcal per km rises.
+- **Ergogenic aids act on timed efforts only** via `ergogenicPerf` (beta-alanine 0.5–10 min, bicarbonate 1–7 min minus expected GI distress, nitrate ≥5 min, attenuated above VO2max 60). Useless supplements map to no engine change.
+- **Bone tissues get a lower share** when an exposure's hazard is split across tissues (`boneTissueWeight` 0.3), and the impact factor is normalised so full-impact running is 1. Before this, stress fractures were 57% of running injuries.
+- **REDs severity reaches 1 at EA 15 kcal/kg FFM** (Loucks 2003 graded suppression), and the low-EA stress-fracture multiplier is 2.5 (range 1.5–4).
+- **Jobs add systemic fatigue** (`jobFatigueLoadPerStrainHour`) outside the training ACWR and an occupational injury hazard on the job's risk tissues.
+- **Gym tiers nest** (commercial ⊃ budget, powerlifting ⊃ commercial, strongman ⊃ powerlifting; track separate). Pool access is free because no pool price constant exists.
+- **Financial stress** is 0 with ≥21 days of cash runway and rises linearly to 1 at zero cash; it feeds `stressStep`'s financial input.
+- **Competition fields are synthetic lognormal distributions** around HEUR local medians; strength medians scale by body mass^0.67.
