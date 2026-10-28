@@ -355,9 +355,9 @@ function frontMuscles(c: Ctx): MShape[] {
       ], true),
     });
     // abs: three rows per side
-    for (let i = 0; i < 4; i++) {
-      const y0 = S.y.chest + cm(10.5) + i * cm(6.0);
-      const w = cm((3.9 - (i === 3 ? 0.4 : 0)) * (0.82 + 0.18 * G.abs));
+    for (let i = 0; i < 3; i++) {
+      const y0 = S.y.chest + cm(10.5) + i * cm(7.5);
+      const w = cm((3.9 - 0) * (0.82 + 0.18 * G.abs));
       out.push({ ids: ['rectusAbdominis'], d: ell(CENTER_X + sgn * (w / 2 + cm(0.5)), y0 + cm(2.5), w / 2, cm(2.4 + 0.2 * G.abs), 0) });
     }
     // upper arm: biceps (front) and a lateral triceps strip
@@ -413,7 +413,7 @@ function sideMuscles(c: Ctx): MShape[] {
   out.push({ ids: ['forearms'], d: seg(arm, 2, 0.06, 0.95, 0.85, 0.28 + (S.fullness.forearms - 1), 0, 1) });
   // glutes
   const rxG = hp.leanPost * 0.55;
-  out.push({ ids: ['gluteMax', 'gluteMed'], d: ell(X - (hp.leanPost - rxG), S.y.hip + cm(0.5), rxG, cm(8.4 * Math.pow(G.glutes, 0.7)), 0) });
+  out.push({ ids: ['gluteMax', 'gluteMed'], d: ell(X - (hp.leanPost - rxG), S.y.hip + cm(0.5), rxG, cm(6.4 * Math.pow(G.glutes, 0.7)), 0) });
   // thigh: quads front, hamstrings back
   const fq = (S.fullness.vasti - 1) * 1.2;
   out.push({ ids: ['vasti', 'rectusFemoris'], d: seg(leg, 1, 0.1, 0.95, 0.62, 0.55 + fq, 0.34, 1) });
@@ -469,7 +469,7 @@ export function BodySvg({ shape, view, highlight, heatmap, height = 360, classNa
   const muscles = view === 'front' ? frontMuscles(c) : sideMuscles(c);
 
   const def = S.definition;
-  const fillOp = 0.1 + 0.55 * def;
+  const fillOp = 0.07 + 0.38 * def;
   const strokeOp = 0.06 + 0.85 * Math.pow(def, 1.3);
   const clipId = `bodyclip-${view}${idSuffix}`;
 

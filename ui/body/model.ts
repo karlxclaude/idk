@@ -18,8 +18,8 @@ const REF_HEIGHT_CM = 175;
 const GIRTH_MIN = 0.55;
 const GIRTH_MAX = 1.7;
 /** Fat thickness (cm) per kg of fat mass per unit regional weight. */
-const FAT_CM_PER_KG = 0.15;
-const FAT_MAX_CM = 14;
+const FAT_CM_PER_KG = 0.2;
+const FAT_MAX_CM = 9;
 const FRAME_EXP = 0.7;
 const HEAD_FRACTION = 0.128; // head height / body height
 const CROTCH_DROP = 0.06; // crotch below hip joint, fraction of height
@@ -136,8 +136,8 @@ export function sizeRatios(state: CharacterState, P: Params): Record<MuscleId, n
 export function fatWeights(androidFat: number): Record<FatRegion, number> {
   const a = clamp(androidFat, 0, 1);
   return {
-    waist: 0.4 + 1.7 * a,
-    chest: 0.7 + 0.6 * a,
+    waist: 0.4 + 1.3 * a,
+    chest: 0.45 + 0.3 * a,
     hip: 0.9 + 0.2 * a,
     neck: 0.5 + 0.5 * a,
     thigh: 1.1 - 0.8 * a,
@@ -236,10 +236,10 @@ export function bodyShape(state: CharacterState, P: Params): BodyShape {
   const fc = fatCm;
   const trunk: TrunkStation[] = [
     mk(yNeckBase, neckLeanCm + 0.6, fc.neck * 0.6, neckLeanCm + 0.4, fc.neck * 0.6, neckLeanCm + 1.2, fc.neck * 0.6),
-    mk(yShoulder, 19 * frameF, fc.chest * 0.4, 8.5 + 1.2 * G.chest, fc.chest * 0.8, 7.6 + 1.4 * G.traps, fc.chest * 0.6),
+    mk(yShoulder, 19 * frameF, fc.chest * 0.15, 8.5 + 1.2 * G.chest, fc.chest * 0.8, 7.6 + 1.4 * G.traps, fc.chest * 0.6),
     mk(yChest, chestHalf, fc.chest * 0.8, 9.2 + 2.0 * G.chest, fc.chest * 1.0, 8.0 + 1.2 * G.traps, fc.chest * 0.8),
     mk(yRib, ribHalf, fc.chest * 0.9, 9.0 + 1.0 * G.abs + 0.5 * G.chest, fc.waist * 1.0, 7.8 + 1.0 * G.erectors, fc.waist * 0.6),
-    mk(yWaist, waistHalf, fc.waist, 8.4 + 0.8 * G.abs, fc.waist * 1.7, 7.4 + 0.9 * G.erectors, fc.waist * 0.7),
+    mk(yWaist, waistHalf, fc.waist, 8.4 + 0.8 * G.abs, fc.waist * 1.4, 7.4 + 0.9 * G.erectors, fc.waist * 0.7),
     mk(yHip, hipHalf, fc.hip, 8.8 + 0.4 * G.abs, fc.waist * 1.4 + fc.hip * 0.3, 8.8 + 3.2 * G.glutes, fc.hip * 0.9),
     mk(yCrotch, hipHalf * 0.82, fc.hip * 0.8, 7.6, fc.hip * 0.7, 9.0 + 2.6 * G.glutes, fc.hip * 0.9),
   ];
@@ -255,7 +255,7 @@ export function bodyShape(state: CharacterState, P: Params): BodyShape {
   // Thigh: hip -> knee. Quads dominate front, hamstrings/adductors back/inner; use blended girth.
   const thighG = 0.55 * G.quads + 0.25 * G.hams + 0.2 * G.adductors;
   const thigh = stations(8, (t) => {
-    const taper = 7.2 * thighG * (1 - 0.34 * t);
+    const taper = 8.2 * thighG * (1 - 0.36 * t);
     const swell = 1 + 0.12 * Math.sin(Math.PI * Math.min(1, t * 1.15)) * thighG * 0.5;
     return Math.max(4.2, taper * swell);
   }, fc.thigh);
@@ -263,7 +263,7 @@ export function bodyShape(state: CharacterState, P: Params): BodyShape {
   const calfPos = 0.3;
   const shank = stations(8, (t) => {
     const belly = 1 + 0.85 * G.calves * Math.exp(-(((t - calfPos) / 0.22) ** 2));
-    const base = 3.5 + 0.8 * (1 - t);
+    const base = 3.9 + 0.8 * (1 - t);
     return Math.max(2.6, base * belly);
   }, fc.calf);
   const upperArm = stations(6, (t) => {
