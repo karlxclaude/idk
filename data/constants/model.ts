@@ -364,7 +364,7 @@ export const modelDefs = {
   evtRuckPaceFactor: design(1.35, 'ratio', [1, 2], 'HEUR: a ruck is mostly a fast march, slower than the equivalent running time.'),
   evtMedianPowerlifting: design(400, 'kg', [200, 700], 'HEUR: local raw male total at the 75 kg reference mass, scaled by mass^0.67.'),
   evtMedianWeightlifting: design(140, 'kg', [60, 300], 'HEUR: local male snatch + clean & jerk total at 75 kg.'),
-  evtMedianStrongman: design(9, 'reps', [3, 30], 'HEUR: local male total reps across three strongman events at 75 kg.'),
+  evtMedianStrongman: design(28, 'reps', [10, 45], 'HEUR: local male total reps across three strongman events at 75 kg; trained competitors manage ~2x an untrained man (~16).'),
   evtMedianSprintMeet: design(14, 's', [11, 18], 'HEUR: local male 100 m time.'),
   evtMedianJumpContest: design(0.42, 'm', [0.25, 0.7], 'HEUR: local male best-of-3 CMJ.'),
   evtMedianRun5k: design(1560, 's', [1000, 2400], 'HEUR: local male 5K time.'),
