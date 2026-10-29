@@ -9,8 +9,6 @@ var attached := true
 ## Velocity inferred from procedural posing, handed to the physics body when it goes dynamic.
 var tracked_lin := Vector3.ZERO
 var tracked_ang := Vector3.ZERO
-var flinch := Vector3.ZERO
-var flinch_t := 0.0
 var held_item: MeshInstance3D = null
 var _has_prev := false
 var max_speed := 25.0
