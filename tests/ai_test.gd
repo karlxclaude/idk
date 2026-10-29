@@ -26,6 +26,7 @@ func _ready() -> void:
 	await _t15()
 	await _t16()
 	await _t17()
+	await _t18()
 	print("AI TEST ", "FAILED" if failures > 0 else "ALL PASSED")
 	get_tree().quit(1 if failures > 0 else 0)
 
@@ -472,3 +473,25 @@ func _t17() -> void:
 	_check("17c walks away from the wounded NPC (+x)", far_spawn_near_now.brain._flee_dir.x > 0.5,
 		str(far_spawn_near_now.brain._flee_dir))
 	a.queue_free(); near_spawn_far_now.queue_free(); far_spawn_near_now.queue_free()
+
+
+func _t18() -> void:
+	_reset()
+	var n := _spawn()
+	n.damage.get_part(BodyIds.Part.HEAD).destroyed = true
+	cues.clear()
+	n.lethal_injury.emit(&"blunt_head")
+	var scr := cues.any(func(c): return c[0] == n and c[1] == &"scream")
+	_check("18a head destroyed (any cause name) -> DEAD, no death scream", n.brain.state == S.DEAD and not scr)
+	var m := _spawn()
+	m.damage.get_part(BodyIds.Part.HEAD).severed = true
+	cues.clear()
+	m.lethal_injury.emit(&"stabbed_head")
+	_check("18b head severed -> no death scream", m.brain.state == S.DEAD
+		and not cues.any(func(c): return c[0] == m and c[1] == &"scream"))
+	var k := _spawn()
+	cues.clear()
+	k.lethal_injury.emit(&"heart")
+	_check("18c head intact -> death scream still fires", k.brain.state == S.DEAD
+		and cues.any(func(c): return c[0] == k and c[1] == &"scream"))
+	n.queue_free(); m.queue_free(); k.queue_free()

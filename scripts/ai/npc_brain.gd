@@ -449,9 +449,18 @@ func _on_stunned(duration: float, _cause: StringName) -> void:
 func _on_lethal(cause: StringName) -> void:
 	if npc.immortal:
 		return
-	if state != S.DEAD and GameSettings.scream_enabled and cause not in [&"head_destroyed", &"decapitation", &"headshot", &"decapitated"]:
+	if state != S.DEAD and GameSettings.scream_enabled and not _head_gone() \
+			and cause not in [&"headshot", &"decapitated"]:
 		npc.cue(&"scream", 1.0)  # single death cue (no head left to scream with -> skipped)
 	_die(cause)
+
+
+## True when the head is destroyed or cut off (state check, independent of the cause name).
+func _head_gone() -> bool:
+	if not is_instance_valid(npc.damage):
+		return false
+	var h: BodyPart = npc.damage.get_part(BodyIds.Part.HEAD)
+	return h != null and (h.destroyed or h.severed)
 
 
 func _on_blood_level_changed(_old: int, new_level: int) -> void:
