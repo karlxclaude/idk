@@ -1,5 +1,5 @@
 ## OWNER: body-ragdoll-dismember-agent. Public API is contractual (docs/CONTRACTS.md).
-## Segmented body: 11 BodySegments (RigidBody3D), 6DOF joints, procedural animation (kinematic),
+## Segmented body: 15 BodySegments (RigidBody3D), 6DOF joints, procedural animation (kinematic),
 ## ragdoll, hit impulses, dismemberment. Tunables: data/body_parts.json.
 class_name NpcBody
 extends Node3D
@@ -10,7 +10,8 @@ signal part_detached(part_id: int, severed_root: RigidBody3D)
 const P := BodyIds.Part
 ## Parents before children.
 const ORDER: Array[int] = [P.TORSO, P.NECK, P.HEAD, P.UPPER_ARM_L, P.LOWER_ARM_L, P.UPPER_ARM_R,
-	P.LOWER_ARM_R, P.UPPER_LEG_L, P.LOWER_LEG_L, P.UPPER_LEG_R, P.LOWER_LEG_R]
+	P.LOWER_ARM_R, P.UPPER_LEG_L, P.LOWER_LEG_L, P.UPPER_LEG_R, P.LOWER_LEG_R,
+	P.HAND_L, P.HAND_R, P.FOOT_L, P.FOOT_R]
 
 var npc: Npc
 
@@ -171,26 +172,32 @@ func _jparam(j: Generic6DOFJoint3D, axis: int, prm: int, v: float) -> void:
 		_: j.set_param_z(prm, v)
 
 
-## No collisions between neighbours (parent, grandparent, siblings) -> no self-collision explosions.
+## No collisions between neighbours: ancestors up to 3 steps up (so hands/feet ignore the torso too) and
+## siblings -> no self-collision explosions.
 func _add_exceptions() -> void:
 	for a in ORDER:
 		for b in ORDER:
 			if a >= b:
 				continue
-			var pa: int = BodyIds.PARENT[a]
-			var pb: int = BodyIds.PARENT[b]
-			var close := pa == b or pb == a or pa == pb
-			if not close and pa >= 0 and BodyIds.PARENT[pa] == b:
-				close = true
-			if not close and pb >= 0 and BodyIds.PARENT[pb] == a:
-				close = true
-			if close:
+			if _close(a, b) or _close(b, a) or BodyIds.PARENT[a] == BodyIds.PARENT[b]:
 				(_segments[a] as BodySegment).add_collision_exception_with(_segments[b])
+
+
+## True if `anc` is within 3 steps above `pid`.
+func _close(pid: int, anc: int) -> bool:
+	var p: int = BodyIds.PARENT[pid]
+	for i in 3:
+		if p < 0:
+			return false
+		if p == anc:
+			return true
+		p = BodyIds.PARENT[p]
+	return false
 
 
 func _make_held_item() -> void:
 	var hc: Dictionary = _cfg.get("held_item", {})
-	var seg: BodySegment = _segments[P.LOWER_ARM_R]
+	var seg: BodySegment = _segments[P.HAND_R]
 	var mi := MeshInstance3D.new()
 	var bm := BoxMesh.new()
 	bm.size = BodySegment._v3(hc.get("size", [0.07, 0.14, 0.012]))
@@ -198,10 +205,12 @@ func _make_held_item() -> void:
 	mi.material_override = _mat(_col(hc.get("color", [0.08, 0.08, 0.1])))
 	mi.name = "Phone"
 	seg.add_child(mi)
-	mi.position = Vector3(0, -seg.half.y + 0.02, seg.half.x + 0.012)
+	# held in the palm (right palm faces +X): phone's thin axis along the hand's X, screen toward the thumb side
+	mi.rotation = Vector3(0, PI * 0.5, 0)
+	mi.position = Vector3(seg.half.x + 0.006, -seg.half.y * 0.2, 0)
 	seg.held_item = mi
 	_held = mi
-	_held_part = P.LOWER_ARM_R
+	_held_part = P.HAND_R
 
 
 # ------------------------------------------------------------------ queries

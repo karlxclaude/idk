@@ -38,7 +38,14 @@ func _ready() -> void:
 			and n.collision_layer == BodyIds.LAYER_NPC_PARTS
 		var h := body.get_part_half_extents(p)
 		ok = ok and h.x > 0.02 and h.y > 0.03 and h.x < 0.5 and h.y < 0.5
-	_check("1a segments/metas/layers", ok, "mass=%.1f" % total_mass)
+	_check("1a 15 segments/metas/layers", ok and BodyIds.PART_COUNT == 15 and absf(total_mass - 75.0) < 1.5,
+		"mass=%.1f" % total_mass)
+	var foot_y := 99.0
+	for f in [BodyIds.Part.FOOT_L, BodyIds.Part.FOOT_R]:
+		foot_y = minf(foot_y, body.get_part_global_transform(f).origin.y)
+	var head_top: float = body.get_part_global_transform(BodyIds.Part.HEAD).origin.y + body.get_part_half_extents(BodyIds.Part.HEAD).y
+	_check("1a2 feet on floor, height ~1.8", foot_y < 0.08 and absf(head_top - 0.02 - 1.8) < 0.1,
+		"foot_y=%.3f head_top=%.3f" % [foot_y, head_top])
 	var q := PhysicsRayQueryParameters3D.create(Vector3(0, 1.3, 2), Vector3(0, 1.3, 0), BodyIds.LAYER_NPC_PARTS)
 	var hit := get_world_3d().direct_space_state.intersect_ray(q)
 	var hit_ok := false
@@ -84,20 +91,28 @@ func _ready() -> void:
 	b2.set_ragdoll(true)
 	var stable := true
 	var max_dist := 0.0
-	for i in 300:
+	var max_speed := 0.0
+	var max_ang := 0.0
+	var late_peak := 0.0  # max speed over the last 1 s: must have settled
+	for i in 300:  # 5 s
 		await get_tree().physics_frame
 		var tc := b2.get_center()
 		for p in BodyIds.PART_COUNT:
 			var pp := b2.get_part_global_transform(p).origin
-			if not (is_finite(pp.x) and is_finite(pp.y) and is_finite(pp.z)):
+			var rbp := b2.get_part_node(p) as RigidBody3D
+			var sp := rbp.linear_velocity.length()
+			if not (is_finite(pp.x) and is_finite(pp.y) and is_finite(pp.z) and is_finite(sp)
+					and is_finite(rbp.angular_velocity.length())):
 				stable = false
 			else:
 				max_dist = maxf(max_dist, pp.distance_to(tc))
-	var max_speed := 0.0
-	for p in BodyIds.PART_COUNT:
-		max_speed = maxf(max_speed, (b2.get_part_node(p) as RigidBody3D).linear_velocity.length())
-	_check("3 ragdoll stable", stable and max_dist < 3.0 and max_speed < 0.5 and b2.is_ragdoll(),
-		"max_dist=%.2f max_speed=%.3f" % [max_dist, max_speed])
+				max_speed = maxf(max_speed, sp)
+				if i >= 240:
+					late_peak = maxf(late_peak, sp)
+					max_ang = maxf(max_ang, rbp.angular_velocity.length())
+	_check("3 ragdoll stable 5 s, no NaN, no jitter", stable and max_dist < 3.0 and late_peak < 0.3 \
+		and max_ang < 1.5 and b2.is_ragdoll(),
+		"max_dist=%.2f peak_v=%.2f late_peak_v=%.3f late_ang=%.3f" % [max_dist, max_speed, late_peak, max_ang])
 	b2.set_ragdoll(false)
 	await _frames(60)
 	var up2: float = b2.get_part_global_transform(BodyIds.Part.TORSO).basis.y.dot(Vector3.UP)
@@ -126,10 +141,60 @@ func _ready() -> void:
 	var still_ok := absf(body.get_center().y - 1.18) < 0.3
 	_check("4b body still standing after sever", still_ok, str(body.get_center()))
 
-	# 5. held item
+	# 4c. sever a hand, and a lower leg takes its foot
+	var evh := DamageEvent.new()
+	evh.type = DamageEvent.Type.BLADE_SLASH
+	evh.part_id = BodyIds.Part.HAND_L
+	evh.impactor_velocity = Vector3(3, 0, 0)
+	evh.impactor_mass = 1.0
+	evh.can_dismember = true
+	var npc5 := Npc.spawn(self, Transform3D(Basis(), Vector3(-30, 0.02, 0)), 5)
+	await _frames(5)
+	evh.hit_position = npc5.body.get_part_global_transform(evh.part_id).origin
+	var hand := npc5.body.sever_part(BodyIds.Part.HAND_L, evh)
+	_check("4c sever HAND_L returns a body", hand != null and not npc5.body.has_part(BodyIds.Part.HAND_L)
+		and BodyIds.part_from_collider(hand) == BodyIds.Part.HAND_L and npc5.body.has_part(BodyIds.Part.HAND_R)
+		and npc5.body.has_part(BodyIds.Part.LOWER_ARM_L))
+	var evl := DamageEvent.new()
+	evl.type = DamageEvent.Type.BLADE_SLASH
+	evl.part_id = BodyIds.Part.LOWER_LEG_R
+	evl.impactor_velocity = Vector3(-3, 0, 0)
+	evl.impactor_mass = 1.0
+	evl.can_dismember = true
+	evl.hit_position = body.get_part_global_transform(evl.part_id).origin
+	var leg := body.sever_part(BodyIds.Part.LOWER_LEG_R, evl)
+	await _frames(120)
+	var foot_r := body.get_part_node(BodyIds.Part.FOOT_R) as RigidBody3D
+	var l_ok := leg != null and not body.has_part(BodyIds.Part.LOWER_LEG_R) and not body.has_part(BodyIds.Part.FOOT_R) \
+		and body.has_part(BodyIds.Part.FOOT_L) and body.has_part(BodyIds.Part.UPPER_LEG_R)
+	if l_ok:
+		l_ok = foot_r.get_parent() == leg.get_parent() and foot_r.global_position.y < 0.3 \
+			and BodyIds.npc_from_collider(foot_r) == npc
+	_check("4d sever LOWER_LEG_R takes FOOT_R", l_ok)
+
+	# 5. held item (in hand_r)
+	var phone_in_hand := body.get_part_node(BodyIds.Part.HAND_R).get_node_or_null("Phone") != null
 	var d1 := body.drop_held_item("r")
 	var d2 := body.drop_held_item("r")
-	_check("5 drop_held_item true then false", d1 and not d2)
+	await _frames(60)
+	var dropped: RigidBody3D = null
+	for c in get_children():
+		if c is RigidBody3D and c.name == "DroppedPhone":
+			dropped = c
+	_check("5 phone in hand_r drops (true then false)", phone_in_hand and d1 and not d2 and dropped != null
+		and dropped.global_position.y < 0.3, "y=%s" % (dropped.global_position.y if dropped else -1.0))
+	# a severed HAND_R takes the phone along
+	var evr := DamageEvent.new()
+	evr.type = DamageEvent.Type.BLADE_SLASH
+	evr.part_id = BodyIds.Part.HAND_R
+	evr.impactor_velocity = Vector3(-2, 0, 0)
+	evr.impactor_mass = 1.0
+	evr.can_dismember = true
+	evr.hit_position = npc5.body.get_part_global_transform(evr.part_id).origin
+	var hr := npc5.body.sever_part(BodyIds.Part.HAND_R, evr)
+	_check("5b severed HAND_R takes the phone", hr != null and hr.get_node_or_null("Phone") != null
+		and not npc5.body.drop_held_item("r"))
+	npc5.queue_free()
 	print(body.get_debug_info())
 
 	# 7. spawn with rotated transform: position and facing follow the Npc transform

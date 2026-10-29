@@ -32,20 +32,22 @@ func build(pid: int, owner_npc: Node, d: Dictionary, mat: Material, cfg: Diction
 	top_level = true
 	max_speed = float(cfg.get("max_segment_speed", 25.0))
 	max_ang_speed = float(cfg.get("max_segment_ang_speed", 40.0))
-	linear_damp = float(cfg.get("linear_damp", 0.3))
-	angular_damp = float(cfg.get("angular_damp", 4.0))
+	linear_damp = float(d.get("lin_damp", cfg.get("linear_damp", 0.3)))
+	angular_damp = float(d.get("ang_damp", cfg.get("angular_damp", 4.0)))
 	var pm := PhysicsMaterial.new()
 	pm.friction = float(cfg.get("friction", 0.9))
 	pm.bounce = 0.0
 	physics_material_override = pm
 	var shape: Shape3D
 	var mesh: Mesh
+	# col_pad: collision shape slightly fatter than the mesh/half extents (small parts jitter less).
+	var pad := float(d.get("col_pad", 0.0))
 	if String(d.get("shape", "capsule")) == "box":
-		var bs := BoxShape3D.new(); bs.size = half * 2.0
+		var bs := BoxShape3D.new(); bs.size = (half + Vector3.ONE * pad) * 2.0
 		var bm := BoxMesh.new(); bm.size = half * 2.0
 		shape = bs; mesh = bm
 	else:
-		var cs := CapsuleShape3D.new(); cs.radius = half.x; cs.height = half.y * 2.0
+		var cs := CapsuleShape3D.new(); cs.radius = half.x + pad; cs.height = (half.y + pad) * 2.0
 		var cm := CapsuleMesh.new(); cm.radius = half.x; cm.height = half.y * 2.0
 		shape = cs; mesh = cm
 	var col := CollisionShape3D.new()
