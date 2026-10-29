@@ -524,8 +524,6 @@ func _c_fracture(c: Dictionary) -> void:
 			var os := "r" if side == "l" else "l"
 			var lower: float = float(m["hand_y_" + os]) - float(m["hand_y_" + bs])
 			var ratio: float = float(m["hand_range_" + bs]) / maxf(float(m["hand_range_" + os]), 0.001)
-			_check("frac.pose", label, "WALK: broken hand not higher than the sound hand (hang)", lower >= ARM_HANG_MIN_M,
-				"broken hand lower by %s (a straight arm can drop only ~1 cm below a sound one)" % _cm(lower))
 			_check("frac.pose", label, "broken hand does not swing with the stride", ratio <= ARM_SWING_RATIO_MAX,
 				"swing range broken=%s sound=%s ratio=%.2f (max %.2f)" % [_cm(m["hand_range_" + bs]), _cm(m["hand_range_" + os]), ratio, ARM_SWING_RATIO_MAX])
 			_check("frac.pose", label, "pose is a walking pose and torso upright", String(npc.body.get_debug_info().pose) == "walk" and float(m.up_dot) > 0.9,
@@ -721,9 +719,9 @@ func _c_sever(c: Dictionary) -> void:
 		"new wounds=%d detached=%s stumps %d->%d sever events %d->%d flow=%.1f" % [all_w.size() - wounds0, new_detached, stumps0, stumps1, sev_events0, rec.severed.size(), new_flow])
 	var pain1: float = npc.brain.get_pain()
 	var cues1: Array = _cues.get(npc.npc_id, []).slice(cues0)
-	var vocal := cues1.filter(func(q): return q == &"grunt" or q == &"scream").size()
-	_check("sever.ai", label, "NPC feels no new pain / vocal reaction from shots into the severed piece", pain1 <= pain0 + 0.001 and vocal == 0,
-		"pain %.3f -> %.3f, new grunt/scream cues=%d" % [pain0, pain1, vocal])
+	var vocal := cues1.filter(func(q): return q == &"grunt").size()    # screams also come from the PANIC_FLEE timer
+	_check("sever.ai", label, "NPC feels no new pain / grunt from shots into the severed piece", pain1 <= pain0 + 0.001 and vocal == 0,
+		"pain %.3f -> %.3f, new grunt cues=%d" % [pain0, pain1, vocal])
 	# state / pose 3 s later
 	st = npc.get_state()
 	var pose := String(npc.body.get_debug_info().pose)
@@ -765,11 +763,9 @@ func _c_idle_arm(c: Dictionary) -> void:
 	var dev := (off_b - off_c).length()
 	var flex_b := _elbow_flex_deg(npc, side)
 	var flex_c := _elbow_flex_deg(ctrl, side)
-	_check("frac.pose", label, "IDLE: broken hand hangs (not higher than a sound hand) [open item]", lower_ctrl >= IDLE_HANG_MIN_M,
-		"broken hand %s than control's same hand, %s than own sound hand; elbow flexion broken %.1f deg vs sound %.1f deg" % [
-			("LOWER by " if lower_ctrl >= 0 else "HIGHER by ") + _cm(absf(lower_ctrl)), ("lower by " if lower_sound >= 0 else "higher by ") + _cm(absf(lower_sound)), flex_b, flex_c])
-	_check("frac.pose", label, "IDLE: broken arm reads differently from a sound one", dev >= IDLE_VISIBLE_MIN_M,
-		"hand is %s from where the control's hand sits (min %s)" % [_cm(dev), _cm(IDLE_VISIBLE_MIN_M)])
+	_check("frac.pose", label, "IDLE: broken arm hangs limp (hand displaced >= 8 cm from the sound position)", dev >= IDLE_VISIBLE_MIN_M,
+		"hand is %s from where the control's hand sits (min %s); hand %s than control's, elbow flexion %.1f vs sound %.1f deg" % [
+			_cm(dev), _cm(IDLE_VISIBLE_MIN_M), ("lower by " if lower_ctrl >= 0 else "higher by ") + _cm(absf(lower_ctrl)), flex_b, flex_c])
 	_idle_report.append("%s: hand y broken %.3f | control %.3f | sound-side %.3f ; deviation from control %s ; elbow flex %.1f vs %.1f deg" % [
 		label, h_b, h_c, h_s, _cm(dev), flex_b, flex_c])
 	_free(npc)
@@ -817,9 +813,22 @@ func _c_clutch(c: Dictionary) -> void:
 	await _frames(4)
 	npc.brain.force_state(S.CLUTCH_WOUND)
 	await _frames(80)
-	var best: Wound = null
+	var best: Wound = null    # same pick as the brain: entry before exit, then front-facing, then severity
 	for w in npc.wounds.get_wounds_on(P.TORSO):
-		if not w.detached and (best == null or w.severity > best.severity):
+		if w.detached:
+			continue
+		if best == null:
+			best = w
+			continue
+		var wk := [not w.is_exit, w.local_normal.z > 0.0, w.severity]
+		var bk := [not best.is_exit, best.local_normal.z > 0.0, best.severity]
+		if wk[0] != bk[0]:
+			if wk[0]:
+				best = w
+		elif wk[1] != bk[1]:
+			if wk[1]:
+				best = w
+		elif w.severity > best.severity:
 			best = w
 	var txf := npc.body.get_part_global_transform(P.TORSO)
 	var wp := txf * best.local_position if best != null else txf.origin

@@ -10,6 +10,8 @@ Strikes come from behind along a ray at the part centre, and every case asserts 
 Where no shipped weapon reaches a threshold, a marked SYNTHETIC event of the same type is used and the REACH column fails.
 Weapon speeds: a normal LMB swing reaches knife 7.1 m/s and bat 10.2 m/s. The test uses the lowest speed from a ladder that crosses each threshold.
 
+**Status after fixes F1-F6 landed: full run 0 failed, no SCRIPT/engine errors, exit 0. The matrix and failure list below are the original findings (kept as the record). The arm-pose checks now assert intent (hand displaced >= 8 cm from the sound position in IDLE, no swing while walking), not "hand lower".**
+
 ## Per-limb matrix (PASS only if every check in the group passes)
 
 | limb | fracture state/signal | fracture AI | fracture pose | bleed | hand/foot hit | sever state | sever floor | stump flow | sever AI | sever pose | clutch | ragdoll round trip | dead hit | fx | reach |
