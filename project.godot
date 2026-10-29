@@ -1,0 +1,35 @@
+; Engine configuration file.
+config_version=5
+
+[application]
+config/name="Gore Sandbox"
+run/main_scene="res://scenes/main.tscn"
+config/features=PackedStringArray("4.4")
+
+[autoload]
+DataDB="*res://scripts/core/data_db.gd"
+GameSettings="*res://scripts/core/game_settings.gd"
+GameEvents="*res://scripts/core/game_events.gd"
+
+[display]
+window/size/viewport_width=1600
+window/size/viewport_height=900
+
+[input]
+fire={"deadzone":0.2,"events":[Object(InputEventMouseButton,"resource_local_to_scene":false,"resource_name":"","device":-1,"window_id":0,"alt_pressed":false,"shift_pressed":false,"ctrl_pressed":false,"meta_pressed":false,"button_mask":0,"position":Vector2(0,0),"global_position":Vector2(0,0),"factor":1.0,"button_index":1,"canceled":false,"pressed":false,"double_click":false,"script":null)]}
+alt_fire={"deadzone":0.2,"events":[Object(InputEventMouseButton,"resource_local_to_scene":false,"resource_name":"","device":-1,"window_id":0,"alt_pressed":false,"shift_pressed":false,"ctrl_pressed":false,"meta_pressed":false,"button_mask":0,"position":Vector2(0,0),"global_position":Vector2(0,0),"factor":1.0,"button_index":2,"canceled":false,"pressed":false,"double_click":false,"script":null)]}
+
+[layer_names]
+3d_physics/layer_1="world"
+3d_physics/layer_2="npc_parts"
+3d_physics/layer_3="player"
+3d_physics/layer_4="weapons"
+3d_physics/layer_5="debris"
+3d_physics/layer_6="npc_mover"
+
+[physics]
+3d/physics_engine="Jolt Physics"
+common/physics_ticks_per_second=60
+
+[rendering]
+renderer/rendering_method="forward_plus"
