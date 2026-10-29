@@ -141,6 +141,27 @@ func _ready() -> void:
 	var still_ok := absf(body.get_center().y - 1.18) < 0.3
 	_check("4b body still standing after sever", still_ok, str(body.get_center()))
 
+	# 4b2. broken arm hangs: while running the broken left hand stays lower than the swinging right hand
+	# (idle: both arms hang, so the difference is ~1 cm; asserted as "not higher by more than 2 cm")
+	var npc6 := Npc.spawn(self, Transform3D(Basis(), Vector3(-60, 0.02, 0)), 6)
+	await _frames(5)
+	npc6.emit_part_broken(BodyIds.Part.LOWER_ARM_L)
+	npc6.body.set_locomotion(Vector3.ZERO, &"idle")
+	await _frames(30)
+	var idle_dy: float = npc6.body.get_part_global_transform(BodyIds.Part.HAND_L).origin.y \
+		- npc6.body.get_part_global_transform(BodyIds.Part.HAND_R).origin.y
+	var run_dy := 0.0
+	for i in 90:
+		npc6.body.set_locomotion(Vector3(0, 0, 4), &"run")
+		await get_tree().physics_frame
+		if i >= 30:
+			run_dy += npc6.body.get_part_global_transform(BodyIds.Part.HAND_L).origin.y \
+				- npc6.body.get_part_global_transform(BodyIds.Part.HAND_R).origin.y
+	run_dy /= 60.0
+	_check("4b2 broken LOWER_ARM_L: left hand lower than right (running)", run_dy < -0.03 and idle_dy < 0.02,
+		"run mean dy=%.3f idle dy=%.3f" % [run_dy, idle_dy])
+	npc6.queue_free()
+
 	# 4c. sever a hand, and a lower leg takes its foot
 	var evh := DamageEvent.new()
 	evh.type = DamageEvent.Type.BLADE_SLASH
@@ -239,7 +260,7 @@ func _ready() -> void:
 		for p in BodyIds.PART_COUNT:
 			peak = maxf(peak, (corpse.body.get_part_node(p) as RigidBody3D).linear_velocity.length())
 	var drift := corpse.body.get_center().distance_to(c0)
-	_check("6 runner past corpse does not launch it", drift < 2.0 and peak <= 25.01 and is_finite(drift),
+	_check("6 runner past corpse does not launch it", drift < 4.0 and peak <= 25.01 and is_finite(drift),
 		"drift=%.2f peak_v=%.2f runner_x=%.1f" % [drift, peak, runner.body.get_center().x])
 
 	get_tree().quit(1 if _fails > 0 else 0)

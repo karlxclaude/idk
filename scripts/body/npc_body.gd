@@ -41,6 +41,7 @@ func setup(owner_npc: Npc) -> void:
 	_cfg = DataDB.table("body_parts")
 	_hip_h = float(_cfg.get("hip_height", 0.88))
 	_build()
+	npc.part_broken.connect(func(id: int): set_part_broken(id, true))
 
 
 # ------------------------------------------------------------------ build
@@ -281,6 +282,18 @@ func set_locomotion(velocity: Vector3, pose: StringName) -> void:
 
 func set_clutch_target(part_id: int) -> void:
 	_clutch_target = part_id
+
+
+func set_limp_side(side: String) -> void:
+	_pose_driver.set_limp_side(side)
+
+
+func set_part_broken(part_id: int, broken := true) -> void:
+	_pose_driver.set_part_broken(part_id, broken)
+
+
+func set_clutch_wound(part_id: int, local_pos: Vector3, local_normal: Vector3) -> void:
+	_pose_driver.set_clutch_wound(part_id, local_pos, local_normal)
 
 
 func set_ragdoll(enabled: bool) -> void:
