@@ -22,8 +22,8 @@ Blood levels: `NORMAL, LIGHT, HEAVY, CRITICAL, FATAL`.
 ```
 TORSO (root)
 ├── NECK ── HEAD
-├── UPPER_ARM_L ── LOWER_ARM_L      ├── UPPER_ARM_R ── LOWER_ARM_R
-└── UPPER_LEG_L ── LOWER_LEG_L      └── UPPER_LEG_R ── LOWER_LEG_R
+├── UPPER_ARM_L ── LOWER_ARM_L ── HAND_L      ├── UPPER_ARM_R ── LOWER_ARM_R ── HAND_R
+└── UPPER_LEG_L ── LOWER_LEG_L ── FOOT_L      └── UPPER_LEG_R ── LOWER_LEG_R ── FOOT_R
 ```
 Part-local axes (rest pose, arms hanging): **+Y up, +Z front of body (facing), +X NPC's left.**
 `DamageEvent.hit_local_normalized` = hit_local / half-extents (≈ -1..1 per axis). Torso: y>0 is chest (heart/lung), y<0 abdomen.
@@ -50,7 +50,7 @@ Flow: weapon → `npc.apply_damage(ev)` → fills local hit → `damage.apply(ev
 `GameEvents` also has `npc_spawned`, `world_impact(pos, normal, ev)`, `audio_cue(npc, cue, pos, intensity)`.
 
 ### Component APIs (stubs in place; owners implement, must keep signatures)
-- **NpcBody** (`scripts/body/npc_body.gd`): `get_part_global_transform(id)`, `get_part_half_extents(id)`, `get_part_node(id)`, `has_part(id)`, `get_center()`, `get_forward()`, `apply_hit_impulse(ev)`, `sever_part(id, ev) -> RigidBody3D`, `set_ragdoll(bool)`, `is_ragdoll()`, `set_locomotion(velocity, pose)` (poses: idle, walk, run, clutch, stagger, crawl), `set_clutch_target(id)`, `drop_held_item(side) -> bool`, `get_debug_info()`, signal `part_detached`.
+- **NpcBody** (`scripts/body/npc_body.gd`): `get_part_global_transform(id)`, `get_part_half_extents(id)`, `get_part_node(id)`, `has_part(id)`, `get_center()`, `get_forward()`, `apply_hit_impulse(ev)`, `sever_part(id, ev) -> RigidBody3D`, `set_ragdoll(bool)`, `is_ragdoll()`, `set_locomotion(velocity, pose)` (poses: idle, walk, run, clutch, stagger, crawl, limp), `set_clutch_target(id)`, `drop_held_item(side) -> bool`, `get_debug_info()`, signal `part_detached`.
 - **DamageSystem**: `apply(ev) -> Array[Wound]`, `get_part(id) -> BodyPart`, `get_parts()`, `get_debug_info()`.
 - **WoundSystem**: `get_wounds()`, `get_wounds_on(id)`, `get_attached_wounds()`, `get_debug_info()` (+ internal add/detach API used by DamageSystem — same owner).
 - **BloodSystem**: `state: BloodState`, `get_debug_info()`. Reads `npc.get_exertion()` (running worsens bleed).
@@ -75,3 +75,9 @@ Rules only fill the context; they never mutate state or emit. Each rule reads on
 ## Body split (milestone 2)
 `NpcBody` keeps segments, joints, mover, ragdoll, impulses, severing, held item. Procedural posing, locomotion animation,
 hit-reaction additives and IK live in `scripts/body/pose/` behind an internal interface documented in `scripts/body/pose/README.md`.
+
+## Milestone 2 additions
+- Parts `HAND_L/R` (children of lower arms) and `FOOT_L/R` (children of lower legs), appended to `BodyIds.Part` (PART_COUNT 15).
+  `is_arm`/`is_leg` include hands/feet; new `is_hand`, `is_foot`, `hand_of(side)`. Hands/feet use the arm/leg region rules.
+- Held item lives in `HAND_R`. `drop_held_item(side)` unchanged.
+- New locomotion pose `limp` (injured foot/lower leg: slow, uneven gait). Limping is a pose/speed modifier chosen by the brain, not an NpcState.

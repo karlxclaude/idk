@@ -7,8 +7,9 @@ enum Part {
 	HEAD, NECK, TORSO,
 	UPPER_ARM_L, LOWER_ARM_L, UPPER_ARM_R, LOWER_ARM_R,
 	UPPER_LEG_L, LOWER_LEG_L, UPPER_LEG_R, LOWER_LEG_R,
+	HAND_L, HAND_R, FOOT_L, FOOT_R,  # milestone 2 (appended: earlier ids unchanged)
 }
-const PART_COUNT := 11
+const PART_COUNT := 15
 const ROOT := Part.TORSO
 
 ## Parent of each part (joint goes from part to its parent). Root has -1.
@@ -20,6 +21,8 @@ const PARENT := {
 	Part.UPPER_ARM_R: Part.TORSO, Part.LOWER_ARM_R: Part.UPPER_ARM_R,
 	Part.UPPER_LEG_L: Part.TORSO, Part.LOWER_LEG_L: Part.UPPER_LEG_L,
 	Part.UPPER_LEG_R: Part.TORSO, Part.LOWER_LEG_R: Part.UPPER_LEG_R,
+	Part.HAND_L: Part.LOWER_ARM_L, Part.HAND_R: Part.LOWER_ARM_R,
+	Part.FOOT_L: Part.LOWER_LEG_L, Part.FOOT_R: Part.LOWER_LEG_R,
 }
 
 ## String keys used in every data file (data/*.json) and the debug overlay.
@@ -29,6 +32,8 @@ const KEYS := {
 	Part.UPPER_ARM_R: "upper_arm_r", Part.LOWER_ARM_R: "lower_arm_r",
 	Part.UPPER_LEG_L: "upper_leg_l", Part.LOWER_LEG_L: "lower_leg_l",
 	Part.UPPER_LEG_R: "upper_leg_r", Part.LOWER_LEG_R: "lower_leg_r",
+	Part.HAND_L: "hand_l", Part.HAND_R: "hand_r",
+	Part.FOOT_L: "foot_l", Part.FOOT_R: "foot_r",
 }
 
 enum Tissue { FLESH, BONE }
@@ -84,12 +89,29 @@ static func descendants_of(part_id: int) -> Array[int]:
 	return out
 
 
+## Arm chain incl. hands.
 static func is_arm(part_id: int) -> bool:
-	return part_id in [Part.UPPER_ARM_L, Part.LOWER_ARM_L, Part.UPPER_ARM_R, Part.LOWER_ARM_R]
+	return part_id in [Part.UPPER_ARM_L, Part.LOWER_ARM_L, Part.UPPER_ARM_R, Part.LOWER_ARM_R,
+		Part.HAND_L, Part.HAND_R]
 
 
+## Leg chain incl. feet.
 static func is_leg(part_id: int) -> bool:
-	return part_id in [Part.UPPER_LEG_L, Part.LOWER_LEG_L, Part.UPPER_LEG_R, Part.LOWER_LEG_R]
+	return part_id in [Part.UPPER_LEG_L, Part.LOWER_LEG_L, Part.UPPER_LEG_R, Part.LOWER_LEG_R,
+		Part.FOOT_L, Part.FOOT_R]
+
+
+static func is_hand(part_id: int) -> bool:
+	return part_id == Part.HAND_L or part_id == Part.HAND_R
+
+
+static func is_foot(part_id: int) -> bool:
+	return part_id == Part.FOOT_L or part_id == Part.FOOT_R
+
+
+## The hand at the end of the arm chain on `side` ("l"/"r").
+static func hand_of(side: String) -> int:
+	return Part.HAND_L if side == "l" else Part.HAND_R
 
 
 ## "l", "r", or "" for centre-line parts.
