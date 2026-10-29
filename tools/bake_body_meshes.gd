@@ -179,6 +179,8 @@ func _w(region: String) -> Vector3:
 
 
 func _wc(w: Vector3) -> Color:
+	if w.x < 0.0:  # "eye" region: alpha 0 -> dark in body_vc.gdshader
+		return Color(0, 0, 0, 0)
 	return Color(w.x, w.y, w.z, 1.0)
 
 
@@ -303,7 +305,7 @@ func _bake_part(pid: int) -> ArrayMesh:
 			var st: Dictionary = spec["stubs"][_base(ch)]
 			var js := _jspec(ch)
 			var cen := _jpoint_in(ch, pid) + Vector3(js.cx, 0.0, js.cz)
-			_dome(b, cen, js.rx, js.rz, _v3(st["dir"]), float(st["len"]), float(st["bulge"]), _w(region))
+			_dome(b, cen, js.rx, js.rz, _v3(st["dir"]), float(st["len"]), float(st["bulge"]), _w(String(st.get("region", region))))
 	# ---- extras (nose, thumb, shoe)
 	for ex in spec.get("extras", []):
 		var axis: String = ex["axis"]

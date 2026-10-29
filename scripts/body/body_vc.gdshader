@@ -11,5 +11,6 @@ void fragment() {
 	vec3 w = COLOR.rgb;
 	float ws = max(0.0, 1.0 - w.r - w.g - w.b);
 	ALBEDO = skin_color * w.r + shirt_color * w.g + pants_color * w.b + shoe_color * ws;
+	ALBEDO = mix(vec3(0.03, 0.025, 0.025), ALBEDO, COLOR.a);  // alpha 0 = eyes
 	ROUGHNESS = mix(0.5, 0.88, clamp(w.g + w.b + ws, 0.0, 1.0));
 }

@@ -253,8 +253,16 @@ func _add_exceptions() -> void:
 		for b in ORDER:
 			if a >= b:
 				continue
-			if _close(a, b) or _close(b, a) or BodyIds.PARENT[a] == BodyIds.PARENT[b]:
+			if _close(a, b) or _close(b, a) or BodyIds.PARENT[a] == BodyIds.PARENT[b] or _hand_thigh(a, b):
 				(_segments[a] as BodySegment).add_collision_exception_with(_segments[b])
+
+
+## Hands hang against the thighs (shoulders are narrow): they never collide with the leg on their own side.
+func _hand_thigh(a: int, b: int) -> bool:
+	for pair in [[a, b], [b, a]]:
+		if BodyIds.is_hand(pair[0]) and (pair[1] == P.UPPER_LEG_L or pair[1] == P.UPPER_LEG_R):
+			return BodyIds.side_of(pair[0]) == BodyIds.side_of(pair[1])
+	return false
 
 
 ## True if `anc` is within 3 steps above `pid`.

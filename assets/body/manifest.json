@@ -1,6 +1,6 @@
 {
  "ball_tris": 1960,
- "body_tris": 8720,
+ "body_tris": 9440,
  "cap_tris": 3920,
  "joints": {
   "foot_l": {
@@ -101,15 +101,15 @@
   },
   "head": {
    "ball": "res://assets/body/head_ball.res",
-   "bone_r": 0.012,
+   "bone_r": 0.013,
    "centre_child": [
     0.0,
-    -0.114999979734421,
+    -0.115000009536743,
     0.0
    ],
    "centre_parent": [
     0.0,
-    0.050000011920929,
+    0.0300000011920929,
     0.0
    ],
    "out_stump": [
@@ -118,8 +118,8 @@
     0.0
    ],
    "parent": "neck",
-   "rx": 0.042,
-   "rz": 0.044,
+   "rx": 0.05,
+   "rz": 0.054,
    "severed": "res://assets/body/head_cap_severed.res",
    "stump": "res://assets/body/head_cap_stump.res"
   },
@@ -221,16 +221,16 @@
   },
   "neck": {
    "ball": "res://assets/body/neck_ball.res",
-   "bone_r": 0.014,
+   "bone_r": 0.015,
    "centre_child": [
     0.0,
     -0.0499999821186066,
-    -0.00300000002607703
+    -0.00400000018998981
    ],
    "centre_parent": [
     0.0,
     0.300000011920929,
-    -0.00300000002607703
+    -0.00400000018998981
    ],
    "out_stump": [
     0.0,
@@ -238,8 +238,8 @@
     0.0
    ],
    "parent": "torso",
-   "rx": 0.047,
-   "rz": 0.05,
+   "rx": 0.056,
+   "rz": 0.06,
    "severed": "res://assets/body/neck_cap_severed.res",
    "stump": "res://assets/body/neck_cap_stump.res"
   },
@@ -252,7 +252,7 @@
     0.0
    ],
    "centre_parent": [
-    0.254999995231628,
+    0.209999993443489,
     0.270000010728836,
     0.0
    ],
@@ -276,7 +276,7 @@
     0.0
    ],
    "centre_parent": [
-    -0.254999995231628,
+    -0.209999993443489,
     0.270000010728836,
     0.0
    ],
@@ -359,7 +359,7 @@
   },
   "head": {
    "mesh": "res://assets/body/head.mesh.res",
-   "tris": 980
+   "tris": 1340
   },
   "lower_arm_l": {
    "mesh": "res://assets/body/lower_arm_l.mesh.res",
@@ -383,7 +383,7 @@
   },
   "torso": {
    "mesh": "res://assets/body/torso.mesh.res",
-   "tris": 1900
+   "tris": 2260
   },
   "upper_arm_l": {
    "mesh": "res://assets/body/upper_arm_l.mesh.res",
@@ -403,5 +403,5 @@
   }
  },
  "ring_verts": 20,
- "total_tris": 14600
+ "total_tris": 15320
 }

@@ -12,7 +12,7 @@ Segmented NPC body. Owner: body-ragdoll-dismember-agent. Tunables: data/body_par
   npc.get_parent(), freed after `severed_cleanup_s`. Piece keeps layer npc_parts and metas.
 - Held item "phone" is a child of hand_r (a severed hand_r takes it along); drop_held_item("r") turns it into a debris RigidBody3D.
 - Per-part optional keys in body_parts.json: `col_pad` (collision shape fatter than mesh), `lin_damp`, `ang_damp`
-  (hands/feet are light: higher damping). Collision exceptions cover ancestors up to 3 steps and siblings.
+  (hands/feet are light: higher damping). Collision exceptions cover ancestors up to 3 steps, siblings, and each hand vs its own-side thigh.
 - Visuals: `"visual": "baked"` in body_parts.json uses lofted meshes from `assets/body/` (bake: `godot --headless --path . res://tools/bake_body_meshes.tscn`,
   profiles in data/body_mesh.json, shader `body_vc.gdshader` colours the vertex-colour regions per NPC). Hidden stump/severed caps and a
   joint ball per joint; sever_part shows the caps and hides the ball. Falls back to primitives if assets are missing. Colliders stay primitive.
