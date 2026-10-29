@@ -44,6 +44,7 @@ func _ready() -> void:
 	await _t5()
 	await _t6()
 	await _t7()
+	await _t8()
 	print("DAMAGE TEST ", "FAILED" if _fails > 0 else "OK")
 	get_tree().quit(1 if _fails > 0 else 0)
 
@@ -231,3 +232,48 @@ func _t7() -> void:
 		_check("7c immortal head %s: knockdown stun" % DamageEvent.Type.keys()[t],
 			stuns.size() > 0 and stuns[-1][0] >= 2.0 and stuns[-1][1] == &"concussion", str(stuns))
 		n.queue_free()
+
+
+func _chunk_ctx(n: Npc, chunk: int, dmg: float, destroy: Array[int]) -> HitContext:
+	var ctx := HitContext.new()
+	ctx.npc = n
+	ctx.ev = _ev(DamageEvent.Type.BULLET, BodyIds.Part.HEAD, 10.0)
+	ctx.part = n.damage.get_part(BodyIds.Part.HEAD)
+	ctx.part_cfg = {}
+	ctx.region = HitContext.REGION_HEAD
+	ctx.chunk = chunk
+	ctx.chunk_damage = dmg
+	ctx.destroy_chunks = destroy
+	return ctx
+
+
+func _t8() -> void:
+	var n := _fresh()
+	await get_tree().physics_frame
+	var head := n.damage.get_part(BodyIds.Part.HEAD)
+	_check("8a head chunk_hp initialised for all 4 chunks", head.chunk_hp.size() == 4 and head.chunk_hp[BodyIds.HeadChunk.JAW] > 0.0, str(head.chunk_hp))
+	_check("8b chunk from hit_local_normalized matches BodyIds",
+		BodyIds.head_chunk_from_local(Vector3(0, -0.8, 0.5)) == BodyIds.HeadChunk.JAW)
+	var got := []
+	n.head_chunk_destroyed.connect(func(c, _g, _e): got.append(c))
+	var jaw0: float = head.chunk_hp[BodyIds.HeadChunk.JAW]
+	n.damage._commit(_chunk_ctx(n, BodyIds.HeadChunk.JAW, 5.0, [BodyIds.HeadChunk.JAW]))
+	n.damage._commit(_chunk_ctx(n, BodyIds.HeadChunk.JAW, 5.0, [BodyIds.HeadChunk.JAW]))
+	_check("8c jaw destroyed: head_chunk_destroyed emitted exactly once, hp reduced",
+		got == [BodyIds.HeadChunk.JAW] and head.chunks_destroyed == [BodyIds.HeadChunk.JAW] and head.chunk_hp[BodyIds.HeadChunk.JAW] <= jaw0 - 5.0, str(got))
+	var dbg: Dictionary = n.damage.get_debug_info()
+	_check("8d debug lists chunk hp and destroyed chunks", dbg.head.has("chunk_hp") and dbg.head.chunks_destroyed == ["jaw"], str(dbg.head))
+	n.queue_free()
+
+	var im := _fresh()
+	await get_tree().physics_frame
+	im.immortal = true
+	var ih := im.damage.get_part(BodyIds.Part.HEAD)
+	var got2 := []
+	im.head_chunk_destroyed.connect(func(c, _g, _e): got2.append(c))
+	im.damage._commit(_chunk_ctx(im, BodyIds.HeadChunk.CRANIUM, 9999.0,
+		[BodyIds.HeadChunk.CRANIUM, BodyIds.HeadChunk.OCCIPUT, BodyIds.HeadChunk.JAW]))
+	_check("8e immortal: jaw may break, cranium/occiput survive with hp >= 1",
+		got2 == [BodyIds.HeadChunk.JAW] and ih.chunk_hp[BodyIds.HeadChunk.CRANIUM] >= 1.0 and ih.chunk_hp[BodyIds.HeadChunk.OCCIPUT] >= 1.0
+		and not ih.chunks_destroyed.has(BodyIds.HeadChunk.CRANIUM), str(got2))
+	im.queue_free()

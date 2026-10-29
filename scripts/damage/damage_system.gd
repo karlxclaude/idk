@@ -64,6 +64,11 @@ func setup(owner_npc: Npc) -> void:
 			bp.tissue = BodyIds.Tissue.BONE if pc.get("tissue", "flesh") == "bone" else BodyIds.Tissue.FLESH
 			bp.max_hp = float(pc.get("max_hp", 100.0))
 			bp.hp = bp.max_hp
+			if id == BodyIds.Part.HEAD:
+				var chunks: Dictionary = table.get("chunks", {})
+				for c in BodyIds.HEAD_CHUNK_KEYS:
+					var row = chunks.get(BodyIds.HEAD_CHUNK_KEYS[c], bp.max_hp)
+					bp.chunk_hp[c] = float(row.get("hp", bp.max_hp)) if row is Dictionary else float(row)
 			_parts[id] = bp
 
 
@@ -84,6 +89,8 @@ func apply(ev: DamageEvent) -> Array[Wound]:
 	ctx.part_cfg = _rows[ev.part_id]
 	ctx.region = region_of(ev)
 	ctx.detached = ctx.part.severed
+	if ev.part_id == BodyIds.Part.HEAD:
+		ctx.chunk = BodyIds.head_chunk_from_local(ev.hit_local_normalized)
 	ctx.base_damage = ev.amount * float(ctx.part_cfg.get("dmg_mult", 1.0)) \
 		* float(_core.get("type_mult", {}).get(type_name(ev.type), 1.0))
 	_mech.get(ev.type, _mech[DamageEvent.Type.BLADE_SLASH]).apply(ctx)
@@ -109,6 +116,13 @@ func get_debug_info() -> Dictionary:
 		var p: BodyPart = _parts[id]
 		d[BodyIds.key(id)] = {"hp": snappedf(p.hp, 0.1), "broken": p.broken, "severed": p.severed,
 			"destroyed": p.destroyed, "bruise": snappedf(p.bruise, 0.01)}
+	var hp: BodyPart = _parts.get(BodyIds.Part.HEAD)
+	if hp:
+		var ch := {}
+		for c in hp.chunk_hp:
+			ch[BodyIds.head_chunk_key(c)] = snappedf(float(hp.chunk_hp[c]), 0.1)
+		d["head"]["chunk_hp"] = ch
+		d["head"]["chunks_destroyed"] = hp.chunks_destroyed.map(func(c): return BodyIds.head_chunk_key(c))
 	d["sever_dropped"] = _dropped_severs
 	return d
 
@@ -202,6 +216,8 @@ func _apply_gates(ctx: HitContext) -> void:
 				if not ctx.cues.has(&"bone_crack"):
 					ctx.cues.append(&"bone_crack")
 	if npc.immortal:
+		# chunks may break visually, but the skull vault (cranium/occiput) always survives
+		ctx.destroy_chunks = ctx.destroy_chunks.filter(func(c): return c != BodyIds.HeadChunk.CRANIUM and c != BodyIds.HeadChunk.OCCIPUT)
 		if lethal_suppressed:
 			# the blow that would have killed knocks the dummy down instead
 			var knock := float(_core.get("immortal_lethal_knockdown", 3.0))
@@ -210,6 +226,23 @@ func _apply_gates(ctx: HitContext) -> void:
 				ctx.stun_cause = &"concussion"
 		ctx.lethal_cause = &""
 		ctx.destroy = false
+
+
+## Head chunk damage and destruction (HEAD only, head not already severed/destroyed before this hit).
+func _commit_chunks(ctx: HitContext) -> void:
+	var part := ctx.part
+	if ctx.chunk >= 0 and ctx.chunk_damage > 0.0:
+		part.chunk_hp[ctx.chunk] = maxf(0.0, float(part.chunk_hp.get(ctx.chunk, part.max_hp)) - ctx.chunk_damage)
+	if npc.immortal:
+		for c in [BodyIds.HeadChunk.CRANIUM, BodyIds.HeadChunk.OCCIPUT]:
+			part.chunk_hp[c] = maxf(float(part.chunk_hp.get(c, 1.0)), 1.0)
+	for c in ctx.destroy_chunks:
+		if c in part.chunks_destroyed:
+			continue
+		part.chunks_destroyed.append(c)
+		part.chunk_hp[c] = 0.0 if not (npc.immortal and c in [BodyIds.HeadChunk.CRANIUM, BodyIds.HeadChunk.OCCIPUT]) else 1.0
+		npc.notify_head_chunk_destroyed(c, ctx.ev)
+		npc.cue(&"skull_crack", 1.0)
 
 
 ## Rule pipeline re-run on a scratch context with severing off (what a non-severing cut would produce).
@@ -235,6 +268,7 @@ func _commit(ctx: HitContext) -> Array[Wound]:
 	var ev := ctx.ev
 	var part := ctx.part
 	_apply_gates(ctx)
+	var chunks_live := part.part_id == BodyIds.Part.HEAD and not part.severed and not part.destroyed
 	part.hit_count += 1
 	part.hp = maxf(0.0, part.hp - ctx.damage)
 	if npc.immortal and part.part_id == BodyIds.Part.HEAD:
@@ -245,6 +279,8 @@ func _commit(ctx: HitContext) -> Array[Wound]:
 		npc.wounds.add_wound(w, ctx.detached)
 		out.append(w)
 		npc.emit_wounded(w, ev)
+	if chunks_live:
+		_commit_chunks(ctx)
 	if ctx.stun_duration > 0.0:
 		npc.emit_stunned(ctx.stun_duration, ctx.stun_cause)
 	if ctx.destroy:
