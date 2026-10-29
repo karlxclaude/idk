@@ -192,6 +192,39 @@ func _ready() -> void:
 	_check("4e piecewise sever hand -> forearm -> upper arm keeps separate containers", pc_ok)
 	npc7.queue_free()
 
+	# 4f. play_action: animated returns >= 0, ragdolled returns 0; auto_cleanup_time frees a severed hand
+	var npc8 := Npc.spawn(self, Transform3D(Basis(), Vector3(-120, 0.02, 0)), 8)
+	await _frames(5)
+	var pa := npc8.body.play_action(&"punch")
+	await _frames(10)
+	var pu := npc8.body.play_action(&"no_such_action")
+	npc8.body.set_ragdoll(true)
+	var pr := npc8.body.play_action(&"punch")
+	await _frames(5)
+	_check("4f play_action animated >= 0, ragdolled 0", pa >= 0.0 and pu == 0.0 and pr == 0.0 and is_finite(pa),
+		"animated=%.2f unknown=%.2f ragdoll=%.2f" % [pa, pu, pr])
+	npc8.body.set_ragdoll(false)
+	await _frames(5)
+	var old_cleanup: float = GameSettings.auto_cleanup_time
+	GameSettings.auto_cleanup_time = 1.0
+	var evc := DamageEvent.new()
+	evc.type = DamageEvent.Type.BLADE_SLASH
+	evc.part_id = BodyIds.Part.HAND_L
+	evc.impactor_velocity = Vector3(2, 0, 0)
+	evc.impactor_mass = 1.0
+	evc.can_dismember = true
+	evc.hit_position = npc8.body.get_part_global_transform(evc.part_id).origin
+	var ch := npc8.body.sever_part(BodyIds.Part.HAND_L, evc)
+	GameSettings.auto_cleanup_time = old_cleanup
+	var alive_early := ch != null and is_instance_valid(ch)
+	var t0 := Time.get_ticks_msec()
+	while is_instance_valid(ch) and Time.get_ticks_msec() - t0 < 3000:
+		await get_tree().process_frame
+	var freed_after := (Time.get_ticks_msec() - t0) / 1000.0
+	_check("4f2 auto_cleanup_time=1 frees a severed hand within ~1.5 s", alive_early
+		and freed_after < 1.5, "freed after %.2f s" % freed_after)
+	npc8.queue_free()
+
 	# 4c. sever a hand, and a lower leg takes its foot
 	var evh := DamageEvent.new()
 	evh.type = DamageEvent.Type.BLADE_SLASH

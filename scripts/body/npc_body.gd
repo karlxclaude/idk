@@ -284,6 +284,20 @@ func set_clutch_target(part_id: int) -> void:
 	_clutch_target = part_id
 
 
+## One-shot upper-body action over the current pose (e.g. &"punch"). Returns seconds until its impact
+## moment; 0.0 while ragdolled, for an unknown action, or if the driver cannot play actions.
+func play_action(action: StringName) -> float:
+	if _ragdoll or not _pose_driver.has_method("play_action"):
+		return 0.0
+	return float(_pose_driver.play_action(action))
+
+
+## Seconds until a severed piece / dropped item is freed: GameSettings.auto_cleanup_time when > 0.
+func _cleanup_s() -> float:
+	var t := float(GameSettings.auto_cleanup_time)
+	return t if t > 0.0 else float(_cfg.get("severed_cleanup_s", 120.0))
+
+
 func set_limp_side(side: String) -> void:
 	_pose_driver.set_limp_side(side)
 
@@ -362,6 +376,8 @@ func apply_hit_impulse(ev: DamageEvent) -> void:
 
 # ------------------------------------------------------------------ dismemberment
 
+## Immortal NPCs: DamageSystem never requests HEAD/NECK severs for them. This function does not check
+## npc.immortal itself (it would sever if asked).
 func sever_part(part_id: int, ev: DamageEvent) -> RigidBody3D:
 	if part_id == P.TORSO or not has_part(part_id):
 		return null
@@ -411,7 +427,7 @@ func sever_part(part_id: int, ev: DamageEvent) -> RigidBody3D:
 	# TODO(roadmap: stump caps): place cap meshes at the cut on root_seg and on the parent's end.
 	var timer := Timer.new()
 	timer.one_shot = true
-	timer.wait_time = float(_cfg.get("severed_cleanup_s", 120.0))
+	timer.wait_time = _cleanup_s()
 	timer.timeout.connect(container.queue_free)
 	container.add_child(timer)
 	timer.start()
@@ -446,7 +462,7 @@ func drop_held_item(side: String) -> bool:
 	rb.global_transform = _held.global_transform
 	rb.linear_velocity = seg.tracked_lin if seg.freeze else seg.linear_velocity
 	rb.angular_velocity = seg.tracked_ang if seg.freeze else seg.angular_velocity
-	var timer := get_tree().create_timer(float(_cfg.get("severed_cleanup_s", 120.0)))
+	var timer := get_tree().create_timer(_cleanup_s())
 	timer.timeout.connect(func(): if is_instance_valid(rb): rb.queue_free())
 	_held.queue_free()
 	seg.held_item = null
