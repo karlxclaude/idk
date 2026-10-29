@@ -47,6 +47,11 @@ func _ready() -> void:
 			["forearm", &"clutch", 0.0, 120, {"clutch": P.LOWER_ARM_R}], ["wound", &"clutch", 0.0, 120, {"clutch": P.TORSO, "wound": true}]]],
 		["D_crawl_broken", [["crawl", &"crawl", 0.4, 140, {}], ["crawl2", &"crawl", 0.4, 156, {}],
 			["broken", &"idle", 0.0, 120, {"broken": [P.LOWER_ARM_L, P.UPPER_LEG_R]}], ["brokenwalk", &"walk", 1.2, 140, {"broken": [P.LOWER_ARM_L, P.UPPER_LEG_R]}]]],
+		["F_m3", [["cower", &"cower", 0.0, 120, {}], ["fight", &"fight", 0.0, 120, {}], ["fightwalk", &"fight", 1.2, 140, {}],
+			["punch", &"fight", 0.0, 90, {"action": "punch", "action_frames": 8}]]],
+		["G_punch_hit", [["punch_walk", &"walk", 1.2, 100, {"action": "punch", "action_frames": 8}], ["punch_late", &"fight", 0.0, 90, {"action": "punch", "action_frames": 14}],
+			["headshot", &"idle", 0.0, 90, {"hit": [P.HEAD, Vector3(0, 0, 1), 20.0], "hit_frames": 6}],
+			["bighit", &"walk", 1.2, 90, {"hit": [P.TORSO, Vector3(1, 0, -1), 50.0], "hit_frames": 10}]]],
 		["E_stagger", [["stagger", &"stagger", 0.0, 100, {}], ["crawl_brokenarm", &"crawl", 0.4, 140, {"broken": [P.LOWER_ARM_R]}],
 			["limp_broken", &"limp", 0.8, 150, {"broken": [P.LOWER_LEG_L]}], ["idle2", &"idle", 0.0, 60, {}]]],
 	]
@@ -172,5 +177,14 @@ func _simulate(rig: Dictionary) -> void:
 		xfs = d.update(spec[1], spec[2], DT, rig["mover"], _all, cpart, cpos)
 		if cpart >= 0:
 			cpos = (xfs[cpart] as Transform3D).origin
+	if opt.has("action"):
+		d.play_action(StringName(opt["action"]))
+		for i in int(opt["action_frames"]):
+			xfs = d.update(spec[1], spec[2], DT, rig["mover"], _all, cpart, cpos)
+	if opt.has("hit"):
+		var h: Array = opt["hit"]
+		d.on_hit(h[0], (rig["mover"] as Transform3D).basis * (h[1] as Vector3).normalized() * float(h[2]), 5.0)
+		for i in int(opt["hit_frames"]):
+			xfs = d.update(spec[1], spec[2], DT, rig["mover"], _all, cpart, cpos)
 	for pid in xfs:
 		(rig["meshes"][pid] as MeshInstance3D).global_transform = xfs[pid]

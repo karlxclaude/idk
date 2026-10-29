@@ -322,6 +322,146 @@ func _ready() -> void:
 	var after := _run(d, &"idle", 0.0, 60, mover)
 	_check("9 flinch finite and decays", _finite(hit) and _finite(after[-1]))
 
+
+	# 10. hit reactions: finite for every part x direction x pose; direction/part aware; decays
+	var dirs := [Vector3.RIGHT, Vector3.LEFT, Vector3.UP, Vector3.DOWN, Vector3.FORWARD, Vector3.BACK,
+		Vector3(1, 0.3, 1).normalized(), Vector3(-1, -0.4, -1).normalized()]
+	ok = true
+	bad = ""
+	for pose in [&"idle", &"walk", &"limp", &"fight", &"cower", &"crawl", &"clutch"]:
+		for pid in _all:
+			d = _driver()
+			_run(d, pose, 1.0, 10, mover)
+			for k in dirs.size():
+				for mag in [3.0 if k % 2 == 0 else 60.0]:
+					d.on_hit(pid, mover.basis * dirs[k] * mag, 5.0)
+					for f in _run(d, pose, 1.0, 12, mover):
+						if not _finite(f):
+							ok = false
+							bad = "%s part %d dir %s" % [pose, pid, dirs[k]]
+	_check("10a reactions finite (all parts, directions, poses)", ok, bad)
+	var base := _driver()
+	var base_f: Array = _run(base, &"idle", 0.0, 60, mover)
+	# head shot: the head moves along the hit direction
+	var hs := _driver()
+	_run(hs, &"idle", 0.0, 60, mover)
+	hs.on_hit(P.HEAD, mover.basis * Vector3(0, 0, 1) * 20.0, 4.5)
+	var hf: Array = _run(hs, &"idle", 0.0, 8, mover)
+	var dhv: Vector3 = mover.basis.inverse() * ((hf[-1][P.HEAD] as Transform3D).origin - (base_f[-1][P.HEAD] as Transform3D).origin)
+	_check("10b head shot snaps the head along the hit", dhv.z > 0.03, "dz=%.3f" % dhv.z)
+	hs = _driver()
+	_run(hs, &"idle", 0.0, 60, mover)
+	hs.on_hit(P.HEAD, mover.basis * Vector3(-1, 0, 0) * 20.0, 4.5)
+	hf = _run(hs, &"idle", 0.0, 8, mover)
+	dhv = mover.basis.inverse() * ((hf[-1][P.HEAD] as Transform3D).origin - (base_f[-1][P.HEAD] as Transform3D).origin)
+	_check("10c head snaps sideways with a side hit", dhv.x < -0.03, "dx=%.3f" % dhv.x)
+	# torso hit from the front: recoil/hunch moves the upper body
+	hs = _driver()
+	_run(hs, &"idle", 0.0, 60, mover)
+	hs.on_hit(P.TORSO, mover.basis * Vector3(0, 0, -1) * 25.0, 30.0)
+	hf = _run(hs, &"idle", 0.0, 8, mover)
+	dhv = mover.basis.inverse() * ((hf[-1][P.HEAD] as Transform3D).origin - (base_f[-1][P.HEAD] as Transform3D).origin)
+	_check("10d torso hit makes the upper body react", dhv.length() > 0.05, "d=%s" % dhv)
+	# limb jerks along the hit; impulse scales the reaction
+	var jd := []
+	for imp in [3.0, 30.0]:
+		hs = _driver()
+		_run(hs, &"idle", 0.0, 60, mover)
+		hs.on_hit(P.LOWER_ARM_L, mover.basis * Vector3(1, 0, 0) * imp, 1.4)
+		hf = _run(hs, &"idle", 0.0, 8, mover)
+		jd.append(((hf[-1][P.HAND_L] as Transform3D).origin - (base_f[-1][P.HAND_L] as Transform3D).origin).length())
+	_check("10e limb jerk scales with impulse", jd[0] > 0.01 and jd[1] > jd[0] * 1.5, "small=%.3f big=%.3f" % [jd[0], jd[1]])
+	# big hit: stagger step offsets the body, then everything decays
+	hs = _driver()
+	_run(hs, &"idle", 0.0, 60, mover)
+	hs.on_hit(P.TORSO, mover.basis * Vector3(1, 0, 0) * 60.0, 30.0)
+	var peak := 0.0
+	for f in _run(hs, &"idle", 0.0, 30, mover):
+		peak = maxf(peak, absf((mover.basis.inverse() * ((f[P.TORSO] as Transform3D).origin - (base_f[-1][P.TORSO] as Transform3D).origin)).x))
+	var rest_f: Array = _run(hs, &"idle", 0.0, 80, mover)
+	var ctl := _driver()
+	var ctl_f: Array = _run(ctl, &"idle", 0.0, 170, mover)
+	var resid: float = ((rest_f[-1][P.HEAD] as Transform3D).origin - (ctl_f[-1][P.HEAD] as Transform3D).origin).length()
+	_check("10f big hit steps the torso, reaction decays within ~0.9 s", peak > 0.06 and resid < 0.01, "peak=%.3f residual=%.4f" % [peak, resid])
+
+	# 11. cower: both hands above the shoulders; a broken arm hangs, the sound arm guards alone
+	d = _driver()
+	last = _run(d, &"cower", 0.0, 120, mover)[-1]
+	var up_ok := true
+	var info11 := ""
+	for s in ["l", "r"]:
+		var tfm: Transform3D = last[P.TORSO]
+		var sh: Vector3 = tfm * Vector3((0.255 if s == "l" else -0.255), 0.27, 0.0)
+		var hy: float = (last[BodyIds.from_key("hand_" + s)] as Transform3D).origin.y
+		up_ok = up_ok and hy > sh.y + 0.05
+		info11 += " %s hand-shoulder=%.2f" % [s, hy - sh.y]
+	_check("11a cower raises both hands above the shoulders", up_ok, info11)
+	d = _driver()
+	d.set_broken_parts([P.LOWER_ARM_L])
+	last = _run(d, &"cower", 0.0, 120, mover)[-1]
+	var shl: Vector3 = (last[P.TORSO] as Transform3D) * Vector3(0.255, 0.27, 0.0)
+	var shr: Vector3 = (last[P.TORSO] as Transform3D) * Vector3(-0.255, 0.27, 0.0)
+	_check("11b cower with a broken arm: only the sound arm guards",
+		(last[P.HAND_L] as Transform3D).origin.y < shl.y and (last[P.HAND_R] as Transform3D).origin.y > shr.y + 0.05)
+
+	# 12. punch action
+	d = _driver()
+	_run(d, &"fight", 0.0, 30, mover)
+	_check("12a unknown action returns 0", d.play_action(&"dance") == 0.0 and not d.is_acting())
+	for pose in [&"fight", &"walk", &"limp"]:
+		for brk in [[], [P.LOWER_ARM_R]]:
+			d = _driver()
+			d.set_broken_parts(brk)
+			var spd := 0.0 if pose == &"fight" else 1.2
+			_run(d, pose, spd, 90, mover)
+			var t_imp: float = d.play_action(&"punch")
+			var frames_n := int(round(t_imp / DT))
+			var fr12 := _run(d, pose, spd, frames_n + 4, mover)
+			var side := "r" if brk.is_empty() else "l"
+			var reach := -9.0
+			for i in range(maxi(0, frames_n - 3), fr12.size()):
+				var f: Dictionary = fr12[i]
+				var rel: Vector3 = mover.basis.inverse() * ((f[BodyIds.from_key("hand_" + side)] as Transform3D).origin - (f[P.TORSO] as Transform3D).origin)
+				reach = maxf(reach, rel.z)
+				ok = ok and _finite(f)
+			_check("12b punch (%s%s) hand reaches >= 0.4 m forward at impact t=%.2f" % [pose, " broken R arm" if not brk.is_empty() else "", t_imp],
+				t_imp > 0.0 and reach >= 0.4, "reach=%.2f side=%s" % [reach, side])
+			var rest12 := _run(d, pose, spd, 40, mover)
+			_check("12c action ends", not d.is_acting() and _finite(rest12[-1]))
+	d = _driver()
+	d.set_broken_parts([P.LOWER_ARM_L, P.UPPER_ARM_R])
+	_run(d, &"fight", 0.0, 10, mover)
+	_check("12d no sound arm -> no punch", d.play_action(&"punch") == 0.0)
+
+	# 13. fight: stance, stable while walking
+	d = _driver()
+	last = _run(d, &"fight", 0.0, 120, mover)[-1]
+	_check("13a fight stance: feet on the floor, staggered, torso upright",
+		absf(_sole(last, "l") - floor_y) < 0.03 and absf(_sole(last, "r") - floor_y) < 0.03
+		and ((last[P.FOOT_L] as Transform3D).origin - (last[P.FOOT_R] as Transform3D).origin).length() > 0.3
+		and (last[P.TORSO] as Transform3D).basis.y.dot(Vector3.UP) > 0.9,
+		"soles %.3f/%.3f feet apart=%.2f" % [_sole(last, "l") - floor_y, _sole(last, "r") - floor_y,
+		((last[P.FOOT_L] as Transform3D).origin - (last[P.FOOT_R] as Transform3D).origin).length()])
+	d = _driver()
+	_run(d, &"fight", 0.0, 60, mover)
+	var prev: Dictionary = {}
+	var maxjump := 0.0
+	var lowest := 9.0
+	var upright := 1.0
+	var guard := 9.0
+	for sp in [0.0, 1.0, 1.4, 0.5, 0.0]:
+		for f in _run(d, &"fight", sp, 120, mover):
+			ok = ok and _finite(f)
+			if not prev.is_empty():
+				for pid in f:
+					maxjump = maxf(maxjump, ((f[pid] as Transform3D).origin - (prev[pid] as Transform3D).origin).length())
+			prev = f
+			lowest = minf(lowest, minf(_sole(f, "l"), _sole(f, "r")) - floor_y)
+			upright = minf(upright, (f[P.TORSO] as Transform3D).basis.y.dot(Vector3.UP))
+			guard = minf(guard, (f[P.HAND_L] as Transform3D).origin.y - ((f[P.TORSO] as Transform3D) * Vector3(0.255, 0.0, 0.0)).y)
+	_check("13b fight stable while walking (finite, no pops, feet on floor, fists up)", ok and maxjump < 0.12 and lowest > -0.04 and upright > 0.85 and guard > 0.0,
+		"max per-frame move=%.3f lowest sole=%.3f upright=%.2f guard=%.2f" % [maxjump, lowest, upright, guard])
+
 	print("pose_test done, fails=", _fails)
 	get_tree().quit(1 if _fails > 0 else 0)
 

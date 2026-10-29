@@ -4,7 +4,7 @@ class_name PoseDriver
 extends RefCounted
 
 const P := BodyIds.Part
-const POSES: Array[StringName] = [&"idle", &"walk", &"run", &"limp", &"clutch", &"stagger", &"crawl"]
+const POSES: Array[StringName] = [&"idle", &"walk", &"run", &"limp", &"clutch", &"stagger", &"crawl", &"cower", &"fight"]
 
 var _cfg: Dictionary = {}
 var _limp_cfg: Dictionary = {}   # gait table with the limp overrides merged in
@@ -28,6 +28,9 @@ var _clutch_extra := 0.0        # extra forward bend / squat when the wound is o
 var _blend_t := 1.0
 var _blend_from: Dictionary = {}
 var _flinch: Dictionary = {}   # part id -> {"off": Vector3, "t": float}
+var _reacts: Array = []        # active hit reactions {part, d (mover-local), mag, t, dur, step}
+var _action: Dictionary = {}   # active one-shot action {name, side, t}
+var _mover := Transform3D.IDENTITY
 var _attached: Dictionary = {}
 var _last_out: Dictionary = {}  # last returned world transforms (clutch contact estimate)
 var _limp_side := ""            # hint: "l", "r", "both" or "" (infer from broken/missing legs)
@@ -56,14 +59,52 @@ func rest_pose(root_xf: Transform3D, attached: Dictionary) -> Dictionary:
 	return _fk(root_xf, _hip_h, Basis.IDENTITY, {}, attached)
 
 
-## Hit reaction (additive flinch). Call for animated (kinematic) parts only.
+## Hit reaction (additive, layered over any pose): small positional flinch plus direction- and part-aware
+## rotations (head snap, torso recoil/hunch, limb jerk, stagger step for big hits). Animated parts only.
 func on_hit(part_id: int, impulse: Vector3, part_mass: float) -> void:
+	if impulse.length() < 0.001:
+		return
 	var fc: Dictionary = _cfg["flinch"]
 	var mag := minf(impulse.length() / part_mass * float(fc["gain"]), float(fc["max"]))
 	var off := impulse.normalized() * mag
 	_flinch[part_id] = {"off": off, "t": float(fc["time"])}
 	if part_id != P.TORSO:
 		_flinch[P.TORSO] = {"off": off * float(fc["torso_share"]), "t": float(fc["time"])}
+	var rc: Dictionary = _cfg["react"]
+	var m := clampf(impulse.length() / float(rc["ref_impulse"]), float(rc["min_mag"]), 1.0)
+	var d := (_mover.basis.inverse() * impulse).normalized()
+	var dur := float(rc["time"]) * (0.7 + 0.6 * m)
+	if _reacts.size() >= 8:
+		_reacts.pop_front()
+	_reacts.append({"part": part_id, "d": d, "mag": m, "t": 0.0, "dur": dur, "step": false})
+	var sc: Dictionary = rc["step"]
+	if m >= float(sc["threshold"]):
+		_reacts.append({"part": P.TORSO, "d": d, "mag": m, "t": 0.0, "dur": float(sc["time"]), "step": true})
+
+
+## One-shot upper-body action layered over the current pose ("punch"). Returns the seconds until its impact
+## moment, or 0 (nothing played) for an unknown action or when no sound arm is available.
+func play_action(action: StringName) -> float:
+	var ac: Dictionary = _cfg["actions"]
+	if not ac.has(String(action)):
+		return 0.0
+	var c: Dictionary = ac[String(action)]
+	var order: Array = [String(c["prefer"]), "l" if String(c["prefer"]) == "r" else "r"]
+	for side in order:
+		if _arm_usable(side):
+			_action = {"name": String(action), "side": side, "t": 0.0}
+			return float(c["impact"])
+	return 0.0
+
+
+func is_acting() -> bool:
+	return not _action.is_empty()
+
+
+func _arm_usable(side: String) -> bool:
+	if _arm_broken(side):
+		return false
+	return _attached.is_empty() or (_attached.has(_id("upper_arm", side)) and _attached.has(_id("lower_arm", side)))
 
 
 ## Ragdoll -> animated: blend from the given world transforms (part id -> Transform3D) to the pose.
@@ -111,6 +152,7 @@ func update(pose: StringName, speed: float, dt: float, mover_xf: Transform3D, at
 		clutch_part: int, clutch_pos: Vector3) -> Dictionary:
 	_t += dt
 	_attached = attached
+	_mover = mover_xf
 	if not pose in POSES:
 		pose = &"idle"
 	var pt := _pose_target(pose, speed, dt, mover_xf, clutch_part, clutch_pos)
@@ -125,7 +167,12 @@ func update(pose: StringName, speed: float, dt: float, mover_xf: Transform3D, at
 		if not tgt_rots.has(pid) and not pt.ends.has(pid):
 			_cur_rot[pid] = Basis(Quaternion(_cur_rot[pid]).slerp(Quaternion(Basis.IDENTITY), k))
 	var end_k := 1.0 - exp(-float(_cfg["foot"]["rate"]) * dt)
-	var xfs := _fk(mover_xf, _cur_hip, _cur_torso, _cur_rot, attached, pt.ends, end_k)
+	# layered additives (not smoothed): hit reactions and one-shot actions
+	var rots_f: Dictionary = _cur_rot.duplicate()
+	var rx := _react_step(dt, rots_f)
+	var ax := _action_step(dt, rots_f)
+	var torso_f := Basis.from_euler((rx["torso"] as Vector3) + ax) * _cur_torso
+	var xfs := _fk(mover_xf, _cur_hip - float(rx["hip"]), torso_f, rots_f, attached, pt.ends, end_k)
 
 	# foot plant: translate the body so the lowest weight-bearing sole touches the floor
 	var pc: Dictionary = _cfg["plant"]
@@ -136,7 +183,7 @@ func update(pose: StringName, speed: float, dt: float, mover_xf: Transform3D, at
 	_plant_off = lerpf(_plant_off, off_t, 1.0 - exp(-float(pc["rate"]) * dt))
 
 	var ft := float(_cfg["flinch"]["time"])
-	var shift := Vector3(0, _plant_off, 0)
+	var shift := Vector3(0, _plant_off, 0) + (rx["shift"] as Vector3)
 	if _flinch.has(P.TORSO) and _flinch[P.TORSO]["t"] > 0.0:
 		shift += _flinch[P.TORSO]["off"] * (_flinch[P.TORSO]["t"] / ft)
 	var bl := 1.0
@@ -265,7 +312,7 @@ func _limp_side_eff() -> String:
 ## hanging limb backwards (shoulder/hip/elbow flexion negative; knee flexion positive; ankle plantarflexion
 ## positive, toes down). Parts without a rotation entry stay at identity (rest) relative to their parent.
 func _pose_target(pose: StringName, speed: float, dt: float, mover_xf: Transform3D,
-		clutch_part: int, clutch_pos: Vector3) -> Dictionary:
+		clutch_part: int, clutch_pos: Vector3, apply_broken := true) -> Dictionary:
 	var rots := {}
 	var ends := {}   # foot id -> world basis (flat-foot compensation)
 	var hip := _hip_h
@@ -427,6 +474,60 @@ func _pose_target(pose: StringName, speed: float, dt: float, mover_xf: Transform
 				rots[_id("upper_leg", side)] = _eb(_id("upper_leg", side), 0.0, 0.0, sg * float(c["leg_abduct"]))
 				rots[_id("lower_leg", side)] = _eb(_id("lower_leg", side), float(c["knee_base"]) + float(c["knee_amp"]) * sw)
 				rots[_id("foot", side)] = _eb(_id("foot", side), float(c["foot_x"]))
+		&"cower":
+			var c: Dictionary = _cfg["cower"]
+			var tr := sin(t * float(c["tremor_hz"])) * float(c["tremor"])
+			var pitch := float(c["pitch"])
+			var sq := float(c["squat"])
+			torso = Basis.from_euler(Vector3(pitch + tr * 0.4, 0.0, tr))
+			hip = _hip_h - float(c["hip_drop"])
+			rots[P.NECK] = _eb(P.NECK, float(c["neck"]))
+			rots[P.HEAD] = _eb(P.HEAD, float(c["head"]))
+			for side in ["l", "r"]:
+				var sg := _sg(side)
+				rots[_id("upper_leg", side)] = _eb(_id("upper_leg", side), -pitch + float(c["leg_extra"]) - sq, 0.0, sg * float(c["leg_abduct"]))
+				rots[_id("lower_leg", side)] = _eb(_id("lower_leg", side), float(c["knee"]) + sq)
+				ends[_id("foot", side)] = mover_xf.basis * Basis.from_euler(Vector3(0.0, sg * float(fc["toe_out"]), 0.0))
+				# arms up over the head and face (a broken arm hangs instead; the sound one guards alone)
+				var solo := _arm_broken("r" if side == "l" else "l")
+				rots[_id("upper_arm", side)] = _eb(_id("upper_arm", side), float(c["solo_arm"] if solo else c["arm"]) + tr, 0.0,
+					sg * float(c["solo_abduct"] if solo else c["abduct"]))
+				rots[_id("lower_arm", side)] = _eb(_id("lower_arm", side), float(c["elbow"]) - tr)
+				rots[_id("hand", side)] = _eb(_id("hand", side), float(c["hand"]))
+		&"fight":
+			var c: Dictionary = _cfg["fight"]
+			var b := sin(t * float(c["breath_hz"]))
+			var w := smoothstep(float(c["walk_from"]), float(c["walk_to"]), speed)
+			var lead := String(c["lead"])
+			# bladed: the lead shoulder (same side as the lead foot) is turned towards the opponent
+			var yaw := float(c["yaw"]) * (-1.0 if lead == "l" else 1.0) * (1.0 - float(c["walk_yaw_loss"]) * w)
+			torso = Basis.from_euler(Vector3(float(c["pitch"]) + 0.012 * b, yaw, 0.0))
+			hip = _hip_h - float(c["hip_drop"])
+			rots[P.NECK] = _eb(P.NECK, -float(c["pitch"]) * 0.5, -yaw * 0.5)
+			rots[P.HEAD] = _eb(P.HEAD, -float(c["pitch"]) * 0.5, -yaw * 0.4)
+			for side in ["l", "r"]:
+				var sg := _sg(side)
+				var is_lead: bool = side == lead
+				var pre := "lead_" if is_lead else "rear_"
+				rots[_id("upper_leg", side)] = _eb(_id("upper_leg", side), -float(c["pitch"]) + float(c[pre + "hip"]), 0.0, sg * float(c["leg_abduct"]))
+				rots[_id("lower_leg", side)] = _eb(_id("lower_leg", side), float(c[pre + "knee"]))
+				var toe := float(fc["toe_out"]) + (0.0 if is_lead else float(c["rear_toe"]))
+				ends[_id("foot", side)] = mover_xf.basis * Basis.from_euler(Vector3(0.0, sg * toe, 0.0))
+				rots[_id("upper_arm", side)] = _eb(_id("upper_arm", side), float(c[pre + "arm"]) + 0.03 * b, 0.0, sg * float(c["arm_abduct"]))
+				rots[_id("lower_arm", side)] = _eb(_id("lower_arm", side), float(c[pre + "elbow"]))
+				rots[_id("hand", side)] = _eb(_id("hand", side), float(c["hand"]))
+			if w > 0.001:  # moving: legs, hips and feet follow the walk gait, the guard stays up
+				var g := _pose_target(&"walk", speed, dt, mover_xf, -1, Vector3.ZERO, false)
+				var gr: Dictionary = g["rots"]
+				for side in ["l", "r"]:
+					for key in ["upper_leg", "lower_leg"]:
+						var pid := _id(key, side)
+						rots[pid] = _mix(rots[pid], gr[pid], w)
+					var fid := _id("foot", side)
+					ends[fid] = _mix(ends[fid], (g["ends"] as Dictionary)[fid], w)
+				hip = lerpf(hip, float(g["hip"]), w)
+				torso = _mix(torso, g["torso"], w * float(c["walk_torso"]))
+				sway_w = w
 		_:  # idle
 			var c: Dictionary = _cfg["idle"]
 			var b := sin(t * float(c["breath_hz"]))
@@ -442,7 +543,7 @@ func _pose_target(pose: StringName, speed: float, dt: float, mover_xf: Transform
 				ends[_id("foot", side)] = mover_xf.basis * Basis.from_euler(Vector3(0.0, sg * float(fc["toe_out"]), 0.0))
 
 	var skip := {}
-	if not _broken.is_empty():
+	if apply_broken and not _broken.is_empty():
 		var r := _apply_broken(pose, rots, ends, torso, hip, mover_xf.basis, sway_w)
 		torso = r[0]
 		hip = r[1]
@@ -505,6 +606,118 @@ func _clutch_side(part: int, contact: Vector3, tc: Transform3D) -> String:
 			best_d = d
 			best = side
 	return best
+
+
+static func _mix(a: Basis, b: Basis, w: float) -> Basis:
+	return Basis(Quaternion(a.orthonormalized()).slerp(Quaternion(b.orthonormalized()), clampf(w, 0.0, 1.0)))
+
+
+func _acc(add: Dictionary, pid: int, v: Vector3) -> void:
+	add[pid] = (add.get(pid, Vector3.ZERO) as Vector3) + v
+
+
+## Advance hit reactions; adds limb/head rotations into rots (clamped to joint limits). Returns the
+## torso euler additive, hip dip and world-space shift (stagger step).
+func _react_step(dt: float, rots: Dictionary) -> Dictionary:
+	var rc: Dictionary = _cfg["react"]
+	var hc: Dictionary = rc["head"]
+	var tc: Dictionary = rc["torso"]
+	var lc: Dictionary = rc["limb"]
+	var sc: Dictionary = rc["step"]
+	var add := {}
+	var te := Vector3.ZERO
+	var hip := 0.0
+	var shift := Vector3.ZERO
+	var i := _reacts.size() - 1
+	while i >= 0:
+		var r: Dictionary = _reacts[i]
+		r["t"] = float(r["t"]) + dt
+		if float(r["t"]) >= float(r["dur"]):
+			_reacts.remove_at(i)
+			i -= 1
+			continue
+		i -= 1
+		var u := float(r["t"]) / float(r["dur"])
+		var d: Vector3 = r["d"]
+		var part: int = r["part"]
+		if r["step"]:
+			var e2 := minf(1.0, float(r["t"]) / 0.08) * (1.0 - u) * (1.0 - u) * float(r["mag"])
+			var dh := Vector3(d.x, 0.0, d.z)
+			shift += _mover.basis * dh.normalized() * float(sc["dist"]) * e2 if dh.length() > 0.01 else Vector3.ZERO
+			var st := sin(PI * u) * float(r["mag"])
+			var lead := "l" if d.x >= 0.0 else "r"
+			for side in ["l", "r"]:
+				var f := 1.0 if side == lead else -0.5
+				_acc(add, _id("upper_leg", side), Vector3(-d.z * float(sc["leg"]) * st * f, 0, 0))
+				_acc(add, _id("lower_leg", side), Vector3(float(sc["knee"]) * st * maxf(f, 0.0), 0, 0))
+			continue
+		var a := minf(1.0, float(r["t"]) / float(rc["attack"])) * (1.0 - u) * (1.0 - u) * float(r["mag"])
+		var any := float(rc["any_torso"])
+		if part == P.HEAD or part == P.NECK:
+			_acc(add, P.HEAD, Vector3(float(hc["pitch"]) * d.z * a, float(hc["yaw"]) * d.x * a, -float(hc["roll"]) * d.x * a))
+			_acc(add, P.NECK, Vector3(float(hc["pitch"]) * d.z * a, 0, -float(hc["roll"]) * d.x * a) * float(hc["neck_share"]))
+			te += Vector3(float(tc["recoil"]) * d.z, 0, -float(tc["roll"]) * d.x) * a * float(hc["torso_share"])
+		elif part == P.TORSO:
+			te += Vector3(float(tc["recoil"]) * d.z + float(tc["hunch"]) * maxf(0.0, -d.z), 0, -float(tc["roll"]) * d.x) * a
+			hip += float(tc["hip"]) * a
+		elif BodyIds.is_arm(part) or BodyIds.is_leg(part):
+			var arm := BodyIds.is_arm(part)
+			var side := BodyIds.side_of(part)
+			var up := _id("upper_arm" if arm else "upper_leg", side)
+			var lo := _id("lower_arm" if arm else "lower_leg", side)
+			var w_up := 1.0 if part == up else float(lc["parent_share"])
+			var w_lo := float(lc["child_share"]) if part == up else 1.0
+			var swing := Vector3(-d.z, 0, d.x) * float(lc["swing"]) * a   # the tip moves along the hit
+			_acc(add, up, swing * w_up)
+			_acc(add, lo, swing * w_lo * 0.6 + Vector3((-1.0 if arm else 1.0) * float(lc["flex"]) * a * w_lo, 0, 0))
+			te += Vector3(float(tc["recoil"]) * d.z, 0, -float(tc["roll"]) * d.x) * a * float(lc["torso_share"])
+		te += Vector3(float(tc["recoil"]) * d.z, 0, -float(tc["roll"]) * d.x) * a * any
+	for pid in add:
+		rots[pid] = _clamp_basis(pid, Basis.from_euler(add[pid]) * (rots.get(pid, Basis.IDENTITY) as Basis))
+	return {"torso": te, "hip": hip, "shift": shift}
+
+
+## Advance the one-shot action; overrides the acting arm in rots. Returns the torso euler additive.
+func _action_step(dt: float, rots: Dictionary) -> Vector3:
+	if _action.is_empty():
+		return Vector3.ZERO
+	var c: Dictionary = _cfg["actions"][_action["name"]]
+	var t: float = float(_action["t"]) + dt
+	_action["t"] = t
+	var total := float(c["total"])
+	if t >= total:
+		_action = {}
+		return Vector3.ZERO
+	var side: String = _action["side"]
+	var sg := _sg(side)
+	var wind := float(c["windup"])
+	var imp := float(c["impact"])
+	var hold := float(c["hold"])
+	var wgt := 1.0
+	var k := 1.0
+	if t < wind:
+		wgt = smoothstep(0.0, wind, t)
+		k = 0.0
+	elif t < imp:
+		var x := (t - wind) / maxf(0.001, imp - wind)
+		k = 1.0 - (1.0 - x) * (1.0 - x)
+	elif t > imp + hold:
+		var y := smoothstep(0.0, 1.0, (t - imp - hold) / maxf(0.001, total - imp - hold))
+		wgt = 1.0 - y
+		k = 1.0 - 0.6 * y
+	var wv: Dictionary = c["wind"]
+	var sv: Dictionary = c["strike"]
+	var up := _id("upper_arm", side)
+	var lo := _id("lower_arm", side)
+	var hd := _id("hand", side)
+	var ux := lerpf(float(wv["arm"]), float(sv["arm"]), k)
+	var uz := -sg * lerpf(float(wv["cross"]), float(sv["cross"]), k)
+	var ex := lerpf(float(wv["elbow"]), float(sv["elbow"]), k)
+	var hx := lerpf(float(wv["hand"]), float(sv["hand"]), k)
+	rots[up] = _mix(rots.get(up, Basis.IDENTITY), _eb(up, ux, 0.0, uz), wgt)
+	rots[lo] = _mix(rots.get(lo, Basis.IDENTITY), _eb(lo, ex), wgt)
+	rots[hd] = _mix(rots.get(hd, Basis.IDENTITY), _eb(hd, hx), wgt)
+	return Vector3(lerpf(float(wv["pitch"]), float(sv["pitch"]), k), sg * -lerpf(float(wv["yaw"]), float(sv["yaw"]), k), 0.0) * wgt
 
 
 func _torso_frame(mover_xf: Transform3D) -> Transform3D:
