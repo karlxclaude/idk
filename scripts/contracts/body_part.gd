@@ -13,6 +13,9 @@ var severed: bool = false     # detached from body (this part or an ancestor was
 var destroyed: bool = false   # hp reached 0 (v1: head => death)
 var bruise: float = 0.0       # accumulated blunt trauma 0..1
 var hit_count: int = 0
+## Milestone 5 (HEAD only): HeadChunk -> remaining hp, and destroyed chunks. Empty for other parts.
+var chunk_hp: Dictionary = {}
+var chunks_destroyed: Array[int] = []
 
 
 func hp_fraction() -> float:

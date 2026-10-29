@@ -38,6 +38,13 @@ const KEYS := {
 
 enum Tissue { FLESH, BONE }
 
+## Milestone 5: head damage chunks. Damage zones INSIDE the single HEAD segment (no extra physics bodies).
+## A destroyed chunk is hidden visually, capped, and thrown off as a gib; the head segment stays.
+enum HeadChunk { JAW, FACE, CRANIUM, OCCIPUT }
+const HEAD_CHUNK_KEYS := {
+	HeadChunk.JAW: "jaw", HeadChunk.FACE: "face", HeadChunk.CRANIUM: "cranium", HeadChunk.OCCIPUT: "occiput",
+}
+
 ## NPC behaviour states (owned at runtime by the AI brain).
 enum NpcState { IDLE, ALERT, PANIC_FLEE, CLUTCH_WOUND, STAGGER, CRAWL, UNCONSCIOUS, DEAD, FIGHT }
 
@@ -137,6 +144,22 @@ static func part_from_collider(collider: Object) -> int:
 	if collider and collider.has_meta(META_PART_ID):
 		return int(collider.get_meta(META_PART_ID))
 	return -1
+
+
+## Which head chunk a hit lands in, from DamageEvent.hit_local_normalized on the HEAD (part-local axes:
+## +Y up, +Z face/front). Single source of truth for damage rules, body visuals and FX.
+static func head_chunk_from_local(n: Vector3) -> int:
+	if n.z > 0.0 and n.y < -0.35:
+		return HeadChunk.JAW
+	if n.z > 0.35:
+		return HeadChunk.FACE
+	if n.z < -0.35 and n.y < 0.45:
+		return HeadChunk.OCCIPUT
+	return HeadChunk.CRANIUM
+
+
+static func head_chunk_key(chunk: int) -> String:
+	return HEAD_CHUNK_KEYS.get(chunk, "?")
 
 
 static func state_name(s: int) -> String:

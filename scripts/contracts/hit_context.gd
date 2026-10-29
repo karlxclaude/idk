@@ -20,6 +20,7 @@ var part: BodyPart                 # state BEFORE this hit
 var part_cfg: Dictionary           # this part's row from its region data file
 var region: StringName
 var detached := false              # part was already severed before this hit
+var chunk := -1                    # HEAD hits: BodyIds.HeadChunk from head_chunk_from_local (else -1)
 var base_damage := 0.0             # ev.amount × part dmg_mult × type mult
 
 # --- filled by the MECHANISM rule (penetrating / blunt) ---
@@ -36,6 +37,8 @@ var wounds: Array[Wound] = []
 var fracture := false              # break the bone (ignored for flesh / severed parts)
 var sever := false                 # cut this part off (DamageSystem severs subtree + stump)
 var destroy := false               # part destroyed (head => lethal)
+var chunk_damage := 0.0            # HEAD: hp removed from ctx.chunk (region rule sets)
+var destroy_chunks: Array[int] = []  # HEAD: chunks to destroy (DamageSystem hides/gibs via Npc helper)
 var stun_duration := 0.0
 var stun_cause: StringName = &""
 var lethal_cause: StringName = &""  # non-empty => report_lethal_injury

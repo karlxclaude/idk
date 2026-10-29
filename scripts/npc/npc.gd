@@ -11,6 +11,8 @@ signal part_severed(part_id: int, severed_root: RigidBody3D, ev: DamageEvent)
 signal state_changed(old_state: int, new_state: int)
 signal died(cause: StringName)
 signal stunned(duration: float, cause: StringName)
+## Milestone 5: a head chunk was destroyed (gib may be null if the body has no chunk visuals).
+signal head_chunk_destroyed(chunk: int, gib: RigidBody3D, ev: DamageEvent)
 ## DamageSystem -> brain: an injury that must kill (head destroyed, decapitation, ...).
 signal lethal_injury(cause: StringName)
 ## BloodSystem -> brain: blood loss level crossed a threshold.
@@ -98,6 +100,15 @@ func notify_part_severed(part_id: int, ev: DamageEvent) -> void:
 	var severed_root := body.sever_part(part_id, ev)
 	part_severed.emit(part_id, severed_root, ev)
 	GameEvents.npc_part_severed.emit(self, part_id, severed_root, ev)
+
+
+## DamageSystem calls this once per destroyed head chunk. Body hides the chunk, caps it and spawns a gib.
+func notify_head_chunk_destroyed(chunk: int, ev: DamageEvent) -> void:
+	var gib: RigidBody3D = null
+	if body.has_method(&"destroy_head_chunk"):
+		gib = body.destroy_head_chunk(chunk, ev)
+	head_chunk_destroyed.emit(chunk, gib, ev)
+	GameEvents.npc_head_chunk_destroyed.emit(self, chunk, gib, ev)
 
 
 func emit_state_changed(old_state: int, new_state: int) -> void:

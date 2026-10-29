@@ -17,3 +17,5 @@ signal audio_cue(npc: Node, cue: StringName, position: Vector3, intensity: float
 signal world_impact(position: Vector3, normal: Vector3, ev: DamageEvent)
 ## Fight-back: an NPC landed a hit on the player. Player (group "player") applies it.
 signal player_hit(npc: Node, amount: float, position: Vector3)
+## Milestone 5: head chunk destroyed (gib = thrown-off piece or null).
+signal npc_head_chunk_destroyed(npc: Node, chunk: int, gib: RigidBody3D, ev: DamageEvent)
