@@ -298,8 +298,8 @@ func _start_crawl_from_unconscious() -> void:
 # ------------------------------------------------------------------ signal handlers
 
 func _on_wounded(w: Wound, ev: DamageEvent) -> void:
-	if _inactive():
-		return
+	if _inactive() or w.detached:
+		return  # wounds on severed pieces (GoreFX still wants them) do not hurt the living NPC
 	var tw: Dictionary = _cfg.get("type_pain_weight", {})
 	var pw: Dictionary = _cfg.get("part_pain_weight", {})
 	var tkey: String = DamageEvent.Type.keys()[w.type].to_lower()
@@ -365,6 +365,17 @@ func _set_limp(side: String) -> void:
 		npc.body.set_limp_side(get_limp_side())
 
 
+## Prefer entry wounds over exit wounds (the hand cannot reach the back), then front-facing, then severity.
+func _clutch_better(a: Wound, b: Wound) -> bool:
+	if a.is_exit != b.is_exit:
+		return not a.is_exit
+	var af := a.local_normal.z > 0.0
+	var bf := b.local_normal.z > 0.0
+	if af != bf:
+		return af
+	return a.severity > b.severity
+
+
 ## Tell the body where the hand goes: the most severe attached wound on the clutched part.
 func _push_clutch_wound(fallback: Wound = null) -> void:
 	if not is_instance_valid(npc.body) or not npc.body.has_method("set_clutch_wound") or _clutch_part < 0:
@@ -372,7 +383,7 @@ func _push_clutch_wound(fallback: Wound = null) -> void:
 	var best: Wound = null
 	if is_instance_valid(npc.wounds):
 		for cw in npc.wounds.get_wounds_on(_clutch_part):
-			if not cw.detached and (best == null or cw.severity > best.severity):
+			if not cw.detached and (best == null or _clutch_better(cw, best)):
 				best = cw
 	if best == null and fallback != null and fallback.part_id == _clutch_part:
 		best = fallback

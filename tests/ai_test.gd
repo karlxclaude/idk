@@ -20,6 +20,7 @@ func _ready() -> void:
 	await _t9()
 	await _t10()
 	await _t11()
+	await _t12()
 	print("AI TEST ", "FAILED" if failures > 0 else "ALL PASSED")
 	get_tree().quit(1 if failures > 0 else 0)
 
@@ -259,4 +260,42 @@ func _t11() -> void:
 	m.wounded.emit(a[0], a[1])
 	var grunts := cues.filter(func(c): return c[0] == m and c[1] == &"grunt").size()
 	_check("11b one grunt per DamageEvent", grunts == 1, str(grunts))
+	m.queue_free()
+
+
+func _t12() -> void:
+	_reset()
+	# F2: a wound on a severed (detached) piece must not hurt the living NPC
+	var n := _spawn()
+	var a := _wound(BodyIds.Part.LOWER_ARM_L, 0.9)
+	a[0].detached = true
+	cues.clear()
+	n.wounded.emit(a[0], a[1])
+	_check("12a detached wound: no pain, no cues, no reaction",
+		n.brain.get_pain() == 0.0 and cues.is_empty() and n.brain.state == S.IDLE,
+		"pain=%.2f cues=%d %s" % [n.brain.get_pain(), cues.size(), BodyIds.state_name(n.brain.state)])
+	n.queue_free()
+	# F6: chest shot clutches the entry wound (front), not the stronger exit wound on the back
+	var m := _spawn()
+	var entry := Wound.new()
+	entry.part_id = BodyIds.Part.TORSO
+	entry.severity = 0.7
+	entry.local_normal = Vector3(0, 0, 1)
+	entry.local_position = Vector3(0, 0.1, 0.1)
+	var exit := Wound.new()
+	exit.part_id = BodyIds.Part.TORSO
+	exit.severity = 1.05
+	exit.is_exit = true
+	exit.local_normal = Vector3(0, 0, -1)
+	exit.local_position = Vector3(0, 0.1, -0.1)
+	m.wounds.add_wound(entry)
+	m.wounds.add_wound(exit)
+	var ev := DamageEvent.new()
+	ev.part_id = BodyIds.Part.TORSO
+	ev.direction = Vector3(1, 0, 0)
+	m.wounded.emit(entry, ev)
+	m.wounded.emit(exit, ev)
+	var cw = m.body._pose_driver._wound if m.body.get("_pose_driver") != null else null
+	_check("12b clutch picks entry wound over exit", m.brain.state == S.CLUTCH_WOUND and cw != null
+		and cw.get("n", Vector3.ZERO).z > 0.0, str(cw))
 	m.queue_free()
