@@ -81,3 +81,6 @@ hit-reaction additives and IK live in `scripts/body/pose/` behind an internal in
   `is_arm`/`is_leg` include hands/feet; new `is_hand`, `is_foot`, `hand_of(side)`. Hands/feet use the arm/leg region rules.
 - Held item lives in `HAND_R`. `drop_held_item(side)` unchanged.
 - New locomotion pose `limp` (injured foot/lower leg: slow, uneven gait). Limping is a pose/speed modifier chosen by the brain, not an NpcState.
+- NpcBody pass-throughs to the PoseDriver (milestone 2): `set_limp_side(side: String)` ("l","r","both",""),
+  `set_part_broken(part_id, broken := true)` (NpcBody also self-feeds from `npc.part_broken`),
+  `set_clutch_wound(part_id, local_pos, local_normal)` (exact palm contact; brain calls it with the clutched wound).
