@@ -98,6 +98,9 @@ func _step_part(npc: Node, pid: int, p: Dictionary, dt: float, run_mult: float, 
 	var base := float(_cfg.get("stain_base", 0.02))
 	var k := float(_cfg.get("stain_k", 0.012))
 	var max_r := float(_cfg.get("stain_max", 0.14))
+	if npc.get("body") != null and is_instance_valid(npc.body):
+		var he: Vector3 = npc.body.get_part_half_extents(pid)
+		max_r = minf(max_r, float(_cfg.get("stain_max_frac", 0.55)) * maxf(he.x, he.z))  # relative to part size
 	var rpf := float(_cfg.get("run_per_flow", 0.002))
 	var max_run := float(_cfg.get("max_run", 0.6))
 	var fast := float(_cfg.get("soak_mult", 2.5))
