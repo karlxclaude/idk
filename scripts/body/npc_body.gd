@@ -1,83 +1,653 @@
-## OWNER: body-ragdoll-dismember-agent. STUB: public API is contractual (docs/CONTRACTS.md);
-## implementation is the agent's. Builds segments, joints, ragdoll, impulses, dismemberment.
+## OWNER: body-ragdoll-dismember-agent. Public API is contractual (docs/CONTRACTS.md).
+## Segmented body: 11 BodySegments (RigidBody3D), 6DOF joints, procedural animation (kinematic),
+## ragdoll, hit impulses, dismemberment. Tunables: data/body_parts.json.
 class_name NpcBody
 extends Node3D
 
 ## Emitted after a part subtree is detached (Npc also re-emits part_severed).
 signal part_detached(part_id: int, severed_root: RigidBody3D)
 
+const P := BodyIds.Part
+## Parents before children.
+const ORDER: Array[int] = [P.TORSO, P.NECK, P.HEAD, P.UPPER_ARM_L, P.LOWER_ARM_L, P.UPPER_ARM_R,
+	P.LOWER_ARM_R, P.UPPER_LEG_L, P.LOWER_LEG_L, P.UPPER_LEG_R, P.LOWER_LEG_R]
+
 var npc: Npc
+
+var _cfg: Dictionary = {}
+var _segments: Dictionary = {}   # part id -> BodySegment (kept after severing)
+var _joints: Dictionary = {}     # child part id -> Generic6DOFJoint3D
+var _rest: Dictionary = {}       # part id -> Vector3 centre rel. torso centre (rest pose)
+var _joint_rest: Dictionary = {} # part id -> Vector3 joint pos rel. torso centre
+var _jp: Dictionary = {}         # joint position in parent-centre frame
+var _cfj: Dictionary = {}        # part centre relative to its joint
+var _limits: Dictionary = {}     # part id -> {x_min,x_max,y,z} radians
+var _mover: CharacterBody3D
+var _mover_shape: CollisionShape3D
+var _hip_h := 0.88
+var _torso_hy := 0.3
+
+var _ragdoll := false
+var _pose: StringName = &"idle"
+var _desired_vel := Vector3.ZERO
+var _t := 0.0
+var _phase := 0.0
+var _clutch_target := -1
+var _cur_rot: Dictionary = {}
+var _cur_torso := Basis.IDENTITY
+var _cur_hip := 0.88
+var _blend_t := 1.0
+var _blend_from: Dictionary = {}
+var _held: MeshInstance3D = null
+var _held_part := -1
 
 
 func setup(owner_npc: Npc) -> void:
 	npc = owner_npc
+	_cfg = DataDB.table("body_parts")
+	_hip_h = float(_cfg.get("hip_height", 0.88))
+	_cur_hip = _hip_h
+	_build()
 
 
-## Global transform of a segment (attached or severed). Part-local axes per CONTRACTS.md.
+# ------------------------------------------------------------------ build
+
+func _pc(pid: int) -> Dictionary:
+	return _cfg["parts"][BodyIds.key(pid)]
+
+
+func _col(a, mul := 1.0) -> Color:
+	return Color(float(a[0]) * mul, float(a[1]) * mul, float(a[2]) * mul)
+
+
+func _build() -> void:
+	var cols: Dictionary = _cfg.get("colors", {})
+	var var_amt := float(cols.get("skin_variation", 0.15))
+	var skin_mul := 1.0 + npc.rng.randf_range(-var_amt, var_amt)
+	var skin := _col(cols.get("skin", [0.85, 0.66, 0.55]), skin_mul)
+	var shirts: Array = cols.get("shirt_list", [[0.3, 0.3, 0.5]])
+	var pants: Array = cols.get("pants_list", [[0.2, 0.2, 0.25]])
+	var mats := {
+		"skin": _mat(skin),
+		"shirt": _mat(_col(shirts[npc.rng.randi() % shirts.size()])),
+		"pants": _mat(_col(pants[npc.rng.randi() % pants.size()])),
+	}
+	var root := Transform3D(Basis(Vector3.UP, npc.global_rotation.y), npc.global_position)
+
+	# mover
+	var mc: Dictionary = _cfg.get("mover", {})
+	_mover = CharacterBody3D.new()
+	_mover.name = "Mover"
+	_mover.collision_layer = BodyIds.LAYER_NPC_MOVER
+	_mover.collision_mask = BodyIds.LAYER_WORLD
+	_mover_shape = CollisionShape3D.new()
+	var cap := CapsuleShape3D.new()
+	cap.radius = float(mc.get("radius", 0.3))
+	cap.height = float(mc.get("height", 1.72))
+	_mover_shape.shape = cap
+	_mover_shape.position.y = cap.height * 0.5
+	_mover.add_child(_mover_shape)
+	add_child(_mover)
+	_mover.global_transform = root
+
+	_torso_hy = float(_pc(P.TORSO)["half"][1])
+	for pid in ORDER:
+		var d := _pc(pid)
+		_rest[pid] = BodySegment._v3(d["rest"])
+		if d.get("joint") != null:
+			_joint_rest[pid] = BodySegment._v3(d["joint"])
+		var lim = d.get("limits")
+		if lim != null:
+			_limits[pid] = {
+				"x_min": deg_to_rad(float(lim["x"][0])), "x_max": deg_to_rad(float(lim["x"][1])),
+				"y": deg_to_rad(float(lim["y"])), "z": deg_to_rad(float(lim["z"]))}
+		var seg := BodySegment.new()
+		seg.build(pid, npc, d, mats[d.get("color", "skin")], _cfg)
+		add_child(seg)
+		_segments[pid] = seg
+	for pid in ORDER:
+		if pid == P.TORSO:
+			continue
+		var par: int = BodyIds.PARENT[pid]
+		_jp[pid] = _joint_rest[pid] - _rest[par]
+		_cfj[pid] = _rest[pid] - _joint_rest[pid]
+
+	# rest pose placement, then joints (their frames are taken from this pose)
+	var rest_xf := _fk(root, _hip_h, Basis.IDENTITY, {})
+	for pid in rest_xf:
+		(_segments[pid] as BodySegment).global_transform = rest_xf[pid]
+	for pid in ORDER:
+		if pid != P.TORSO:
+			_make_joint(pid, root.basis)
+	_add_exceptions()
+	_make_held_item()
+
+
+func _mat(c: Color) -> StandardMaterial3D:
+	var m := StandardMaterial3D.new()
+	m.albedo_color = c
+	m.roughness = 0.85
+	return m
+
+
+func _make_joint(pid: int, basis: Basis) -> void:
+	var par: int = BodyIds.PARENT[pid]
+	var pseg: BodySegment = _segments[par]
+	var cseg: BodySegment = _segments[pid]
+	var j := Generic6DOFJoint3D.new()
+	j.name = "J_" + BodyIds.key(pid)
+	j.top_level = true
+	add_child(j)
+	j.global_transform = Transform3D(basis, pseg.global_transform * _jp[pid])
+	var l: Dictionary = _limits[pid]
+	for axis in 3:
+		_jflag(j, axis, Generic6DOFJoint3D.FLAG_ENABLE_LINEAR_LIMIT, true)
+		_jparam(j, axis, Generic6DOFJoint3D.PARAM_LINEAR_LOWER_LIMIT, 0.0)
+		_jparam(j, axis, Generic6DOFJoint3D.PARAM_LINEAR_UPPER_LIMIT, 0.0)
+		_jflag(j, axis, Generic6DOFJoint3D.FLAG_ENABLE_ANGULAR_LIMIT, true)
+	_jparam(j, 0, Generic6DOFJoint3D.PARAM_ANGULAR_LOWER_LIMIT, l["x_min"])
+	_jparam(j, 0, Generic6DOFJoint3D.PARAM_ANGULAR_UPPER_LIMIT, l["x_max"])
+	_jparam(j, 1, Generic6DOFJoint3D.PARAM_ANGULAR_LOWER_LIMIT, -l["y"])
+	_jparam(j, 1, Generic6DOFJoint3D.PARAM_ANGULAR_UPPER_LIMIT, l["y"])
+	_jparam(j, 2, Generic6DOFJoint3D.PARAM_ANGULAR_LOWER_LIMIT, -l["z"])
+	_jparam(j, 2, Generic6DOFJoint3D.PARAM_ANGULAR_UPPER_LIMIT, l["z"])
+	j.node_a = j.get_path_to(pseg)
+	j.node_b = j.get_path_to(cseg)
+	_joints[pid] = j
+
+
+func _jflag(j: Generic6DOFJoint3D, axis: int, flag: int, v: bool) -> void:
+	match axis:
+		0: j.set_flag_x(flag, v)
+		1: j.set_flag_y(flag, v)
+		_: j.set_flag_z(flag, v)
+
+
+func _jparam(j: Generic6DOFJoint3D, axis: int, prm: int, v: float) -> void:
+	match axis:
+		0: j.set_param_x(prm, v)
+		1: j.set_param_y(prm, v)
+		_: j.set_param_z(prm, v)
+
+
+## No collisions between neighbours (parent, grandparent, siblings) -> no self-collision explosions.
+func _add_exceptions() -> void:
+	for a in ORDER:
+		for b in ORDER:
+			if a >= b:
+				continue
+			var pa: int = BodyIds.PARENT[a]
+			var pb: int = BodyIds.PARENT[b]
+			var close := pa == b or pb == a or pa == pb
+			if not close and pa >= 0 and BodyIds.PARENT[pa] == b:
+				close = true
+			if not close and pb >= 0 and BodyIds.PARENT[pb] == a:
+				close = true
+			if close:
+				(_segments[a] as BodySegment).add_collision_exception_with(_segments[b])
+
+
+func _make_held_item() -> void:
+	var hc: Dictionary = _cfg.get("held_item", {})
+	var seg: BodySegment = _segments[P.LOWER_ARM_R]
+	var mi := MeshInstance3D.new()
+	var bm := BoxMesh.new()
+	bm.size = BodySegment._v3(hc.get("size", [0.07, 0.14, 0.012]))
+	mi.mesh = bm
+	mi.material_override = _mat(_col(hc.get("color", [0.08, 0.08, 0.1])))
+	mi.name = "Phone"
+	seg.add_child(mi)
+	mi.position = Vector3(0, -seg.half.y + 0.02, seg.half.x + 0.012)
+	seg.held_item = mi
+	_held = mi
+	_held_part = P.LOWER_ARM_R
+
+
+# ------------------------------------------------------------------ queries
+
+func _seg(part_id: int) -> BodySegment:
+	var s = _segments.get(part_id)
+	return s if is_instance_valid(s) else null
+
+
 func get_part_global_transform(part_id: int) -> Transform3D:
-	return global_transform
+	var s := _seg(part_id)
+	return s.global_transform if s else global_transform
 
 
 func get_part_half_extents(part_id: int) -> Vector3:
-	return Vector3(0.1, 0.1, 0.1)
+	var s := _seg(part_id)
+	return s.half if s else Vector3(0.1, 0.1, 0.1)
 
 
-## The physics node (BodySegment/RigidBody3D) for the part. Valid after severing too.
 func get_part_node(part_id: int) -> Node3D:
-	return null
+	return _seg(part_id)
 
 
-## True while the part is still attached to the NPC.
 func has_part(part_id: int) -> bool:
-	return true
+	var s := _seg(part_id)
+	return s != null and s.attached
 
 
-## World position of torso centre.
 func get_center() -> Vector3:
-	return global_position
+	var s := _seg(P.TORSO)
+	return s.global_position if s else global_position
 
 
-## Horizontal facing direction (world).
 func get_forward() -> Vector3:
-	return -global_basis.z
-
-
-## Physical hit reaction: impulse at ev.hit_position on ev.part_id's segment (even if severed).
-func apply_hit_impulse(ev: DamageEvent) -> void:
-	pass
-
-
-## Detach part_id and all its descendants as rigid bodies keeping velocity. Returns the
-## RigidBody3D of part_id (descendants stay jointed to it). Called only via Npc.notify_part_severed.
-func sever_part(part_id: int, ev: DamageEvent) -> RigidBody3D:
-	return null
-
-
-## Full ragdoll ON (death/collapse/knockdown) or OFF (recover to animated, standing up).
-func set_ragdoll(enabled: bool) -> void:
-	pass
+	var b: Basis = _mover.global_basis
+	if _ragdoll:
+		var s := _seg(P.TORSO)
+		if s:
+			b = s.global_basis
+	var f := Vector3(b.z.x, 0.0, b.z.z)
+	if f.length() < 0.2:
+		f = Vector3(b.y.x, 0.0, b.y.z)
+	return f.normalized() if f.length() > 0.001 else Vector3.BACK
 
 
 func is_ragdoll() -> bool:
-	return false
-
-
-## Called by the brain every physics frame while not ragdolled. velocity = desired horizontal
-## world velocity (m/s). pose in: idle, walk, run, clutch, stagger, crawl.
-## In crawl the body may be ragdoll-driven; the body decides how.
-func set_locomotion(velocity: Vector3, pose: StringName) -> void:
-	pass
-
-
-## Pose hint: which part the NPC clutches with its free hand (-1 = none). IK is a stub in v1.
-func set_clutch_target(part_id: int) -> void:
-	pass
-
-
-## Drop the held item from the given side ("l"/"r"). Returns true if something was dropped.
-func drop_held_item(side: String) -> bool:
-	return false
+	return _ragdoll
 
 
 func get_debug_info() -> Dictionary:
-	return {}
+	var att: Array = []
+	for pid in ORDER:
+		if has_part(pid):
+			att.append(BodyIds.key(pid))
+	var held := ""
+	if is_instance_valid(_held):
+		held = "phone"
+	return {"mode": "ragdoll" if _ragdoll else "animated", "pose": String(_pose),
+		"attached": att, "held_item": held}
+
+
+# ------------------------------------------------------------------ control
+
+func set_locomotion(velocity: Vector3, pose: StringName) -> void:
+	_desired_vel = Vector3(velocity.x, 0.0, velocity.z)
+	_pose = pose
+
+
+func set_clutch_target(part_id: int) -> void:
+	_clutch_target = part_id
+
+
+func set_ragdoll(enabled: bool) -> void:
+	if enabled == _ragdoll:
+		return
+	if enabled:
+		_ragdoll = true
+		for pid in ORDER:
+			var s := _seg(pid)
+			if s and s.attached:
+				s.make_dynamic()
+		_mover.collision_layer = 0
+		_mover.collision_mask = 0
+		_mover.velocity = Vector3.ZERO
+	else:
+		_get_up()
+
+
+func _get_up() -> void:
+	var torso := _seg(P.TORSO)
+	if torso == null:
+		return
+	var tp := torso.global_position
+	# facing from torso: front axis, or head direction when lying flat on front/back
+	var f := Vector3(torso.global_basis.z.x, 0.0, torso.global_basis.z.z)
+	if f.length() < 0.35:
+		f = Vector3(torso.global_basis.y.x, 0.0, torso.global_basis.y.z)
+	var yaw := _mover.global_rotation.y
+	if f.length() > 0.05:
+		yaw = atan2(f.x, f.z)
+	var y := tp.y - _hip_h - _torso_hy
+	var q := PhysicsRayQueryParameters3D.create(tp + Vector3.UP * 0.3, tp + Vector3.DOWN * 3.0,
+		BodyIds.LAYER_WORLD)
+	var hit := get_world_3d().direct_space_state.intersect_ray(q)
+	if hit:
+		y = hit.position.y
+	_blend_from.clear()
+	for pid in ORDER:
+		var s := _seg(pid)
+		if s and s.attached:
+			_blend_from[pid] = s.global_transform
+			s.make_kinematic()
+	_mover.global_transform = Transform3D(Basis(Vector3.UP, yaw), Vector3(tp.x, y, tp.z))
+	_mover.velocity = Vector3.ZERO
+	_mover.collision_layer = BodyIds.LAYER_NPC_MOVER
+	_mover.collision_mask = BodyIds.LAYER_WORLD
+	_cur_rot.clear()
+	_cur_torso = Basis.IDENTITY
+	_cur_hip = _hip_h
+	_blend_t = 0.0
+	_ragdoll = false
+
+
+# ------------------------------------------------------------------ hits
+
+func apply_hit_impulse(ev: DamageEvent) -> void:
+	var s := _seg(ev.part_id)
+	if s == null:
+		return
+	var imp := ev.impactor_velocity * ev.impactor_mass * float(_cfg.get("hit_impulse_scale", 1.0))
+	imp = imp.limit_length(float(_cfg.get("max_hit_impulse", 80.0)))
+	if imp.length() < 0.001:
+		return
+	if s.freeze:
+		var mag := minf(imp.length() / s.mass * float(_cfg.get("flinch_gain", 0.12)),
+			float(_cfg.get("flinch_max", 0.07)))
+		s.flinch = imp.normalized() * mag
+		s.flinch_t = float(_cfg.get("flinch_time", 0.3))
+		var tor := _seg(P.TORSO)
+		if tor and tor != s:
+			tor.flinch = s.flinch * 0.5
+			tor.flinch_t = s.flinch_t
+	else:
+		s.apply_impulse(imp, ev.hit_position - s.global_position)
+
+
+# ------------------------------------------------------------------ dismemberment
+
+func sever_part(part_id: int, ev: DamageEvent) -> RigidBody3D:
+	if part_id == P.TORSO or not has_part(part_id):
+		return null
+	var ids: Array[int] = [part_id]
+	ids.append_array(BodyIds.descendants_of(part_id))
+	var host: Node = npc.get_parent() if npc and npc.get_parent() else self
+	var container := Node3D.new()
+	container.name = "Severed_%s_%d" % [BodyIds.key(part_id), npc.npc_id if npc else 0]
+	host.add_child(container)
+	var root_seg: BodySegment = _segments[part_id]
+	# joints: cut link to parent, others move with the pieces
+	var moving_joints: Array = []
+	if _joints.has(part_id):
+		var cut: Node = _joints[part_id]
+		_joints.erase(part_id)
+		cut.queue_free()
+		remove_child(cut)
+	for pid in ids:
+		if pid != part_id and _joints.has(pid):
+			var j: Node = _joints[pid]
+			remove_child(j)
+			moving_joints.append(j)
+	var segs: Array[BodySegment] = []
+	for pid in ids:
+		var s: BodySegment = _segments[pid]
+		var lin := s.tracked_lin if s.freeze else s.linear_velocity
+		var ang := s.tracked_ang if s.freeze else s.angular_velocity
+		var xf := s.global_transform
+		remove_child(s)
+		container.add_child(s)
+		s.global_transform = xf
+		s.attached = false
+		s.flinch = Vector3.ZERO
+		s.flinch_t = 0.0
+		s.freeze = false
+		s.linear_velocity = lin
+		s.angular_velocity = ang
+		s.sleeping = false
+		segs.append(s)
+	for j in moving_joints:
+		container.add_child(j)
+	# impulse from the cutting blow
+	var imp := ev.impactor_velocity * ev.impactor_mass * float(_cfg.get("hit_impulse_scale", 1.0))
+	imp = imp.limit_length(float(_cfg.get("max_hit_impulse", 80.0)))
+	root_seg.apply_impulse(imp, ev.hit_position - root_seg.global_position)
+	# TODO(roadmap: stump caps): place cap meshes at the cut on root_seg and on the parent's end.
+	var timer := Timer.new()
+	timer.one_shot = true
+	timer.wait_time = float(_cfg.get("severed_cleanup_s", 120.0))
+	timer.timeout.connect(container.queue_free)
+	container.add_child(timer)
+	timer.start()
+	part_detached.emit(part_id, root_seg)
+	return root_seg
+
+
+func drop_held_item(side: String) -> bool:
+	if side != "r" or not is_instance_valid(_held):
+		return false
+	var seg := _seg(_held_part)
+	if seg == null or not seg.attached:
+		return false  # went with the severed arm
+	var hc: Dictionary = _cfg.get("held_item", {})
+	var rb := RigidBody3D.new()
+	rb.name = "DroppedPhone"
+	rb.mass = float(hc.get("mass", 0.2))
+	rb.collision_layer = BodyIds.LAYER_DEBRIS
+	rb.collision_mask = BodyIds.LAYER_WORLD | BodyIds.LAYER_DEBRIS
+	var size := BodySegment._v3(hc.get("size", [0.07, 0.14, 0.012]))
+	var cs := CollisionShape3D.new()
+	var bs := BoxShape3D.new(); bs.size = size
+	cs.shape = bs
+	rb.add_child(cs)
+	var mi := MeshInstance3D.new()
+	var bm := BoxMesh.new(); bm.size = size
+	mi.mesh = bm
+	mi.material_override = _held.material_override
+	rb.add_child(mi)
+	var host: Node = npc.get_parent() if npc and npc.get_parent() else self
+	host.add_child(rb)
+	rb.global_transform = _held.global_transform
+	rb.linear_velocity = seg.tracked_lin if seg.freeze else seg.linear_velocity
+	rb.angular_velocity = seg.tracked_ang if seg.freeze else seg.angular_velocity
+	var timer := get_tree().create_timer(float(_cfg.get("severed_cleanup_s", 120.0)))
+	timer.timeout.connect(func(): if is_instance_valid(rb): rb.queue_free())
+	_held.queue_free()
+	seg.held_item = null
+	_held = null
+	return true
+
+
+# ------------------------------------------------------------------ per-frame
+
+func _physics_process(delta: float) -> void:
+	if _mover == null:
+		return
+	_t += delta
+	if _ragdoll:
+		var s := _seg(P.TORSO)
+		if s:
+			_mover.global_position = Vector3(s.global_position.x, _mover.global_position.y, s.global_position.z)
+		return
+	_animated_step(delta)
+
+
+func _animated_step(dt: float) -> void:
+	var mc: Dictionary = _cfg.get("mover", {})
+	# --- mover
+	var v := _mover.velocity
+	var hv := Vector2(v.x, v.z).move_toward(Vector2(_desired_vel.x, _desired_vel.z),
+		float(mc.get("accel", 20.0)) * dt)
+	v.x = hv.x
+	v.z = hv.y
+	if _mover.is_on_floor():
+		v.y = -0.5
+	else:
+		v.y -= 9.8 * dt
+	_mover.velocity = v
+	_mover.move_and_slide()
+	if _desired_vel.length() > 0.15:
+		var yaw := atan2(_desired_vel.x, _desired_vel.z)
+		_mover.rotation.y = lerp_angle(_mover.rotation.y, yaw,
+			minf(1.0, float(mc.get("turn_rate", 10.0)) * dt))
+	var speed := Vector2(_mover.velocity.x, _mover.velocity.z).length()
+
+	# --- pose
+	var pt := _pose_target(_pose, speed, dt)
+	var k := 1.0 - exp(-float(_cfg.get("pose_blend_rate", 12.0)) * dt)
+	_cur_hip = lerpf(_cur_hip, pt.hip, k)
+	_cur_torso = Basis(Quaternion(_cur_torso).slerp(Quaternion(pt.torso), k))
+	var tgt_rots: Dictionary = pt.rots
+	for pid in tgt_rots:
+		var cur: Basis = _cur_rot.get(pid, Basis.IDENTITY)
+		_cur_rot[pid] = Basis(Quaternion(cur).slerp(Quaternion(tgt_rots[pid]), k))
+	var xfs := _fk(_mover.global_transform, _cur_hip, _cur_torso, _cur_rot)
+
+	# --- flinch, get-up blend, apply
+	var ft := float(_cfg.get("flinch_time", 0.3))
+	var shift := Vector3.ZERO
+	var tor := _seg(P.TORSO)
+	if tor and tor.flinch_t > 0.0:
+		shift = tor.flinch * (tor.flinch_t / ft)
+	var bl := 1.0
+	if _blend_t < 1.0:
+		_blend_t = minf(1.0, _blend_t + dt / maxf(0.05, float(_cfg.get("get_up_blend_s", 0.6))))
+		bl = smoothstep(0.0, 1.0, _blend_t)
+	for pid in xfs:
+		var s := _seg(pid)
+		if s == null:
+			continue
+		var xf: Transform3D = xfs[pid]
+		if bl < 1.0 and _blend_from.has(pid):
+			xf = (_blend_from[pid] as Transform3D).interpolate_with(xf, bl)
+		var off := shift
+		if s.flinch_t > 0.0 and pid != P.TORSO:
+			off += s.flinch * (s.flinch_t / ft)
+		xf.origin += off
+		if s.flinch_t > 0.0:
+			s.flinch_t = maxf(0.0, s.flinch_t - dt)
+		s.snap(xf, dt)
+
+
+## Forward kinematics of attached parts. root_xf = mover frame (feet, +Z front).
+func _fk(root_xf: Transform3D, hip: float, torso_b: Basis, rots: Dictionary) -> Dictionary:
+	var out := {}
+	var tb := root_xf.basis * torso_b
+	var pivot := root_xf.origin + root_xf.basis * Vector3(0, hip, 0)
+	out[P.TORSO] = Transform3D(tb, pivot + tb * Vector3(0, _torso_hy, 0))
+	for pid in ORDER:
+		if pid == P.TORSO:
+			continue
+		var par: int = BodyIds.PARENT[pid]
+		if not out.has(par) or not has_part(pid):
+			continue
+		var r: Basis = rots.get(pid, Basis.IDENTITY)
+		out[pid] = (out[par] as Transform3D) * Transform3D(r, _jp[pid] + r * _cfj[pid])
+	return out
+
+
+func _eb(pid: int, x: float, y: float = 0.0, z: float = 0.0) -> Basis:
+	var l: Dictionary = _limits[pid]
+	return Basis.from_euler(Vector3(clampf(x, l["x_min"], l["x_max"]),
+		clampf(y, -l["y"], l["y"]), clampf(z, -l["z"], l["z"])))
+
+
+func _id(base: String, side: String) -> int:
+	return BodyIds.from_key(base + "_" + side)
+
+
+## Target {hip, torso, rots} for a pose. Sign conventions: rotation about +X by + moves a
+## hanging limb backwards (so shoulder/hip flexion and elbow flexion are negative; knee flexion positive).
+func _pose_target(pose: StringName, speed: float, dt: float) -> Dictionary:
+	var rots := {}
+	var hip := _hip_h
+	var torso := Basis.IDENTITY
+	var t := _t
+	match pose:
+		&"walk", &"run":
+			_phase += dt * TAU * clampf(0.6 * speed, 0.0, 1.9)
+			var sf := clampf(speed / 0.6, 0.0, 1.0)
+			var amp := clampf(0.25 + 0.12 * speed, 0.25, 0.85) * sf
+			var s := sin(_phase)
+			var c := cos(_phase)
+			var lean := clampf(speed * 0.04, 0.0, 0.28)
+			var run_f := smoothstep(2.0, 5.0, speed)
+			torso = Basis.from_euler(Vector3(lean, sin(_phase) * 0.12 * sf, 0.0))
+			hip = _hip_h - 0.04 * sf + 0.025 * sf * absf(c)
+			rots[P.NECK] = _eb(P.NECK, -lean * 0.5)
+			rots[P.HEAD] = _eb(P.HEAD, -lean * 0.5, -sin(_phase) * 0.12 * sf)
+			for side in ["l", "r"]:
+				var sg := 1.0 if side == "l" else -1.0
+				var sw := sg * s
+				var cw := sg * c
+				rots[_id("upper_leg", side)] = _eb(_id("upper_leg", side), -amp * sw - lean, 0.0, sg * 0.04)
+				rots[_id("lower_leg", side)] = _eb(_id("lower_leg", side), 0.12 + 1.3 * amp * maxf(0.0, cw))
+				rots[_id("upper_arm", side)] = _eb(_id("upper_arm", side), 0.9 * amp * sw, 0.0, sg * 0.1)
+				rots[_id("lower_arm", side)] = _eb(_id("lower_arm", side), -(0.15 + 0.9 * run_f))
+		&"clutch":
+			var pitch := 0.55
+			torso = Basis.from_euler(Vector3(pitch, 0.0, sin(t * 2.0) * 0.03))
+			hip = _hip_h - 0.03
+			rots[P.NECK] = _eb(P.NECK, -0.2)
+			rots[P.HEAD] = _eb(P.HEAD, -0.2)
+			for side in ["l", "r"]:
+				rots[_id("upper_leg", side)] = _eb(_id("upper_leg", side), -pitch - 0.2)
+				rots[_id("lower_leg", side)] = _eb(_id("lower_leg", side), 0.4)
+			var free_side := "l"
+			var has_t := _clutch_target >= 0 and has_part(_clutch_target)
+			if has_t and BodyIds.side_of(_clutch_target) == "r":
+				free_side = "r"
+			var other := "r" if free_side == "l" else "l"
+			var sgo := 1.0 if other == "l" else -1.0
+			rots[_id("upper_arm", other)] = _eb(_id("upper_arm", other), -0.5, 0.0, sgo * 0.15)
+			rots[_id("lower_arm", other)] = _eb(_id("lower_arm", other), -1.3)
+			var fu := _id("upper_arm", free_side)
+			var fl := _id("lower_arm", free_side)
+			var sgf := 1.0 if free_side == "l" else -1.0
+			if has_t:
+				var txf := Transform3D(_mover.global_basis * _cur_torso, Vector3.ZERO)
+				var pivot := _mover.global_position + _mover.global_basis * Vector3(0, _cur_hip, 0)
+				var tc := Transform3D(txf.basis, pivot + txf.basis * Vector3(0, _torso_hy, 0))
+				var tl := tc.affine_inverse() * get_part_global_transform(_clutch_target).origin
+				var ik := _arm_ik(fu, tl)
+				rots[fu] = ik[0]
+				rots[fl] = ik[1]
+			else:
+				rots[fu] = _eb(fu, -0.6, 0.0, sgf * 0.15)
+				rots[fl] = _eb(fl, -1.4)
+		&"stagger":
+			var sw := sin(t * 5.5)
+			torso = Basis.from_euler(Vector3(0.15, sin(t * 3.0) * 0.25, sw * 0.18))
+			hip = _hip_h - 0.05
+			rots[P.NECK] = _eb(P.NECK, 0.0, 0.0, -sw * 0.2)
+			rots[P.HEAD] = _eb(P.HEAD, 0.0, 0.0, -sw * 0.2)
+			for side in ["l", "r"]:
+				var sg := 1.0 if side == "l" else -1.0
+				var ph := sin(t * 4.0) * sg
+				rots[_id("upper_leg", side)] = _eb(_id("upper_leg", side), -0.2 - 0.3 * ph, 0.0, sg * 0.12)
+				rots[_id("lower_leg", side)] = _eb(_id("lower_leg", side), 0.3 + 0.3 * maxf(0.0, ph))
+				rots[_id("upper_arm", side)] = _eb(_id("upper_arm", side), 0.4 * sin(t * 6.0 + sg), 0.0, sg * 0.9)
+				rots[_id("lower_arm", side)] = _eb(_id("lower_arm", side), -0.4)
+		&"crawl":
+			_phase += dt * TAU * clampf(0.8 * speed + 0.3, 0.0, 1.5)
+			var s := sin(_phase)
+			torso = Basis.from_euler(Vector3(1.45, 0.0, 0.0))
+			hip = 0.25
+			rots[P.NECK] = _eb(P.NECK, -0.7)
+			rots[P.HEAD] = _eb(P.HEAD, -0.6)
+			for side in ["l", "r"]:
+				var sg := 1.0 if side == "l" else -1.0
+				var sw := sg * s
+				rots[_id("upper_arm", side)] = _eb(_id("upper_arm", side), -2.4 + 0.5 * sw, 0.0, sg * 0.45)
+				rots[_id("lower_arm", side)] = _eb(_id("lower_arm", side), -0.6 - 0.4 * maxf(0.0, sw))
+				rots[_id("upper_leg", side)] = _eb(_id("upper_leg", side), 0.0, 0.0, sg * 0.15)
+				rots[_id("lower_leg", side)] = _eb(_id("lower_leg", side), 0.3 + 0.3 * sw)
+		_:  # idle
+			var b := sin(t * 1.6)
+			torso = Basis.from_euler(Vector3(0.01 * b, 0.0, sin(t * 0.5) * 0.012))
+			hip = _hip_h + 0.003 * b
+			for side in ["l", "r"]:
+				var sg := 1.0 if side == "l" else -1.0
+				rots[_id("upper_arm", side)] = _eb(_id("upper_arm", side), 0.02 * b, 0.0, sg * (0.08 + 0.01 * b))
+				rots[_id("lower_arm", side)] = _eb(_id("lower_arm", side), -0.12)
+	return {"hip": hip, "torso": torso, "rots": rots}
+
+
+## Two-bone IK for an arm, in torso-centre space. Returns [upper_basis, lower_basis].
+func _arm_ik(upper_id: int, target_local: Vector3) -> Array:
+	var lower_id := _id("lower_arm", BodyIds.side_of(upper_id))
+	var a: float = (_segments[upper_id] as BodySegment).half.y * 2.0
+	var b: float = (_segments[lower_id] as BodySegment).half.y * 2.0
+	var d: Vector3 = target_local - (_joint_rest[upper_id] as Vector3)
+	var dist := clampf(d.length(), 0.12, a + b - 0.02)
+	var tdir := d.normalized() if d.length() > 0.001 else Vector3.DOWN
+	var phi := acos(clampf((a * a + b * b - dist * dist) / (2.0 * a * b), -1.0, 1.0))
+	var alpha := acos(clampf((a * a + dist * dist - b * b) / (2.0 * a * dist), -1.0, 1.0))
+	var n := Vector3(0, 0, 1).cross(tdir)
+	n = n.normalized() if n.length() > 0.05 else Vector3.RIGHT
+	var u := tdir.rotated(n, alpha)
+	var by := -u
+	var bz := n.cross(by)
+	return [Basis(n, by, bz).orthonormalized(), Basis(Vector3.RIGHT, -(PI - phi))]
