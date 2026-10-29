@@ -1,0 +1,29 @@
+{
+  "max_decals": 120,
+  "decal_size": [0.15, 0.5],
+  "bullet_hole_size": 0.08,
+  "decal_depth": 0.3,
+  "blood_color": "#7a0b0b",
+  "max_bursts": 12,
+  "burst": {"min_amount": 12, "max_amount": 48, "exit_mult": 2.0, "lifetime": 0.7, "speed": 3.0, "exit_speed": 5.5},
+  "max_wound_emitters": 40,
+  "wound_emitter": {"amount": 24, "lifetime": 0.6, "min_flow": 0.02, "flow_ref": 25.0, "speed_min": 0.6, "speed_max": 3.5, "drop_interval": 0.3, "drop_chance_per_flow": 0.05},
+  "stump": {"flow": 30.0, "duration": 6.0, "burst": 40},
+  "pool": {"enabled": true, "max_radius": 1.4, "min_radius": 0.15, "radius_per_sqrt_lost": 0.03, "slow_speed": 0.6, "update_interval": 0.25, "max_pools": 12, "min_external_rate": 0.1},
+  "audio": {
+    "log_recent": 24, "max_players": 6, "blip_volume_db": -22.0,
+    "cues": {
+      "gunshot":   {"path": "res://audio/gunshot.ogg", "freq": 110.0, "dur": 0.09},
+      "knife_hit": {"path": "res://audio/knife_hit.ogg", "freq": 520.0, "dur": 0.05},
+      "bat_hit":   {"path": "res://audio/bat_hit.ogg", "freq": 140.0, "dur": 0.07},
+      "scream":    {"path": "res://audio/scream.ogg", "freq": 780.0, "dur": 0.2},
+      "grunt":     {"path": "res://audio/grunt.ogg", "freq": 200.0, "dur": 0.1},
+      "gurgle":    {"path": "res://audio/gurgle.ogg", "freq": 160.0, "dur": 0.12},
+      "pain_breath": {"path": "res://audio/pain_breath.ogg", "freq": 300.0, "dur": 0.08},
+      "bone_crack": {"path": "res://audio/bone_crack.ogg", "freq": 900.0, "dur": 0.03},
+      "sever":     {"path": "res://audio/sever.ogg", "freq": 240.0, "dur": 0.08},
+      "body_fall": {"path": "res://audio/body_fall.ogg", "freq": 70.0, "dur": 0.1}
+    }
+  },
+  "overlay": {"max_panels": 6, "refresh": 0.2, "label_height": 1.5}
+}
