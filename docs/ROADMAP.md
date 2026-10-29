@@ -35,7 +35,11 @@ Each item has a `TODO(roadmap: <name>)` comment at its plug-in point.
   wet→dry), blood simulation with progressive soaking and spill to lower parts, pulsing arterial spray, drips, high-energy mist,
   entry/exit splatter decals with fade, piece pools, procedural layered audio (14 cues). Tests: 15 scenes green.
   Note: floor/wall Decals only render under Forward+ (not in the xvfb Compatibility captures); audio unheard (synthesised, tested non-silent).
-- **Next — milestone 7**: perf benchmark (20 NPCs), spawner menu + props, startup mature-content screen, grab/drag/throw bodies and parts, polish.
+- **Milestone 7**: done — perf benchmark (20 NPCs, CPU p95 ≈ 15–16 ms wounded/fleeing, within 60 fps on this 4-core box but
+  near the limit), debug overlay off by default + throttled, startup content warning, spawner panel (NPC groups, props, clear
+  buttons, time scale), grab/drag/throw. Acceptance 173 checks.
+- **All roadmap milestones complete.** Remaining work = the tuning backlog above, real CC0 audio/model assets (need downloads),
+  GPU profiling on real hardware, and a human play-test.
 
 ## Tuning backlog (from docs/INJURY_CONSISTENCY.md suggestions; not bugs)
 - Bullet/stab bleed ignores hit strength; bullet penetration constant (0.45 m) regardless of velocity → scale with velocity/caliber (pairs with milestone 5 calibers).
