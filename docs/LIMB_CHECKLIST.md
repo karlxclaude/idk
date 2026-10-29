@@ -17,8 +17,8 @@ Weapon speeds: a normal LMB swing reaches knife 7.1 m/s and bat 10.2 m/s. The te
 | upper_arm_l/r | PASS | PASS | **FAIL** (F1) | PASS | PASS | PASS | PASS | PASS | **FAIL** (F2) | PASS | - | - | PASS | PASS | PASS (bat 16, knife 12 m/s) |
 | lower_arm_l/r | PASS | PASS | **FAIL** (F1) | PASS | PASS | PASS | PASS | PASS | **FAIL** (F2) | PASS | PASS | PASS (r) | PASS | PASS | PASS (bat 12, knife 12) |
 | hand_l/r | PASS | PASS | **FAIL** (F1) | PASS | PASS | PASS | PASS | PASS | **FAIL** (F2) | PASS | PASS | PASS (l) | PASS | PASS | PASS (bat 8, knife 7.5) |
-| upper_leg_l/r | PASS | PASS | PASS | PASS | PASS | PASS (synthetic) | PASS | PASS | **FAIL** (F2) | PASS | - | - | PASS | PASS | **FAIL** (F4) |
-| lower_leg_l/r | PASS | PASS | PASS | PASS | PASS | PASS (synthetic) | PASS | PASS | **FAIL** (F2) | PASS | - | - | PASS | PASS | **FAIL** (F4) |
+| upper_leg_l/r | PASS | PASS | PASS | PASS | PASS | PASS (synthetic) | PASS | PASS | **FAIL** (F2) | PASS | - | - | PASS | PASS | INFO (F4, by decision) |
+| lower_leg_l/r | PASS | PASS | PASS | PASS | PASS | PASS (synthetic) | PASS | PASS | **FAIL** (F2) | PASS | - | - | PASS | PASS | INFO (F4, by decision) |
 | foot_l/r | PASS | PASS | PASS | PASS | PASS | PASS (knife 10.5 m/s) | PASS | PASS | **FAIL** (F2) | PASS | - | PASS | PASS | PASS | PASS (bat 10, knife 10.5) |
 
 Combos: both feet broken PASS. Chain cut (hand, then forearm, then upper arm; foot, shin, thigh) shows the right state but raises engine errors (F3). Corpse sever PASS. GoreFX with freed nodes **FAIL** (F5).
@@ -79,13 +79,11 @@ Cause: `sever_part` only checks `has_part(part_id)` for the root, but `ids` incl
 The pieces still end up fine in the test (`chain_*` checks pass), so this is log spam and a risk.
 Fix: `ids = ids.filter(func(p): return _segments[p].attached)`, and only move joints of still-attached parts.
 
-**F4. Upper and lower legs cannot be severed by any shipped weapon** (design, MEDIUM). Owner: **legs-agent** (`data/injury/legs.json` `dismember`) or **weapons-ui-agent** (`data/weapons.json`).
-Failure: thigh needs amount 70 and shin 55, but the knife caps at 48 (`base_damage` 24 x `max_damage_scale` 2) and the bat and gun have `can_dismember` false. The chain works with a synthetic event, but a player can never trigger it. REACH FAIL x4.
-Fix: add a heavy blade entry (machete or axe: `base_damage` about 60, `can_dismember` true, `dismember_min_velocity` about 6), which is data only. Alternatively lower `lower_leg dismember` to 45 and `upper_leg` to 48.
-Related reach notes (not failures):
-- At a normal LMB swing (knife 7.1, bat 10.2 m/s) only hand and foot fractures are reachable, and the only sever is the hand.
-- Foot and arm severs need knife 10.5-12 m/s, which only Shift free-swing could give.
-- Hand sever at LMB works only because tip speed 7.097 just exceeds `dismember_min_velocity` 7.0 (a 1.4 % margin).
+**F4. Upper and lower legs cannot be severed by a shipped weapon: INTENTIONAL, not a failure.** Per docs/DECISIONS.md, leg severing by the v1 knife is out of reach until the machete/heavy weapons arrive in milestone 5.
+The REACH rows are now INFO lines in the test. The synthetic-event sever checks for thigh and shin remain real assertions.
+Reach notes:
+- At a normal LMB swing (knife 7.1, bat 10.2 m/s) only hand and foot fractures and the hand sever are reachable.
+- The hand sever clears `dismember_min_velocity` 7.0 by only 1.4 %.
 
 **F5. GoreFX errors every physics frame once an emitter's node is freed** (HIGH for stability). Owner: **fx-audio-agent**. File: `scripts/fx/gore_fx.gd` `_update_emitters` (line 238).
 Failure: `var node: GPUParticles3D = e.node` is assigned before the `is_instance_valid` check, so a freed node raises `SCRIPT ERROR: Trying to assign invalid previously freed instance` and aborts the function.

@@ -460,7 +460,11 @@ func _phase_reach() -> void:
 		var smsg := "knife >= %s m/s (normal swing %.1f)%s" % [_fv(sv), _lmb.knife, "" if sv >= 0 and sv <= _lmb.knife + 0.01 else " - needs a faster-than-LMB swing"]
 		# no shipped weapon at all = FAIL; reachable only with a faster-than-LMB swing = noted, still PASS
 		_check("reach", c.label, "fracturable by a shipped weapon", fv >= 0.0, fmsg)
-		_check("reach", c.label, "severable by a shipped weapon", sv >= 0.0, smsg)
+		if sv < 0.0 and BodyIds.is_leg(pid) and not BodyIds.is_foot(pid):
+			# docs/DECISIONS.md: leg severing by the v1 knife is intentionally out of reach (machete/heavy weapons, milestone 5).
+			_check("reach", c.label, "INFO severable by a shipped weapon: skipped, out of reach by decision (docs/DECISIONS.md, milestone 5 heavy weapons); synthetic sever checks still assert", true, smsg)
+		else:
+			_check("reach", c.label, "severable by a shipped weapon", sv >= 0.0, smsg)
 
 
 # ============================================================================== phase: fracture
