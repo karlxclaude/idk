@@ -76,5 +76,90 @@
         "ext": 5.0
       }
     }
+  },
+  "bullet": {
+    "_doc": "strength s = clamp((E/ref_energy)^energy_exp, min, max), E = ev.extra.energy (J) else (v/ref_velocity)^2 when speed >= fallback_min_speed, else s = 1 (no information). severity = clamp(damage/sev_div * sev_mult * s^sev_exp, sev_min*s^sev_exp, 1). bleed = table * bleed_mult * s^bleed_exp. exit wounds exist only when ev.penetration > thickness (weapon decides penetration).",
+    "default_caliber": "9mm",
+    "aliases": {
+      "9x19": "9mm",
+      "pistol": "9mm",
+      "handgun": "9mm",
+      "556": "rifle",
+      "5.56": "rifle",
+      "5.56x45": "rifle",
+      "762": "rifle",
+      "7.62": "rifle",
+      "rifle_556": "rifle",
+      "12ga": "buckshot",
+      "12gauge": "buckshot",
+      "shotgun": "buckshot",
+      "00buck": "buckshot"
+    },
+    "strength": {
+      "energy_exp": 0.5,
+      "min": 0.08,
+      "max": 1.5,
+      "sev_exp": 0.35,
+      "bleed_exp": 1.0,
+      "fallback_min_speed": 12.0
+    },
+    "sev_div": 60.0,
+    "sev_min": 0.1,
+    "sev_max": 1.0,
+    "exit": {
+      "sev_mult": 1.5,
+      "sev_min": 0.2,
+      "sev_max": 1.0
+    },
+    "calibers": {
+      "9mm": {
+        "ref_energy_j": 577.6,
+        "ref_velocity": 380.0,
+        "sev_mult": 1.0,
+        "bleed_mult": 1.0,
+        "int_mult": 1.0,
+        "exit_size_mult": 1.0,
+        "exit_bleed_mult": 1.0
+      },
+      "rifle": {
+        "ref_energy_j": 1700.0,
+        "ref_velocity": 900.0,
+        "sev_mult": 1.15,
+        "bleed_mult": 1.2,
+        "int_mult": 1.5,
+        "exit_size_mult": 1.8,
+        "exit_bleed_mult": 2.0
+      },
+      "buckshot": {
+        "ref_energy_j": 280.0,
+        "ref_velocity": 400.0,
+        "sev_mult": 0.4,
+        "sev_min": 0.05,
+        "bleed_mult": 0.3,
+        "int_mult": 0.25,
+        "exit_size_mult": 0.8,
+        "exit_bleed_mult": 0.5
+      }
+    }
+  },
+  "stab": {
+    "_doc": "severity = clamp(depth/thickness, sev_min, 1). strength s = clamp(ev.amount / ref_amount, min, max) scales ext/int bleed (ref_amount = the normal scripted thrust).",
+    "sev_min": 0.1,
+    "sev_max": 1.0,
+    "strength": {
+      "ref_amount": 20.0,
+      "min": 0.15,
+      "max": 1.0,
+      "bleed_exp": 1.0
+    }
+  },
+  "slash": {
+    "_doc": "severity = clamp(damage/sev_div, sev_min, 1); ext bleed = table * clamp(bleed_sev_base + sev, bleed_scale_min, bleed_scale_max).",
+    "sev_div": 40.0,
+    "sev_min": 0.1,
+    "sev_max": 1.0,
+    "bleed_sev_base": 0.5,
+    "bleed_scale_min": 0.5,
+    "bleed_scale_max": 1.5
   }
 }
