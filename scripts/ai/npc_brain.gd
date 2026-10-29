@@ -9,6 +9,7 @@ var npc: Npc
 var state: int = S.IDLE
 
 var pain_tolerance := 1.0
+var aggression := 0.5          # 0..1, randomized per NPC; >= fight_aggression_min may fight back
 var shock_tolerance := 1.0
 
 var _cfg: Dictionary = {}
@@ -31,6 +32,8 @@ var _limp := {"l": false, "r": false}      # injured (non-crawl) foot/lower leg 
 var _arm_lost := {"l": false, "r": false}  # arm chain (upper/lower/hand) broken or severed per side
 var _dead_cause: StringName = &""
 var _last_cue_ev := 0
+var _fight_cd := 0.0           # seconds until the next punch may start
+var _attack_t := -1.0          # seconds until the running punch lands (<0: no punch in flight)
 
 
 func setup(owner_npc: Npc) -> void:
@@ -40,6 +43,8 @@ func setup(owner_npc: Npc) -> void:
 	var sr: Array = _cfg.get("shock_tolerance_range", [0.7, 1.3])
 	pain_tolerance = npc.rng.randf_range(float(pr[0]), float(pr[1]))
 	shock_tolerance = npc.rng.randf_range(float(sr[0]), float(sr[1]))
+	var ar: Array = _cfg.get("aggression_range", [0.2, 1.0])
+	aggression = npc.rng.randf_range(float(ar[0]), float(ar[1]))
 	npc.wounded.connect(_on_wounded)
 	npc.part_broken.connect(_on_part_broken)
 	npc.part_severed.connect(_on_part_severed)
@@ -49,7 +54,7 @@ func setup(owner_npc: Npc) -> void:
 	GameEvents.npc_wounded.connect(_on_other_wounded)
 	GameSettings.changed.connect(_on_setting_changed)
 	if is_instance_valid(npc.blood):
-		_blood_level = npc.blood.state.level
+		_blood_level = _effective_blood_level(npc.blood.state.level)
 	if GameSettings.ragdoll_only:
 		_set_ragdoll(true)
 
@@ -63,7 +68,7 @@ func get_exertion() -> float:
 		S.CLUTCH_WOUND: return float(ex.get("clutch", 0.3))
 		S.STAGGER: return float(ex.get("stagger", 0.2))
 		S.ALERT: return float(ex.get("walk", 0.3))
-		S.FIGHT: return float(ex.get("run", 1.0))  # TODO(roadmap: fight back)
+		S.FIGHT: return float(ex.get("fight", 0.8))
 	return float(ex.get("idle", 0.0))
 
 
@@ -126,6 +131,8 @@ func get_debug_info() -> Dictionary:
 		"flee_dir": _flee_dir,
 		"blood_level": _blood_level,
 		"ragdolled": _ragdolled,
+		"aggression": snappedf(aggression, 0.01),
+		"can_fight": _can_fight(),
 		"limp_side": get_limp_side(),
 		"limping": is_limping(),
 		"one_handed": is_one_handed(),
@@ -156,6 +163,31 @@ func _gait(pose: StringName, speed_key: String) -> Array:
 		var scale := float(_cfg.get("limp_walk_scale", 0.75)) if pose == &"walk" else 1.0
 		return [&"limp", minf(_speed(speed_key), cap) * scale]
 	return [pose, _speed(speed_key)]
+
+
+## Immortal NPCs never see a blood level worse than HEAVY (no collapse, no get-up block).
+func _effective_blood_level(level: int) -> int:
+	if is_instance_valid(npc) and npc.immortal:
+		return mini(level, BodyIds.BloodLevel.HEAVY)
+	return level
+
+
+func _player() -> Node3D:
+	return get_tree().get_first_node_in_group("player") as Node3D if is_inside_tree() else null
+
+
+## Fight-back gate: setting on, aggressive enough, hurting little, an arm to hit with, legs fine, not bleeding badly.
+func _can_fight(break_off := false) -> bool:
+	if not GameSettings.fight_back or _inactive() or _leg_down:
+		return false
+	if aggression < float(_cfg.get("fight_aggression_min", 0.5)):
+		return false
+	if _arm_lost["l"] and _arm_lost["r"]:
+		return false
+	if _blood_level >= BodyIds.BloodLevel.HEAVY:
+		return false
+	var pain_max := float(_cfg.get("fight_break_pain" if break_off else "fight_enter_pain", 0.5))
+	return get_pain() < pain_max
 
 
 func _random_dir() -> Vector3:
@@ -208,12 +240,15 @@ func _change(new_state: int) -> void:
 		S.PANIC_FLEE:
 			_scream_t = _rand_range("scream_interval")
 			_stumble_t = _rand_range("stumble_interval")
+		S.FIGHT:
+			_fight_cd = float(_cfg.get("fight_first_attack_delay", 0.4))
+			_attack_t = -1.0
 	if old != new_state:
 		npc.emit_state_changed(old, new_state)
 
 
 func _die(cause: StringName) -> void:
-	if state == S.DEAD:
+	if state == S.DEAD or npc.immortal:
 		return
 	_dead_cause = cause
 	_change(S.DEAD)
@@ -236,6 +271,8 @@ func _react(w: Wound, ev: DamageEvent) -> void:
 		return
 	if state == S.CRAWL or state == S.CLUTCH_WOUND and _clutch_part == BodyIds.Part.NECK:
 		return
+	if state == S.FIGHT and _can_fight(true) and w.part_id != BodyIds.Part.TORSO:
+		return  # keeps swinging through minor hits; a bad torso hit falls through to clutch
 	if w.is_bruise and w.severity < float(_cfg.get("bruise_severity_max", 0.3)):
 		_stagger_next = S.ALERT
 		_change(S.STAGGER)
@@ -247,7 +284,11 @@ func _react(w: Wound, ev: DamageEvent) -> void:
 		_change(S.CLUTCH_WOUND)
 		_push_clutch_wound(w)
 		return
-	if GameSettings.panic_enabled:
+	if state == S.FIGHT and _can_fight(true):
+		return
+	if _can_fight():
+		_change(S.FIGHT)
+	elif GameSettings.panic_enabled:
 		_panic_left = _rand_range("panic_duration")
 		_change(S.PANIC_FLEE)
 	else:
@@ -399,21 +440,23 @@ func _on_stunned(duration: float, _cause: StringName) -> void:
 		_wake_in = duration
 	else:
 		_state_duration = duration
-		_stagger_next = S.PANIC_FLEE if state == S.PANIC_FLEE else S.ALERT
+		_stagger_next = S.PANIC_FLEE if state == S.PANIC_FLEE else (S.FIGHT if state == S.FIGHT else S.ALERT)
 		if state != S.STAGGER:
 			_change(S.STAGGER)
 		_state_duration = duration
 
 
 func _on_lethal(cause: StringName) -> void:
+	if npc.immortal:
+		return
 	if state != S.DEAD and GameSettings.scream_enabled and cause not in [&"head_destroyed", &"decapitation", &"headshot", &"decapitated"]:
 		npc.cue(&"scream", 1.0)  # single death cue (no head left to scream with -> skipped)
 	_die(cause)
 
 
 func _on_blood_level_changed(_old: int, new_level: int) -> void:
-	_blood_level = new_level
-	if state == S.DEAD:
+	_blood_level = _effective_blood_level(new_level)
+	if state == S.DEAD or npc.immortal:
 		return
 	if new_level >= BodyIds.BloodLevel.FATAL:
 		_die(&"blood_loss")
@@ -444,6 +487,8 @@ func _on_setting_changed(setting: StringName, value) -> void:
 			_set_ragdoll(true)
 		elif state != S.UNCONSCIOUS:
 			_set_ragdoll(false)
+	elif setting == &"fight_back" and not value and state == S.FIGHT:
+		_after_clutch()  # back to fleeing (or staggering with panic off)
 	elif setting == &"panic_enabled" and not value and state == S.PANIC_FLEE:
 		_stagger_next = S.ALERT
 		_change(S.STAGGER)
@@ -462,13 +507,18 @@ func _physics_process(delta: float) -> void:
 	_shock = maxf((1.0 - frac) * float(_cfg.get("shock_gain", 1.6)), 0.0)
 	var bs := _blood_scale()
 	var body := npc.body
-	var pos := npc.global_position
+	var pos := npc.get_center()  # the Npc node stays at its spawn point; the body mover is what moves
 	match state:
-		S.IDLE, S.FIGHT:  # TODO(roadmap: fight back)
+		S.IDLE:
 			body.set_locomotion(Vector3.ZERO, &"idle")
+		S.FIGHT:
+			_fight_tick(delta, bs)
 		S.ALERT:
-			var g := _gait(&"walk", "walk")
-			body.set_locomotion(_flee_dir * g[1] * (bs if g[0] == &"limp" else 1.0), g[0])
+			if is_limping():
+				var g := _gait(&"walk", "walk")
+				body.set_locomotion(_flee_dir * g[1] * bs, g[0])
+			else:
+				body.set_locomotion(Vector3.ZERO, &"cower")  # standing, arms up protecting head and torso
 			if _state_time >= _state_duration:
 				_change(S.IDLE)
 		S.PANIC_FLEE:
@@ -499,7 +549,9 @@ func _physics_process(delta: float) -> void:
 			var wob := _flee_dir.rotated(Vector3.UP, sin(_state_time * 7.0) * 1.2)
 			body.set_locomotion(wob * _speed("stagger") * bs, &"stagger")
 			if _state_time >= _state_duration:
-				if _stagger_next == S.PANIC_FLEE and _panic_left > 0.0 and GameSettings.panic_enabled:
+				if _stagger_next == S.FIGHT and _can_fight():
+					_change(S.FIGHT)
+				elif _stagger_next == S.PANIC_FLEE and _panic_left > 0.0 and GameSettings.panic_enabled:
 					_change(S.PANIC_FLEE)
 				else:
 					_change(S.ALERT)
@@ -516,6 +568,57 @@ func _physics_process(delta: float) -> void:
 				_wake_in -= delta
 				if _wake_in < 0.0:
 					_get_up()
+
+
+## FIGHT: close in on the player, stop at reach, punch on cooldown. Breaks off when no longer able.
+func _fight_tick(delta: float, bs: float) -> void:
+	var body := npc.body
+	if not _can_fight(true):
+		_attack_t = -1.0
+		_after_clutch()
+		return
+	var player := _player()
+	if player == null:
+		_change(S.ALERT)
+		return
+	var to := player.global_position - npc.get_center()
+	var dist := Vector3(to.x, 0.0, to.z).length()
+	var dir := _flat(to)
+	var reach := float(_cfg.get("fight_reach", 1.0))
+	var pose: StringName = &"limp" if is_limping() else &"fight"
+	var spd := float(_cfg.get("fight_speed", 2.2))
+	if is_limping():
+		spd = minf(spd, float(_cfg.get("limp_speed", 1.6)))
+	if dist > reach * 0.9:
+		body.set_locomotion(dir * spd * bs, pose)
+	else:
+		# in reach: hold position but keep facing the player (tiny heading-only velocity)
+		body.set_locomotion(dir * 0.05, pose)
+	_fight_cd -= delta
+	if _attack_t >= 0.0:
+		_attack_t -= delta
+		if _attack_t < 0.0:
+			_land_punch(player)
+	elif _fight_cd <= 0.0 and dist <= reach:
+		var delay := float(_cfg.get("punch_fallback_delay", 0.3))
+		if body.has_method("play_action"):
+			delay = maxf(float(body.play_action(&"punch")), 0.0)
+		_attack_t = delay
+		_fight_cd = _rand_range("attack_cooldown")
+		if delay <= 0.0:
+			_attack_t = -1.0
+			_land_punch(player)
+
+
+func _land_punch(player: Node3D) -> void:
+	if not is_instance_valid(player):
+		return
+	var to := player.global_position - npc.get_center()
+	var slack := float(_cfg.get("fight_reach", 1.0)) + float(_cfg.get("fight_hit_slack", 0.3))
+	if Vector3(to.x, 0.0, to.z).length() > slack:
+		return  # player stepped out of reach: whiff
+	var amount := _rand_range("punch_damage")
+	GameEvents.player_hit.emit(npc, amount, player.global_position + Vector3.UP * 1.2)
 
 
 ## Keep inside the arena: reflect the heading when it points outward near the edge.

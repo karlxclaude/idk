@@ -16,4 +16,11 @@ Finite state machine for NPC behaviour. Tunables: `data/ai.json`. Test: `tests/a
   fleeing/walking the brain sends pose `limp` at `limp_speed` (exertion unchanged). Broken upper/lower leg or any
   severed leg/foot -> CRAWL (overrides limp). `get_limp_side()` -> "l"/"r"/"both"/"" (also `limp_side` in debug info);
   NpcBody has no side API yet, the orchestrator wires it.
-- FIGHT is a stub (TODO(roadmap: fight back)).
+- FIGHT (needs `GameSettings.fight_back`): entered on a hit if aggression >= `fight_aggression_min`, pain < `fight_enter_pain`,
+  an arm is usable, legs fine (not CRAWL), blood < HEAVY. Approaches group "player" with pose `fight` (`limp` if limping),
+  stops at `fight_reach`, `body.play_action(&"punch")` (has_method-guarded) -> after its delay emits
+  `GameEvents.player_hit(npc, amount, pos)` if still in reach; `attack_cooldown`. Breaks off to flee/clutch when pain >=
+  `fight_break_pain`, blood HEAVY, leg/arms lost, or fight_back is toggled off.
+- ALERT stands in pose `cower` (limping NPCs limp-walk instead). `npc.immortal`: never DEAD / blood UNCONSCIOUS
+  (lethal, CRITICAL, FATAL ignored); everything else still happens.
+- Positions use `npc.get_center()` (the Npc node itself never moves).

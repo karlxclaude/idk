@@ -21,6 +21,10 @@ func _ready() -> void:
 	await _t10()
 	await _t11()
 	await _t12()
+	await _t13()
+	await _t14()
+	await _t15()
+	await _t16()
 	print("AI TEST ", "FAILED" if failures > 0 else "ALL PASSED")
 	get_tree().quit(1 if failures > 0 else 0)
 
@@ -52,6 +56,7 @@ func _reset() -> void:
 	GameSettings.panic_enabled = true
 	GameSettings.scream_enabled = true
 	GameSettings.ragdoll_only = false
+	GameSettings.fight_back = false
 	cues.clear()
 
 
@@ -298,4 +303,140 @@ func _t12() -> void:
 	var cw = m.body._pose_driver._wound if m.body.get("_pose_driver") != null else null
 	_check("12b clutch picks entry wound over exit", m.brain.state == S.CLUTCH_WOUND and cw != null
 		and cw.get("n", Vector3.ZERO).z > 0.0, str(cw))
+	m.queue_free()
+
+
+func _fake_player(pos: Vector3) -> Node3D:
+	var p := Node3D.new()
+	add_child(p)
+	p.global_position = pos
+	p.add_to_group("player")
+	return p
+
+
+func _fighter(aggr := 1.0) -> Npc:
+	var n := _spawn()
+	n.brain.pain_tolerance = 1.0
+	n.brain.aggression = aggr
+	return n
+
+
+func _t13() -> void:
+	_reset()
+	GameSettings.fight_back = true
+	var player := _fake_player(Vector3(0, 0, 2.5))
+	var hits := []
+	var cb := func(npc, amount, _pos): hits.append([npc, amount])
+	GameEvents.player_hit.connect(cb)
+	var n := _fighter()
+	var a := _wound(BodyIds.Part.UPPER_ARM_L, 0.3)
+	n.wounded.emit(a[0], a[1])
+	_check("13a fight_back on + hit -> FIGHT", n.brain.state == S.FIGHT, BodyIds.state_name(n.brain.state))
+	for i in 360:
+		await get_tree().physics_frame
+		if not hits.is_empty():
+			break
+	var c := n.get_center() - player.global_position
+	var close := Vector2(c.x, c.z).length()
+	_check("13b approaches player", close < 2.0, "dist=%.2f" % close)
+	_check("13c player_hit emitted by this npc", hits.any(func(h): return h[0] == n and h[1] > 0.0), str(hits.size()))
+	_check("13d fighting pose is fight", _pose_of(n) == "fight", _pose_of(n))
+	# cooldown: not a punch every frame
+	var c0 := hits.size()
+	for i in 10:
+		await get_tree().physics_frame
+	_check("13e attack cooldown respected", hits.size() == c0, "%d -> %d" % [c0, hits.size()])
+	# toggling fight_back off mid-fight -> fleeing
+	GameSettings.set_setting(&"fight_back", false)
+	_check("13f fight_back off mid-fight -> leaves FIGHT", n.brain.state != S.FIGHT, BodyIds.state_name(n.brain.state))
+	GameEvents.player_hit.disconnect(cb)
+	n.queue_free()
+	player.queue_free()
+	GameSettings.fight_back = false
+
+
+func _t14() -> void:
+	_reset()
+	var player := _fake_player(Vector3(0, 0, 2.5))
+	var n := _fighter()
+	var a := _wound(BodyIds.Part.UPPER_ARM_L, 0.3)
+	n.wounded.emit(a[0], a[1])
+	_check("14a fight_back off -> no FIGHT", n.brain.state != S.FIGHT, BodyIds.state_name(n.brain.state))
+	n.queue_free()
+	# fight_back on but unable: low aggression, crawling, heavy bleed, no arms
+	GameSettings.fight_back = true
+	var m := _fighter(0.1)
+	var b := _wound(BodyIds.Part.UPPER_ARM_L, 0.3)
+	m.wounded.emit(b[0], b[1])
+	_check("14b low aggression -> no FIGHT", m.brain.state != S.FIGHT)
+	m.queue_free()
+	var k := _fighter()
+	k.blood_level_changed.emit(BodyIds.BloodLevel.NORMAL, BodyIds.BloodLevel.HEAVY)
+	var c := _wound(BodyIds.Part.UPPER_ARM_L, 0.3)
+	k.wounded.emit(c[0], c[1])
+	_check("14c heavy bleeding -> no FIGHT", k.brain.state != S.FIGHT)
+	k.queue_free()
+	var q := _fighter()
+	q.part_broken.emit(BodyIds.Part.LOWER_ARM_L)
+	q.part_severed.emit(BodyIds.Part.UPPER_ARM_R, null, null)
+	var d := _wound(BodyIds.Part.UPPER_LEG_L, 0.3)
+	q.wounded.emit(d[0], d[1])
+	_check("14d no usable arm -> no FIGHT", q.brain.state != S.FIGHT)
+	q.queue_free()
+	player.queue_free()
+	GameSettings.fight_back = false
+
+
+func _t15() -> void:
+	_reset()
+	GameSettings.fight_back = true
+	var player := _fake_player(Vector3(0, 0, 6.0))
+	var n := _fighter()
+	var a := _wound(BodyIds.Part.UPPER_ARM_L, 0.3)
+	n.wounded.emit(a[0], a[1])
+	var fighting: bool = n.brain.state == S.FIGHT
+	await get_tree().physics_frame
+	var b := _wound(BodyIds.Part.UPPER_LEG_R, 0.9)
+	n.wounded.emit(b[0], b[1])
+	_check("15 high-pain hit while fighting -> leaves FIGHT", fighting and n.brain.state != S.FIGHT,
+		"%s pain=%.2f" % [BodyIds.state_name(n.brain.state), n.brain.get_pain()])
+	n.queue_free()
+	player.queue_free()
+	GameSettings.fight_back = false
+
+
+func _t16() -> void:
+	_reset()
+	var n := _spawn()
+	n.immortal = true
+	var deaths := [0]
+	n.died.connect(func(_c): deaths[0] += 1)
+	n.lethal_injury.emit(&"decapitation")
+	n.blood_level_changed.emit(BodyIds.BloodLevel.NORMAL, BodyIds.BloodLevel.CRITICAL)
+	n.blood_level_changed.emit(BodyIds.BloodLevel.CRITICAL, BodyIds.BloodLevel.FATAL)
+	n.brain.force_state(S.DEAD)
+	_check("16a immortal: lethal/CRITICAL/FATAL -> not DEAD/UNCONSCIOUS", n.brain.state != S.DEAD
+		and n.brain.state != S.UNCONSCIOUS and deaths[0] == 0, BodyIds.state_name(n.brain.state))
+	var a := _wound(BodyIds.Part.TORSO, 0.4)
+	n.wounded.emit(a[0], a[1])
+	_check("16b immortal still reacts and feels pain", n.brain.state == S.PANIC_FLEE and n.brain.get_pain() > 0.0)
+	n.part_broken.emit(BodyIds.Part.LOWER_LEG_L)
+	_check("16c immortal still crawls", n.brain.state == S.CRAWL)
+	n.queue_free()
+	var k := _spawn()
+	k.immortal = true
+	k.stunned.emit(3.0, &"concussion")
+	_check("16d immortal knockdown still happens", k.brain.state == S.UNCONSCIOUS)
+	for i in 200:
+		await get_tree().physics_frame
+	_check("16e immortal knockdown wakes", k.brain.state != S.UNCONSCIOUS and k.brain.state != S.DEAD,
+		BodyIds.state_name(k.brain.state))
+	k.queue_free()
+	# ALERT uses the cower pose
+	_reset()
+	var m := _spawn()
+	m.brain.force_state(S.ALERT)
+	for i in 3:
+		await get_tree().physics_frame
+	_check("16f ALERT uses pose cower", m.brain.state == S.ALERT and _pose_of(m) == "cower", _pose_of(m))
 	m.queue_free()
