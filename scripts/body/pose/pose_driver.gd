@@ -471,6 +471,8 @@ func _apply_broken(pose: StringName, rots: Dictionary, ends: Dictionary, torso: 
 				sg * (float(bc["arm_abduct"]) + (float(bc["crawl_abduct"]) if prone else 0.0)))
 			rots[_id("lower_arm", side)] = _eb(_id("lower_arm", side), float(bc["elbow"]))
 			rots[_id("hand", side)] = _eb(_id("hand", side), float(bc["hand_x"]) + sway * 0.6, 0.0, sg * float(bc["hand_z"]))
+			if not prone:
+				e.z -= sg * float(bc["arm_roll"])  # shoulder drops on the broken side
 	var dl := _leg_down("l")
 	var dr := _leg_down("r")
 	if dl != dr and pose != &"crawl":
@@ -483,9 +485,8 @@ func _apply_broken(pose: StringName, rots: Dictionary, ends: Dictionary, torso: 
 		ends[_id("foot", side)] = mover_b * Basis.from_euler(Vector3(float(bc["foot_x"]), sg * float(_cfg["foot"]["toe_out"]), 0.0))  # dangles
 		skip[side] = true
 		e.z += sg * float(bc["roll"])
-		torso = Basis.from_euler(e)
 		hip -= float(bc["hip_drop"])
-	return [torso, hip, skip]
+	return [Basis.from_euler(e), hip, skip]
 
 
 ## Which arm clutches: the one whose shoulder is nearest the contact (never the wounded arm itself;

@@ -33,7 +33,7 @@
  "crawl": {"cycle_hz_base": 0.3, "cycle_hz_per_speed": 0.8, "cycle_hz_max": 1.5, "torso_pitch": 1.45,
   "hip": 0.25, "neck": -0.7, "head": -0.6, "leg_abduct": 0.15, "knee_base": 0.3, "knee_amp": 0.3,
   "foot_x": 0.5, "reach": 0.4, "reach_amp": 0.1, "lift": 0.09, "spread": 0.04, "wrist": -0.15},
- "broken": {"arm_x": 0.04, "arm_abduct": 0.12, "crawl_abduct": 0.3, "elbow": -0.18, "hand_x": -0.35, "hand_z": 0.1,
+ "broken": {"arm_x": 0.04, "arm_abduct": 0.32, "crawl_abduct": 0.3, "arm_roll": 0.14, "elbow": -0.02, "hand_x": -0.35, "hand_z": 0.3,
   "arm_sway": 0.1, "arm_sway_hz": 2.2,
   "leg_hip": -0.5, "leg_knee": 1.1, "leg_abduct": 0.05, "leg_swing": 0.1, "foot_x": 0.25,
   "roll": 0.1, "hip_drop": 0.025}
