@@ -62,7 +62,7 @@ func _ready() -> void:
 		toggle.text = "Settings  [-]" if panel.visible else "Settings  [+]")
 	_build_panel()
 	var help := Label.new()
-	help.text = "WASD move, Space jump, 1/2/3 weapon, LMB attack, RMB stab\nShift+mouse free swing, F1 debug, Esc frees mouse"
+	help.text = "WASD move, Space jump, 1-7 weapon, LMB attack, RMB stab\nShift+mouse free swing, F1 debug, Esc frees mouse"
 	help.add_theme_font_size_override("font_size", 12)
 	box.add_child(help)
 

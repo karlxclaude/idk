@@ -216,6 +216,8 @@ func _build_event(v: Vector3) -> DamageEvent:
 				and speed > float(def.get("dismember_min_velocity", 1e9))
 		_:
 			ev.penetration = float(def.get("penetration", 0.0))
+	if def.has("head_area_cm2"):
+		ev.extra["head_area"] = float(def.head_area_cm2)  # contact area (cm2), read by the blunt mechanism
 	ev.extra["swing_mode"] = _mode
 	ev.extra["speed"] = speed
 	ev.extra["angle_deg"] = angle

@@ -9,6 +9,9 @@ var cfg: Dictionary = {}
 var max_decals := 120          # base cap; effective cap = max_decals * intensity decal_cap_mult
 ## Running total of particles asked for (bursts + emitter rate), for tests/debug.
 var particles_spawned := 0.0
+var chunk_bursts_fired := 0
+var _bone_bursts: Array[GPUParticles3D] = []
+var _bone_i := 0
 var _decals: Array[Decal] = []
 var _decal_tex: Texture2D
 var _bursts: Array[GPUParticles3D] = []
@@ -31,6 +34,7 @@ func _ready() -> void:
 	_build_burst_pool()
 	GameEvents.npc_wounded.connect(_on_wounded)
 	GameEvents.npc_part_severed.connect(_on_severed)
+	GameEvents.npc_head_chunk_destroyed.connect(_on_head_chunk)
 	GameEvents.world_impact.connect(_on_world_impact)
 	GameSettings.changed.connect(_on_settings_changed)
 
@@ -188,7 +192,56 @@ func burst(pos: Vector3, dir: Vector3, amount: float, speed: float) -> void:
 	p.emitting = true
 
 
+## Head chunk destroyed: big blood + bone fragment burst, short bleeding on the gib and the head.
+func _on_head_chunk(npc: Node, chunk: int, gib: RigidBody3D, ev: DamageEvent) -> void:
+	var cc: Dictionary = cfg.get("chunk", {})
+	var pos := Vector3.ZERO
+	var head: Node3D = _part_node(npc, BodyIds.Part.HEAD)
+	if gib != null and is_instance_valid(gib):
+		pos = gib.global_position
+	elif ev != null:
+		pos = ev.hit_position
+	elif head != null:
+		pos = head.global_position
+	var dir: Vector3 = (-ev.direction if ev != null else Vector3.UP)
+	var mult := _im("burst_mult")
+	chunk_bursts_fired += 1
+	if mult <= 0.0:
+		return
+	burst(pos, dir, float(cc.get("blood_amount", 90)), float(cc.get("speed", 6.0)))
+	if not _bone_bursts.is_empty():
+		var bp := _bone_bursts[_bone_i]
+		_bone_i = (_bone_i + 1) % _bone_bursts.size()
+		var bm := bp.process_material as ParticleProcessMaterial
+		bm.direction = dir.normalized() if dir.length() > 0.01 else Vector3.UP
+		bm.initial_velocity_min = float(cc.get("bone_speed", 5.0)) * 0.4
+		bm.initial_velocity_max = float(cc.get("bone_speed", 5.0))
+		bp.amount_ratio = maxf(mult, 0.05)
+		bp.global_position = pos
+		particles_spawned += bp.amount * bp.amount_ratio
+		bp.restart()
+		bp.emitting = true
+	if _im("emitter_mult") <= 0.0:
+		return  # LOW: small burst only, no gib/head emitters
+	var dur := float(cc.get("emitter_duration", 3.0))
+	var flow := float(cc.get("emitter_flow", 25.0))
+	if gib != null and is_instance_valid(gib):
+		var e := _make_emitter(gib, Vector3.ZERO, Vector3.UP)
+		if not e.is_empty():
+			e.stump_flow = flow; e.stump_dur = dur
+	if head != null and ev != null:
+		var e2 := _make_emitter(head, head.to_local(pos), head.global_basis.inverse() * dir)
+		if not e2.is_empty():
+			e2.stump_flow = flow; e2.stump_dur = dur * 1.5
+
+
 func _build_burst_pool() -> void:
+	var cc: Dictionary = cfg.get("chunk", {})
+	for i in int(cc.get("max_bone_bursts", 6)):
+		var bp := _make_particles(int(cc.get("bone_amount", 24)), 0.9, true, true)
+		(bp.process_material as ParticleProcessMaterial).gravity = Vector3(0, -9.8, 0)
+		add_child(bp)
+		_bone_bursts.append(bp)
 	var b: Dictionary = cfg.get("burst", {})
 	for i in int(cfg.get("max_bursts", 12)):
 		var p := _make_particles(int(b.get("max_amount", 48)) * 2, float(b.get("lifetime", 0.7)), true)
@@ -196,7 +249,7 @@ func _build_burst_pool() -> void:
 		_bursts.append(p)
 
 
-func _make_particles(amount: int, lifetime: float, one_shot: bool) -> GPUParticles3D:
+func _make_particles(amount: int, lifetime: float, one_shot: bool, bone := false) -> GPUParticles3D:
 	var p := GPUParticles3D.new()
 	p.amount = amount
 	p.lifetime = lifetime
@@ -212,14 +265,23 @@ func _make_particles(amount: int, lifetime: float, one_shot: bool) -> GPUParticl
 	m.scale_min = 0.6
 	m.scale_max = 1.4
 	p.process_material = m
+	var sm := StandardMaterial3D.new()
+	sm.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	if bone:
+		sm.albedo_color = Color(0.9, 0.86, 0.74)
+		var box := BoxMesh.new()
+		box.size = Vector3(0.02, 0.012, 0.016)
+		box.material = sm
+		p.draw_pass_1 = box
+		m.angle_min = 0.0
+		m.angle_max = 360.0
+		return p
+	sm.albedo_color = _blood_color
 	var sphere := SphereMesh.new()
 	sphere.radius = 0.014
 	sphere.height = 0.028
 	sphere.radial_segments = 6
 	sphere.rings = 3
-	var sm := StandardMaterial3D.new()
-	sm.albedo_color = _blood_color
-	sm.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	sphere.material = sm
 	p.draw_pass_1 = sphere
 	return p

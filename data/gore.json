@@ -9,6 +9,7 @@
     "MED":  {"burst_mult": 0.5,  "emitter_mult": 0.5, "decal_cap_mult": 0.75, "pool_radius_mult": 1.0},
     "HIGH": {"burst_mult": 1.0,  "emitter_mult": 1.0, "decal_cap_mult": 1.0,  "pool_radius_mult": 1.0}
   },
+  "chunk": {"blood_amount": 96, "speed": 6.0, "bone_amount": 24, "bone_speed": 5.0, "max_bone_bursts": 6, "emitter_flow": 25.0, "emitter_duration": 3.0},
   "max_bursts": 12,
   "burst": {"min_amount": 12, "max_amount": 48, "exit_mult": 2.0, "lifetime": 0.7, "speed": 3.0, "exit_speed": 5.5},
   "max_wound_emitters": 40,

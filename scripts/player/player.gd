@@ -104,7 +104,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		match event.physical_keycode:
 			KEY_ESCAPE:
 				capture_mouse(false)
-			KEY_1, KEY_2, KEY_3, KEY_4, KEY_5:
+			KEY_1, KEY_2, KEY_3, KEY_4, KEY_5, KEY_6, KEY_7, KEY_8, KEY_9:
 				select_weapon(event.physical_keycode - KEY_1)
 	elif event is InputEventMouseButton and event.pressed:
 		if Input.mouse_mode != Input.MOUSE_MODE_CAPTURED:

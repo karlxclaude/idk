@@ -82,12 +82,14 @@ func is_busy() -> bool:
 
 # ---------------- shared helpers ----------------
 
-func _ray(from: Vector3, to: Vector3, mask: int) -> Dictionary:
+func _ray(from: Vector3, to: Vector3, mask: int, also_exclude: Array[RID] = []) -> Dictionary:
 	if not is_inside_tree():
 		return {}
 	var q := PhysicsRayQueryParameters3D.create(from, to, mask)
+	var ex: Array[RID] = also_exclude.duplicate()
 	if source is CollisionObject3D:
-		q.exclude = [(source as CollisionObject3D).get_rid()]
+		ex.append((source as CollisionObject3D).get_rid())
+	q.exclude = ex
 	return get_world_3d().direct_space_state.intersect_ray(q)
 
 
