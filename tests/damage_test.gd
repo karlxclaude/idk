@@ -43,6 +43,7 @@ func _ready() -> void:
 	await _t4()
 	await _t5()
 	await _t6()
+	await _t7()
 	print("DAMAGE TEST ", "FAILED" if _fails > 0 else "OK")
 	get_tree().quit(1 if _fails > 0 else 0)
 
@@ -192,3 +193,41 @@ func _t6() -> void:
 		min_vol >= floor_v - 0.01 and worst_level < BodyIds.BloodLevel.CRITICAL and flow_ok,
 		"min=%.0f floor=%.0f worst=%d" % [min_vol, floor_v, worst_level])
 	n.queue_free()
+
+
+func _t7() -> void:
+	# 7a monotonic under no_dismemberment: stronger cut on a hand-like bone part fractures + bleeds >= weaker
+	GameSettings.no_dismemberment = true
+	var weak := _fresh(); var strong := _fresh()
+	await get_tree().physics_frame
+	var ww := weak.damage.apply(_ev(DamageEvent.Type.BLADE_SLASH, BodyIds.Part.LOWER_ARM_R, 40.0, 0.0, Vector3.ZERO, true))
+	var sw := strong.damage.apply(_sever_slash(BodyIds.Part.LOWER_ARM_R))
+	var wb := 0.0; var sb := 0.0
+	for w in ww: wb += w.bleed_rate
+	for w in sw: sb += w.bleed_rate
+	var wbroke: bool = weak.damage.get_part(BodyIds.Part.LOWER_ARM_R).broken
+	var sbroke: bool = strong.damage.get_part(BodyIds.Part.LOWER_ARM_R).broken
+	_check("7a no_dismemberment: stronger cut fractures if weaker did, bleeds >=",
+		(sbroke or not wbroke) and sbroke and sb >= wb, "weak broke=%s bleed=%.1f | strong broke=%s bleed=%.1f" % [wbroke, wb, sbroke, sb])
+	weak.queue_free(); strong.queue_free()
+	# 7b neck: dropped sever bleeds at least like a normal neck slash
+	var n1 := _fresh(); var n2 := _fresh()
+	await get_tree().physics_frame
+	var a1 := n1.damage.apply(_ev(DamageEvent.Type.BLADE_SLASH, BodyIds.Part.NECK, 40.0, 0.0, Vector3.ZERO, true))
+	var a2 := n2.damage.apply(_sever_slash(BodyIds.Part.NECK))
+	_check("7b no_dismemberment: neck cut-through bleeds >= normal slash, arterial",
+		a2.size() > 0 and a1.size() > 0 and a2[0].bleed_rate >= a1[0].bleed_rate and a2[0].is_arterial,
+		"normal=%.1f dropped=%.1f" % [a1[0].bleed_rate, a2[0].bleed_rate])
+	GameSettings.no_dismemberment = false
+	n1.queue_free(); n2.queue_free()
+	# 7c immortal head: lethal-level hits knock down (>= 2 s concussion stun)
+	for t in [DamageEvent.Type.BULLET, DamageEvent.Type.BLADE_SLASH, DamageEvent.Type.BLADE_STAB, DamageEvent.Type.BLUNT]:
+		var n := _fresh()
+		await get_tree().physics_frame
+		n.immortal = true
+		var stuns := []
+		n.stunned.connect(func(d, c): stuns.append([d, c]))
+		n.damage.apply(_ev(t, BodyIds.Part.HEAD, 300.0, 0.5))
+		_check("7c immortal head %s: knockdown stun" % DamageEvent.Type.keys()[t],
+			stuns.size() > 0 and stuns[-1][0] >= 2.0 and stuns[-1][1] == &"concussion", str(stuns))
+		n.queue_free()

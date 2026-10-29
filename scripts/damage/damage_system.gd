@@ -164,6 +164,7 @@ func new_wound(ctx: HitContext, sev: float, ext: float, inn: float, art: bool) -
 ## Settings / immortal gates, applied to the region rule's requests before they are committed.
 func _apply_gates(ctx: HitContext) -> void:
 	var id := ctx.part.part_id
+	var lethal_suppressed: bool = npc.immortal and (ctx.lethal_cause != &"" or ctx.destroy)
 	var drop := false
 	if ctx.sever:
 		if not GameSettings.dismemberment_allowed():
@@ -176,17 +177,58 @@ func _apply_gates(ctx: HitContext) -> void:
 		_dropped_severs += 1
 		if id == BodyIds.Part.NECK:
 			ctx.lethal_cause = &""  # decapitation did not happen
+			lethal_suppressed = npc.immortal
 		ctx.cues.erase(&"sever")
 		if ctx.wounds.is_empty():
-			# the region rule replaced the surface wound by the cut-through: keep it as a deep cut
+			# the region rule replaced the surface wound by the cut-through: keep it as a deep cut,
+			# never weaker than the wound a non-severing slash of the same strength would make
 			var d: Dictionary = _core.get("dropped_sever_wound", {})
 			var art: bool = BodyIds.key(id) in _core.get("arterial_stump_parts", [])
 			var w := new_wound(ctx, float(d.get("severity", 0.8)), float(d.get("arterial_ext", 180.0)) if art else float(d.get("ext", 25.0)), 0.0, art)
 			w.local_direction = local_dir(ctx)
+			var shadow := _shadow_cut(ctx)
+			for sw in shadow.wounds:
+				if sw.is_exit:
+					continue
+				w.bleed_rate = maxf(w.bleed_rate, sw.bleed_rate)
+				w.internal_bleed_rate = maxf(w.internal_bleed_rate, sw.internal_bleed_rate)
+				w.severity = maxf(w.severity, sw.severity)
+				w.is_arterial = w.is_arterial or sw.is_arterial
+				break
 			ctx.wounds.append(w)
+			# a cut that would have severed a bone part at least breaks it
+			if ctx.part.tissue == BodyIds.Tissue.BONE and not ctx.part.broken and not ctx.part.severed:
+				ctx.fracture = true
+				if not ctx.cues.has(&"bone_crack"):
+					ctx.cues.append(&"bone_crack")
 	if npc.immortal:
+		if lethal_suppressed:
+			# the blow that would have killed knocks the dummy down instead
+			var knock := float(_core.get("immortal_lethal_knockdown", 3.0))
+			if ctx.stun_duration < knock:
+				ctx.stun_duration = knock
+				ctx.stun_cause = &"concussion"
 		ctx.lethal_cause = &""
 		ctx.destroy = false
+
+
+## Rule pipeline re-run on a scratch context with severing off (what a non-severing cut would produce).
+func _shadow_cut(ctx: HitContext) -> HitContext:
+	var ev := ctx.ev
+	var sc := HitContext.new()
+	sc.npc = npc
+	sc.ev = ev
+	sc.part = ctx.part
+	sc.part_cfg = ctx.part_cfg
+	sc.region = ctx.region
+	sc.detached = ctx.detached
+	sc.base_damage = ctx.base_damage
+	var had := ev.can_dismember
+	ev.can_dismember = false
+	_mech.get(ev.type, _mech[DamageEvent.Type.BLADE_SLASH]).apply(sc)
+	_regions[sc.region].apply(sc)
+	ev.can_dismember = had
+	return sc
 
 func _commit(ctx: HitContext) -> Array[Wound]:
 	var out: Array[Wound] = []

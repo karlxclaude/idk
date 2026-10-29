@@ -21,5 +21,6 @@
     "severity": 0.8,
     "ext": 25.0,
     "arterial_ext": 180.0
-  }
+  },
+  "immortal_lethal_knockdown": 3.0
 }
