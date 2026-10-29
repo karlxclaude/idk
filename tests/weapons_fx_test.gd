@@ -136,7 +136,7 @@ func _ready() -> void:
 	var sg := WeaponFactory.create(WeaponDefs.get_def("shotgun"), null) as HitscanWeapon
 	_holder.add_child(sg)
 	var snpc := FakeNpc.new(); add_child(snpc)
-	var st := _target(Vector3(0, 5, -8), Vector3(8, 8, 0.5), BodyIds.Part.TORSO, snpc)
+	var st := _target(Vector3(0, 5, -2), Vector3(8, 8, 0.5), BodyIds.Part.TORSO, snpc)
 	var rnpc1 := FakeNpc.new(); add_child(rnpc1)
 	var rnpc2 := FakeNpc.new(); add_child(rnpc2)
 	await get_tree().physics_frame
@@ -149,7 +149,16 @@ func _ready() -> void:
 		spread_ok = spread_ok and e.extra.get("pellet", false) == true and e.extra.get("caliber", "") == "buckshot" and e.extra.get("energy", 0.0) > 0.0
 	_check("8a shotgun fires N pellets inside the spread cone", spread_ok and max_ang <= float(sg.def.spread_deg) + 0.01 and max_ang > 0.1,
 		"n=%d max_angle=%.2f spread=%.1f" % [sg.last_events.size(), max_ang, float(sg.def.spread_deg)])
-	st.queue_free(); sg.queue_free(); snpc.queue_free()
+	var near_e: DamageEvent = sg.last_events[0]
+	st.queue_free()
+	var st2 := _target(Vector3(0, 5, -24), Vector3(8, 8, 0.5), BodyIds.Part.TORSO, snpc)
+	await get_tree().physics_frame
+	await get_tree().physics_frame
+	sg.fire_ray(Vector3(0, 5, 0), Vector3(0, 0, -1))
+	var far_e: DamageEvent = sg.last_events[0]
+	_check("8a2 far pellet has lower amount/energy/penetration", far_e.amount < near_e.amount and far_e.extra.energy < near_e.extra.energy
+		and far_e.penetration < near_e.penetration, "E %.0f -> %.0f pen %.3f -> %.3f" % [near_e.extra.energy, far_e.extra.energy, near_e.penetration, far_e.penetration])
+	st2.queue_free(); sg.queue_free(); snpc.queue_free()
 	var rf := WeaponFactory.create(WeaponDefs.get_def("rifle"), null) as HitscanWeapon
 	_holder.add_child(rf)
 	var ra := _target(Vector3(0, 5, -5), Vector3(1, 1, 0.3), BodyIds.Part.TORSO, rnpc1)

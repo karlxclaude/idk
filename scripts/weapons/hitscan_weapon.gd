@@ -82,13 +82,19 @@ func _trace(origin: Vector3, dir: Vector3, is_pellet: bool) -> void:
 		var ratio := v / maxf(float(def.get("velocity_ref", mv)), 0.001)
 		var amt := float(def.get("base_damage", 10.0)) * clampf(
 			pow(ratio, float(def.get("damage_velocity_exponent", 1.0))), 0.0, float(def.get("max_damage_scale", 1.0)))
+		# Range falloff models energy loss: one multiplier scales amount, energy and penetration
+		# (velocity by sqrt, so energy = 1/2 m v^2 stays consistent) so bleed/penetration rules see it too.
+		var fmult := 1.0
 		if not fo.is_empty():
 			var t := clampf((travelled - float(fo.get("start", 0.0))) / maxf(float(fo.get("end", 1.0)) - float(fo.get("start", 0.0)), 0.001), 0.0, 1.0)
-			amt *= lerpf(1.0, float(fo.get("min_mult", 0.2)), t)
+			fmult = lerpf(1.0, float(fo.get("min_mult", 0.2)), t)
+		amt *= fmult
 		ev.amount = amt
+		ev.penetration *= fmult
+		ev.impactor_velocity *= sqrt(fmult)
 		ev.extra["caliber"] = def.get("caliber", "")
 		ev.extra["pellet"] = is_pellet
-		ev.extra["energy"] = energy
+		ev.extra["energy"] = energy * fmult
 		var collider: Object = res.collider
 		var npc = BodyIds.npc_from_collider(collider)
 		_deliver(ev, collider, res.position, res.normal)
