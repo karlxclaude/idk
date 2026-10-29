@@ -28,7 +28,7 @@ func _ready() -> void:
 	GameEvents.audio_cue.connect(func(n, c, _p, i): _cues.append([n, c, i]))
 	await get_tree().physics_frame
 	var t0 := Time.get_ticks_msec()
-	for sec in ["neck", "body", "knife", "bat", "sever", "hands", "feet", "m3fight", "m3cower", "m3immortal", "m3gore", "m3slowmo", "m3cleanup", "m3react", "m5rifle", "m5shotgun", "m5machete", "m5hammer", "m5jaw", "m5face", "m5regress", "debug", "sweep", "ragdoll", "seams"]:
+	for sec in ["neck", "body", "knife", "bat", "sever", "hands", "feet", "m3fight", "m3cower", "m3immortal", "m3gore", "m3slowmo", "m3cleanup", "m3react", "m5rifle", "m5shotgun", "m5machete", "m5hammer", "m5jaw", "m5face", "m5regress", "m7", "debug", "sweep", "ragdoll", "seams"]:
 		if _only != "" and not _only_match(sec):
 			continue
 		var s0 := Time.get_ticks_msec()
@@ -1513,6 +1513,162 @@ func _sec_m5regress() -> void:
 	check("M5.7b", "neck shot still bleeds out in 10-25 s", n.is_dead() and t >= 10.0 and t <= 25.0, "dead=%s t=%.1fs" % [n.is_dead(), t])
 
 
+# ------------------------------------------------------------------ milestone 7: spawner, props, grabber, clear gore
+
+func _find_button(root: Node, text: String) -> Button:
+	if root is Button and (root as Button).text == text:
+		return root as Button
+	for c in root.get_children():
+		var b := _find_button(c, text)
+		if b != null:
+			return b
+	return null
+
+
+func _key_event(code: int, pressed: bool) -> void:
+	var e := InputEventKey.new()
+	e.physical_keycode = code
+	e.keycode = code
+	e.pressed = pressed
+	Input.parse_input_event(e)
+
+
+func _sec_m7() -> void:
+	var main := await _main_scene()
+	var player: Player = main.player
+	# --- warning screen is skipped in headless runs
+	check("M7.0", "content warning is skipped headless / with GORE_SKIP_WARNING (input enabled, no warning node)",
+		not main.warning_active and main.warning == null and player.input_enabled,
+		"warning_enabled=%s active=%s input_enabled=%s" % [main.warning_enabled, main.warning_active, player.input_enabled])
+
+	# --- spawner x5
+	var before: int = get_tree().get_nodes_in_group(&"npc").size()
+	var b5 := _find_button(main.ui, "x5")
+	if b5 != null:
+		b5.pressed.emit()
+	await frames(5)
+	var spawned: Array = get_tree().get_nodes_in_group(&"npc").filter(func(n): return n.get_parent() == main.npc_root)
+	var inside := spawned.all(func(n): return absf(n.body.get_center().x) < 20.0 and absf(n.body.get_center().z) < 20.0)
+	check("M7.1", "spawner button 'x5' spawns 5 NPCs (all alive and inside the arena)",
+		b5 != null and spawned.size() == before + 5 and inside and spawned.all(func(n): return not n.is_dead()),
+		"button=%s npcs before=%d after=%d inside=%s" % [b5 != null, before, spawned.size(), inside])
+	var bn := _find_button(main.ui, "Clear NPCs")
+	if bn != null:
+		bn.pressed.emit()
+	await frames(5)
+	check("M7.1b", "spawner button 'Clear NPCs' removes them", get_tree().get_nodes_in_group(&"npc").filter(func(n): return not n.is_queued_for_deletion()).is_empty(),
+		"left=%d" % get_tree().get_nodes_in_group(&"npc").filter(func(n): return not n.is_queued_for_deletion()).size())
+
+	# --- props are hit by the handgun
+	var plank: RigidBody3D = main.spawn_prop("plank")
+	await seconds(2.0)
+	var impacts: Array = []
+	var on_imp := func(pos, _n, ev): impacts.append([pos, ev])
+	GameEvents.world_impact.connect(on_imp)
+	var p0 := plank.global_position
+	var peak := [0.0]
+	var smp := func() -> void:
+		peak[0] = maxf(peak[0], plank.linear_velocity.length())
+	_samplers.append(smp)
+	var gun := _weapon("handgun") as HitscanWeapon
+	await frames(1)
+	var ev := gun.fire_ray(p0 + Vector3(0, 0, 3.0), Vector3(0, 0, -1))
+	gun.get_parent().queue_free()
+	await seconds(1.0)
+	_samplers.erase(smp)
+	GameEvents.world_impact.disconnect(on_imp)
+	var moved := plank.global_position.distance_to(p0)
+	check("M7.2", "handgun hits a prop: world impact is emitted (no NPC) and the prop moves",
+		ev != null and impacts.size() >= 1 and BodyIds.npc_from_collider(plank) == null and (peak[0] > 0.05 or moved > 0.01),
+		"ev=%s impacts=%d peak speed=%.2f m/s moved=%.3f m" % [ev.describe() if ev else "miss", impacts.size(), peak[0], moved])
+	var bp := _find_button(main.ui, "Clear props")
+	if bp != null:
+		bp.pressed.emit()
+	await frames(5)
+	check("M7.2b", "spawner button 'Clear props' removes the props", get_tree().get_nodes_in_group(&"prop").filter(func(n): return not n.is_queued_for_deletion()).is_empty(), "")
+
+	# --- grabber: hold a severed hand, throw it with LMB
+	var vic := Npc.spawn(main.npc_root, Transform3D(Basis.IDENTITY, Vector3(6, 0.05, -6)), 371)
+	await frames(3)
+	var r := await stroke_on(vic, "knife", P.HAND_L, 2.5, 0.75)
+	await seconds(2.0)
+	var sev: bool = vic.damage.get_part(P.HAND_L).severed
+	var hand := vic.body.get_part_node(P.HAND_L) as RigidBody3D
+	check("M7.3a", "precondition: a knife slash severed the left hand (RigidBody3D piece at rest)", sev and hand != null and hand.get_parent() != vic.body,
+		"severed=%s y=%.2f" % [sev, hand.global_position.y if hand else -9.0])
+	if sev and hand != null:
+		# stand 1.5 m from the hand and look down at it (reach is 3 m)
+		var hp := hand.global_position
+		player.global_position = Vector3(hp.x, 0.05, hp.z + 1.5)
+		player.rotation = Vector3.ZERO
+		player.set("_pitch", -atan2(1.6 - hp.y, 1.5))
+		player.velocity = Vector3.ZERO
+		player.capture_mouse(true)
+		await frames(3)
+		_key_event(KEY_E, true)
+		await seconds(0.5)
+		var held := player.grabber.held
+		player.set("_pitch", 0.25)     # carry it up: the hold point follows the view (2 m in front of the camera)
+		await seconds(1.5)
+		var speed_held := hand.linear_velocity.length()
+		var lifted := hand.global_position.y
+		var holding := player.grabber.is_holding() and player.grabber.held == hand
+		check("M7.3b", "grabber (E) picks up the severed hand and carries it with the view (lifted > 0.5 m above the floor)",
+			held == hand and holding and lifted > 0.5, "held=%s holding=%s y=%.2f speed=%.2f" % [held == hand, holding, lifted, speed_held])
+		# throw with LMB. A headless run cannot capture the mouse, and the first click then only re-captures it,
+		# so the click path is tried and grabber.throw() (what LMB calls while holding) is the fallback.
+		player.set("_pitch", 0.1)
+		await frames(3)
+		var v_before := hand.linear_velocity.length()
+		var peak2 := [0.0]
+		var start := hand.global_position
+		var smp2 := func() -> void:
+			peak2[0] = maxf(peak2[0], hand.linear_velocity.length())
+		_samplers.append(smp2)
+		var click := InputEventMouseButton.new()
+		click.button_index = MOUSE_BUTTON_LEFT
+		click.pressed = true
+		click.position = Vector2(100, 100)
+		Input.parse_input_event(click)
+		await frames(3)
+		var by_click := not player.grabber.is_holding()
+		if not by_click:
+			player.grabber.throw()
+		_key_event(KEY_E, false)
+		await seconds(4.0)
+		_samplers.erase(smp2)
+		var travelled := (hand.global_position - start).length()
+		check("M7.3c", "throw: the held hand's speed rises (> 6 m/s, above the hold speed), it travels > 2 m and lands (y < 0.35, at rest)",
+			holding and not player.grabber.is_holding() and peak2[0] > 6.0 and peak2[0] > v_before + 3.0 and travelled > 2.0 and hand.global_position.y < 0.35 and hand.linear_velocity.length() < 0.5,
+			"released by %s; speed before=%.2f peak=%.2f travelled=%.2f m final y=%.2f speed=%.2f" % ["LMB event" if by_click else "grabber.throw() (mouse not capturable headless, mode=%d)" % Input.mouse_mode,
+				v_before, peak2[0], travelled, hand.global_position.y, hand.linear_velocity.length()])
+
+	# --- clear gore
+	var gore: GoreFX = main.gore
+	var gv := Npc.spawn(main.npc_root, Transform3D(Basis.IDENTITY, Vector3(-6, 0.05, -6)), 372)
+	await frames(3)
+	await shoot(gv, P.TORSO, Vector3(0, 0, 1), 3.0, Vector3(0, 0.1, 0))
+	await shoot(gv, P.HEAD, Vector3(0, 0, 1), 3.0)
+	await seconds(4.0)
+	var dec0 := gore.decal_count()
+	var pool0 := gore.pool_count()
+	var emit0 := gore.emitter_count()
+	var old_pools: Array = []
+	for k in gore.get("_pools"):
+		old_pools.append(gore.get("_pools")[k].node)
+	var bg := _find_button(main.ui, "Clear gore")
+	if bg != null:
+		bg.pressed.emit()
+	var pool_now := gore.pool_count()     # right after the press (a still-bleeding corpse may start a new pool later)
+	await frames(5)
+	var old_gone := old_pools.all(func(n): return not is_instance_valid(n) or n.is_queued_for_deletion())
+	check("M7.4a", "there was gore to clear (decals present before the button)", dec0 > 0, "decals=%d pools=%d emitters=%d" % [dec0, pool0, emit0])
+	check("M7.4b", "spawner button 'Clear gore' removes decals, pools and wound emitters",
+		bg != null and gore.decal_count() == 0 and pool_now == 0 and old_gone and gore.emitter_count() == 0,
+		"decals %d -> %d, pools %d -> %d (old pool nodes freed=%s; %d after 5 frames), emitters %d -> %d" % [dec0, gore.decal_count(), pool0, pool_now, old_gone, gore.pool_count(), emit0, gore.emitter_count()])
+	await _free_main(main)
+
+
 # ------------------------------------------------------------------ 6. debug info + overlay
 
 func _sec_debug() -> void:
@@ -1549,7 +1705,24 @@ func _sec_debug() -> void:
 		var txt: String = ov.describe_npc(mnpc)
 		check("6.6", "overlay text shows state, blood volume and wounds", txt.contains("blood") and txt.contains("wounds") and txt.begins_with("Npc"),
 			txt.get_slice("\n", 0) + " | " + txt.get_slice("\n", 1))
-		check("6.7", "GameSettings.debug_overlay defaults ON", GameSettings.debug_overlay, str(GameSettings.debug_overlay))
+		check("6.7", "GameSettings.debug_overlay is OFF after the main scene starts (main.gd turns it off; perf default)", not GameSettings.debug_overlay,
+			"debug_overlay=%s" % str(GameSettings.debug_overlay))
+		# toggled on: F1 key event -> overlay setting ON -> overlay layer visible and per-NPC text still works; F1 again -> OFF
+		var f1 := InputEventKey.new()
+		f1.physical_keycode = KEY_F1
+		f1.pressed = true
+		Input.parse_input_event(f1)
+		await frames(3)
+		var on_now := GameSettings.debug_overlay
+		await frames(30)       # lets the overlay's own _process refresh its NPC labels
+		var layer: CanvasLayer = ov._layer
+		var txt2: String = ov.describe_npc(mnpc)
+		check("6.8", "F1 turns the overlay ON: layer visible and describe_npc still reports state, blood and wounds",
+			on_now and layer.visible and txt2.contains("blood") and txt2.contains("wounds"), "setting=%s layer.visible=%s text=%s" % [on_now, layer.visible, txt2.get_slice("\n", 0)])
+		Input.parse_input_event(f1)
+		await frames(3)
+		check("6.9", "F1 again turns the overlay OFF (layer hidden)", not GameSettings.debug_overlay and not layer.visible,
+			"setting=%s layer.visible=%s" % [GameSettings.debug_overlay, layer.visible])
 	main.queue_free()
 	await frames(2)
 

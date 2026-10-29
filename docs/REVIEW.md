@@ -1,13 +1,13 @@
 # Review report (systems-review-agent)
 
-State: milestone 5. Acceptance is green (161/161). No red scenes.
+State: milestone 7. Acceptance is green (173/173). No red scenes.
 Nothing outside the review-owned files (`tests/acceptance_test.*`, `docs/REVIEW.md`) was edited.
 
 Run any scene with `godot --headless --path /home/user/idk res://tests/<name>.tscn` (run `--import` once after adding `class_name` scripts).
-The acceptance scene (`tests/acceptance_test.tscn`, about 355 s wall clock: Godot headless steps physics in real time and `Engine.time_scale`
+The acceptance scene (`tests/acceptance_test.tscn`, about 370 s wall clock: Godot headless steps physics in real time and `Engine.time_scale`
 cannot be used to speed it up, it scales the physics step) prints `ACC|id|PASS/FAIL|name|evidence` lines and exits 1 on any failure.
-Optional filter: `-- only=<prefix>[,<prefix>...]` over the sections neck, body, knife, bat, sever, hands, feet, m3fight, m3cower, m3immortal, m3gore, m3slowmo, m3cleanup, m3react, m5rifle, m5shotgun, m5machete, m5hammer, m5jaw, m5face, m5regress, debug, sweep, ragdoll, seams
-(`only=m3` / `only=m5` run all milestone 3 / 5 sections, `only=hands,m3fight` two sections).
+Optional filter: `-- only=<prefix>[,<prefix>...]` over the sections neck, body, knife, bat, sever, hands, feet, m3fight, m3cower, m3immortal, m3gore, m3slowmo, m3cleanup, m3react, m5rifle, m5shotgun, m5machete, m5hammer, m5jaw, m5face, m5regress, m7, debug, sweep, ragdoll, seams
+(`only=m3` / `only=m5` / `only=m7` run all milestone 3 / 5 / 7 sections, `only=hands,m3fight` two sections).
 The test is part-count agnostic: it uses `BodyIds.PART_COUNT` / `BodyIds.KEYS`, and the sweep covers every part in `BodyIds.KEYS`.
 Every section starts and ends with all `GameSettings` toggles (milestone 3 ones included) and `Engine.time_scale` reset to their defaults.
 
@@ -21,16 +21,17 @@ Every section starts and ends with all `GameSettings` toggles (milestone 3 ones 
 | tests/blunt_test.tscn | PASS | 24 PASS, 0 FAIL |
 | tests/head_neck_test.tscn | PASS | 26 PASS, 0 FAIL |
 | tests/penetrating_test.tscn | PASS | 42 PASS, 0 FAIL |
-| tests/body_test.tscn | PASS | 30 PASS, 0 FAIL |
+| tests/body_test.tscn | PASS | 31 PASS, 0 FAIL |
 | tests/pose_test.tscn | PASS | 55 PASS, 0 FAIL |
 | tests/arms_test.tscn | PASS | 20 PASS, 0 FAIL |
 | tests/legs_test.tscn | PASS | 29 PASS, 0 FAIL |
-| tests/weapons_fx_test.tscn | PASS | 26 PASS, 0 FAIL |
+| tests/weapons_fx_test.tscn | PASS | 33 PASS, 0 FAIL |
 | tests/limb_integration_test.tscn | PASS | 575 PASS, 0 FAIL |
-| tests/injury_consistency_test.tscn | PASS | 50 / 50 CHK at the last run (milestone 3); not rerun for milestone 5, run by its own overseer |
-| tests/acceptance_test.tscn | PASS | 161 / 161 checks |
+| tests/fx_test.tscn | PASS | 9 PASS, 0 FAIL |
+| tests/injury_consistency_test.tscn | PASS | 50 / 50 CHK at its last run (milestone 3); not rerun since, run by its own overseer |
+| tests/acceptance_test.tscn | PASS | 173 / 173 checks |
 
-## 2. Acceptance checks (all 161 from the last full run)
+## 2. Acceptance checks (all 173 from the last full run)
 
 ### Neck shot
 
@@ -178,7 +179,7 @@ Every section starts and ends with all `GameSettings` toggles (milestone 3 ones 
 | M3.4a | PASS | control: sever-level knife slash (can_dismember, setting off) severs the hand | ev=BLADE_SLASH 48.0 part=hand_r v=15.9m/s severed=true attached=false |
 | M3.4b | PASS | no_dismemberment: the same slash does not sever (hand attached, wound still recorded) | ev=BLADE_SLASH 48.0 part=hand_r v=15.9m/s severed=false attached=true wounds_on_hand=2 |
 | M3.4c | PASS | gore LOW implies no dismemberment: the same slash does not sever | ev=BLADE_SLASH 48.0 part=hand_r v=15.9m/s severed=false attached=true |
-| M3.4d | PASS | gore LOW spawns fewer particles than HIGH for the same bullet (LOW < MED < HIGH) | particles HIGH=202 MED=101 LOW=24 \| wound emitters 2/2/2 \| decal cap 120/90/60 |
+| M3.4d | PASS | gore LOW spawns fewer particles than HIGH for the same bullet (LOW < MED < HIGH) | particles HIGH=204 MED=102 LOW=24 \| wound emitters 2/2/2 \| decal cap 120/90/60 |
 
 ### M3 slow-mo on kill
 
@@ -201,7 +202,7 @@ Every section starts and ends with all `GameSettings` toggles (milestone 3 ones 
 
 | ID | Result | Check | Evidence (last run) |
 |---|---|---|---|
-| M3.7 | PASS | head hit while animated: head moves relative to the neck within 0.1 s (>= 2 deg or >= 1.5 cm) and the NPC is not ragd... | hit_tick=14105 max_rot=5.7 deg max_shift=0.075 m (idle noise before hit 0.0001) ragdoll=false state=STAGGER |
+| M3.7 | PASS | head hit while animated: head moves relative to the neck within 0.1 s (>= 2 deg or >= 1.5 cm) and the NPC is not ragd... | hit_tick=14109 max_rot=5.7 deg max_shift=0.075 m (idle noise before hit 0.0001) ragdoll=false state=STAGGER |
 
 ### M5 rifle (pass-through)
 
@@ -244,7 +245,7 @@ Every section starts and ends with all `GameSettings` toggles (milestone 3 ones 
 |---|---|---|---|
 | M5.4a | PASS | hammer: head blows destroy the cranium chunk within 3 strokes and the NPC dies | strokes=1 chunks destroyed=["cranium"] dead=true (2.1s) |
 | M5.4b | PASS | hammer destroys the cranium sooner (fewer strokes) than the bat does | hammer 1 strokes (destroyed=true) vs bat 4 strokes (destroyed=false) |
-| M5.4c | PASS | hammer: a gib is spawned (RigidBody3D on the debris layer, not a hittable body part) and comes to rest on the floor | gib=HeadGib_cranium y=0.07 layer=16 |
+| M5.4c | PASS | hammer: a gib is spawned (RigidBody3D on the debris layer, not a hittable body part) and comes to rest on the floor | gib=HeadGib_cranium y=0.04 layer=16 |
 
 ### M5 jaw shot
 
@@ -271,7 +272,42 @@ Every section starts and ends with all `GameSettings` toggles (milestone 3 ones 
 | M5.7a | PASS | handgun headshot is still lethal (front, side, back) | (0.0, 0.0, 1.0): BULLET 34.0 part=head v=380.0m/s chunk=face dead=true \| (1.0, 0.0, 0.0): BULLET 34.0 part=head v=380.0m/s chunk=cranium dead=true... |
 | M5.7b | PASS | neck shot still bleeds out in 10-25 s | dead=true t=12.1s |
 
-### Debug info / overlay
+### M7 content warning
+
+| ID | Result | Check | Evidence (last run) |
+|---|---|---|---|
+| M7.0 | PASS | content warning is skipped headless / with GORE_SKIP_WARNING (input enabled, no warning node) | warning_enabled=false active=false input_enabled=true |
+
+### M7 spawner
+
+| ID | Result | Check | Evidence (last run) |
+|---|---|---|---|
+| M7.1 | PASS | spawner button 'x5' spawns 5 NPCs (all alive and inside the arena) | button=true npcs before=0 after=5 inside=true |
+| M7.1b | PASS | spawner button 'Clear NPCs' removes them | left=0 |
+
+### M7 props
+
+| ID | Result | Check | Evidence (last run) |
+|---|---|---|---|
+| M7.2 | PASS | handgun hits a prop: world impact is emitted (no NPC) and the prop moves | ev=BULLET 34.0 part=? v=380.0m/s impacts=1 peak speed=0.44 m/s moved=0.014 m |
+| M7.2b | PASS | spawner button 'Clear props' removes the props |  |
+
+### M7 grabber (hold and throw a severed hand)
+
+| ID | Result | Check | Evidence (last run) |
+|---|---|---|---|
+| M7.3a | PASS | precondition: a knife slash severed the left hand (RigidBody3D piece at rest) | severed=true y=0.05 |
+| M7.3b | PASS | grabber (E) picks up the severed hand and carries it with the view (lifted > 0.5 m above the floor) | held=true holding=true y=1.99 speed=0.01 |
+| M7.3c | PASS | throw: the held hand's speed rises (> 6 m/s, above the hold speed), it travels > 2 m and lands (y < 0.35, at rest) | released by grabber.throw() (mouse not capturable headless, mode=0); speed before=1.11 peak=14.00 travelled=7.81 m final y=0.02 speed=0.00 |
+
+### M7 clear gore
+
+| ID | Result | Check | Evidence (last run) |
+|---|---|---|---|
+| M7.4a | PASS | there was gore to clear (decals present before the button) | decals=120 pools=1 emitters=10 |
+| M7.4b | PASS | spawner button 'Clear gore' removes decals, pools and wound emitters | decals 120 -> 0, pools 1 -> 0 (old pool nodes freed=true; 0 after 5 frames), emitters 10 -> 0 |
+
+### Debug info / overlay (default OFF, F1 toggle)
 
 | ID | Result | Check | Evidence (last run) |
 |---|---|---|---|
@@ -281,8 +317,10 @@ Every section starts and ends with all `GameSettings` toggles (milestone 3 ones 
 | 6.4 | PASS | get_debug_info() has body + per-part damage | part rows=15/15 (16 keys total, extra keys are counters) body=animated |
 | 6.4b | PASS | every BodyIds part has a damage row and an attached body node with npc/part_id metas | missing=[] keys=15 |
 | 6.5 | PASS | DebugOverlay node exists in main scene | node=Node3D |
-| 6.6 | PASS | overlay text shows state, blood volume and wounds | Npc65 IDLE \| blood 5000/5000 (100%) NORMAL  ext 0.0/s int 0.0/s  hr 70 |
-| 6.7 | PASS | GameSettings.debug_overlay defaults ON | true |
+| 6.6 | PASS | overlay text shows state, blood volume and wounds | Npc72 IDLE \| blood 5000/5000 (100%) NORMAL  ext 0.0/s int 0.0/s  hr 70 |
+| 6.7 | PASS | GameSettings.debug_overlay is OFF after the main scene starts (main.gd turns it off; perf default) | debug_overlay=false |
+| 6.8 | PASS | F1 turns the overlay ON: layer visible and describe_npc still reports state, blood and wounds | setting=true layer.visible=true text=Npc72 IDLE |
+| 6.9 | PASS | F1 again turns the overlay OFF (layer hidden) | setting=false layer.visible=false |
 
 ### Consistency sweep (all 15 parts)
 
@@ -343,6 +381,13 @@ Every section starts and ends with all `GameSettings` toggles (milestone 3 ones 
   - M5.6 face: pain tolerance is pinned to 50 so pain cannot be the reason the fight stops. The NPC is provoked into FIGHT (light knife slash, real Player in `main.tscn`), one full-speed hammer blow to the face destroys the FACE chunk without killing (head hp 18/60),
     the brain reports `disoriented`, its flee direction turns > 30 degrees at least twice while up, and it never returns to FIGHT. The face blow stuns about 6 s (UNCONSCIOUS), so the observation window is 18 s.
   - M5.7: handgun headshot kills from front (face chunk), side (cranium) and back (occiput); neck shot bleeds out in 12.1 s.
+- M7 (all in the real `main.tscn`, buttons pressed through their `pressed` signal):
+  - The content warning is skipped headless (`warning_enabled` false, input enabled).
+  - M7.1 `x5` spawns 5 NPCs in the arena; M7.2 a handgun bullet hits a plank prop (world impact, peak 0.44 m/s, moved 1.4 cm); Clear NPCs / Clear props empty their groups.
+  - M7.3 the grabber is driven with real key events (E). The severed left hand is lifted to 2 m and thrown: speed 1.1 -> 14.0 m/s, 7.8 m travelled, rests at y = 0.02.
+    A headless run cannot capture the mouse (`Input.mouse_mode` stays visible), so the first LMB click only re-captures it; the throw is therefore triggered with `grabber.throw()`, which is exactly what the LMB handler calls while holding. The evidence field names which path was used.
+  - M7.4 Clear gore: decals 120 -> 0, pools 1 -> 0 (checked right after the press: a corpse that is still bleeding can start a new pool later), wound emitters 10 -> 0.
+  - Overlay: `main.gd` turns `debug_overlay` OFF at startup (6.7); F1 events toggle it on (layer visible, `describe_npc` works, 6.8) and off again (6.9). `GameSettings.debug_overlay` itself still defaults to true, `main.gd` overrides it.
 - Mid-reaction panic toggling still changes an NPC that is already clutching; the IDLE-NPC alert radius (8 m) makes sweep shots go off in one tick; lanes are 3 m apart.
 - `damage.get_debug_info()` now has a non-part key `sever_dropped` (counter); check 6.4 counts only per-part rows.
 - Not fixed, intermittent: three engine lines "Lambda capture at index 0 was freed" appeared in one of four full runs (sections m3immortal and m3gore, no check failed); they did not reproduce in 12 bisect runs or in the final full run.
@@ -357,3 +402,4 @@ v1 round 1 (review-agent) found four failures, all fixed and green since:
 Milestone 2: acceptance 68 -> 104 checks (hands, feet, 15-part sweep, 6.4b), part counts no longer hard-coded.
 Milestone 3: acceptance 104 -> 128 checks (M3.1 to M3.7).
 Milestone 5: acceptance 128 -> 161 checks (M5.1 to M5.7).
+Milestone 7: check 6.7 now asserts the new default (overlay OFF); 6.8 / 6.9 added for the F1 toggle; M7.0 to M7.4 added; acceptance 161 -> 173 checks.
