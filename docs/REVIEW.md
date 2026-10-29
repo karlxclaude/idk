@@ -1,31 +1,33 @@
 # Review report (systems-review-agent)
 
-State: milestone 2 (15 body parts, limp pose, injury pipeline). All test scenes green. Nothing outside the review-owned files was edited.
+State: milestone 3. Acceptance is green (128/128). No red scenes.
+Nothing outside the review-owned files (`tests/acceptance_test.*`, `docs/REVIEW.md`) was edited.
 
 Run any scene with `godot --headless --path /home/user/idk res://tests/<name>.tscn` (run `--import` once after adding `class_name` scripts).
-The acceptance scene (`tests/acceptance_test.tscn`, about 175 s wall clock: Godot headless steps physics in real time and `Engine.time_scale`
-cannot be used, it scales the physics step) prints `ACC|id|PASS/FAIL|name|evidence` lines and exits 1 on any failure.
-Optional filter: `-- only=<section>` (neck, body, knife, bat, sever, hands, feet, debug, sweep, ragdoll, seams).
-The test is part-count agnostic: it uses `BodyIds.PART_COUNT` / `BodyIds.KEYS`, and the sweep covers every part in `BodyIds.KEYS`
-(head, neck, torso first, then the rest in enum order), so a new part joins the sweep and checks 6.4 / 6.4b / S.1 automatically.
+The acceptance scene (`tests/acceptance_test.tscn`, about 290 s wall clock: Godot headless steps physics in real time and `Engine.time_scale`
+cannot be used to speed it up, it scales the physics step) prints `ACC|id|PASS/FAIL|name|evidence` lines and exits 1 on any failure.
+Optional filter: `-- only=<prefix>[,<prefix>...]` over the sections neck, body, knife, bat, sever, hands, feet, m3fight, m3cower, m3immortal, m3gore, m3slowmo, m3cleanup, m3react, debug, sweep, ragdoll, seams
+(`only=m3` runs all milestone 3 sections, `only=hands,m3fight` two sections).
+The test is part-count agnostic: it uses `BodyIds.PART_COUNT` / `BodyIds.KEYS`, and the sweep covers every part in `BodyIds.KEYS`.
+Every section starts and ends with all `GameSettings` toggles (milestone 3 ones included) and `Engine.time_scale` reset to their defaults.
 
 ## 1. Test scenes
 
 | Scene | Result | Count |
 |---|---|---|
 | tests/smoke_test.tscn | PASS | "SMOKE OK" |
-| tests/ai_test.tscn | PASS | 30 PASS lines, 0 FAIL |
-| tests/damage_test.tscn | PASS | 16 / 16 |
-| tests/body_test.tscn | PASS | 16 / 16 |
-| tests/pose_test.tscn | PASS | 31 / 31 (fails=0) |
-| tests/arms_test.tscn | PASS | 20 / 20 |
-| tests/legs_test.tscn | PASS | 28 / 28 |
-| tests/weapons_fx_test.tscn | PASS | 12 / 12 |
-| tests/acceptance_test.tscn | PASS | 104 / 104 checks |
+| tests/ai_test.tscn | PASS | 55 PASS, 0 FAIL |
+| tests/damage_test.tscn | PASS | 29 PASS, 0 FAIL |
+| tests/body_test.tscn | PASS | 20 PASS, 0 FAIL |
+| tests/pose_test.tscn | PASS | 55 PASS, 0 FAIL |
+| tests/arms_test.tscn | PASS | 20 PASS, 0 FAIL |
+| tests/legs_test.tscn | PASS | 29 PASS, 0 FAIL |
+| tests/weapons_fx_test.tscn | PASS | 18 PASS, 0 FAIL |
+| tests/limb_integration_test.tscn | PASS | 575 PASS, 0 FAIL (earlier arm frac.pose failures fixed) |
+| tests/injury_consistency_test.tscn | PASS | 50 / 50 CHK (about 360 s; an earlier run mid-development had 11 failures, fixed since) |
+| tests/acceptance_test.tscn | PASS | 128 / 128 checks |
 
-`tests/limb_integration_test.*` belongs to the limb-integration overseer and is not covered here.
-
-## 2. Acceptance checks (all 104 from the last full run)
+## 2. Acceptance checks (all 128 from the last full run)
 
 ### Neck shot
 
@@ -50,10 +52,10 @@ The test is part-count agnostic: it uses `BodyIds.PART_COUNT` / `BodyIds.KEYS`, 
 | 2.2 | PASS | panic ON: NPC moves away from shooter (>2 m along fire direction in 2 s) | displacement=8.58 m (away component 8.58) |
 | 2.4 | PASS | panic OFF: no PANIC_FLEE; reacts STAGGER/CLUTCH_WOUND (stands/staggers) | states seen in 2 s=["IDLE", "CLUTCH_WOUND"] first=CLUTCH_WOUND |
 | 2.5 | PASS | panic OFF: NPC stays near (<2.5 m in 2 s) and exertion low (<0.5) | displacement=1.93 m max_exertion=0.30 |
-| 2.3 | PASS | panic ON: collapses from blood loss later (UNCONSCIOUS/DEAD) | collapse t=43.7s state=UNCONSCIOUS level=CRITICAL vol=2424/5000 |
-| 2.3b | PASS | panic ON: collapse is not instant (>10 s after the shot) | t=43.7s |
-| 2.6 | PASS | panic OFF: still collapses from blood loss later | collapse t=55.9s state=UNCONSCIOUS vol=2749 |
-| 2.7 | PASS | panic ON bleeds out faster than panic OFF (running raises exertion) | ON=43.7s OFF=55.9s |
+| 2.3 | PASS | panic ON: collapses from blood loss later (UNCONSCIOUS/DEAD) | collapse t=45.6s state=UNCONSCIOUS level=CRITICAL vol=2485/5000 |
+| 2.3b | PASS | panic ON: collapse is not instant (>10 s after the shot) | t=45.6s |
+| 2.6 | PASS | panic OFF: still collapses from blood loss later | collapse t=55.4s state=UNCONSCIOUS vol=2749 |
+| 2.7 | PASS | panic ON bleeds out faster than panic OFF (running raises exertion) | ON=45.6s OFF=55.4s |
 
 ### Knife
 
@@ -139,6 +141,65 @@ The test is part-count agnostic: it uses `BodyIds.PART_COUNT` / `BodyIds.KEYS`, 
 | F.8.7 | PASS | wounds on the severed piece are detached (no longer drain the body) | ["lower_leg_l BLADE_SLASH sev=1.00 ext=40.0 int=0.0 flow=56.8 STUMP"] |
 | F.8.8 | PASS | NPC itself survives the sever (not DEAD instantly, body still upright/animated or in a reaction) | state=CRAWL sane='' |
 
+### M3 fight-back
+
+| ID | Result | Check | Evidence (last run) |
+|---|---|---|---|
+| M3.1a | PASS | fight_back OFF: a hit aggressive NPC never enters FIGHT, never approaches the player, never hurts the player | states=["IDLE", "PANIC_FLEE"] player_hits=0 min_health=100 min_dist=3.00 aggression=1.00 |
+| M3.1b | PASS | fight_back ON + aggression 1.0: hit NPC enters FIGHT | states=["IDLE", "FIGHT"] pain@hit=0.59 ev=BLADE_SLASH 18.0 part=upper_arm_l v=4.5m/s all=["BLADE_SLASH 19.9 part=torso v=5.0m/s", "BLADE_SLASH 18.0... |
+| M3.1c | PASS | fighting NPC approaches the real Player (comes within 1.5 m of it) | min_dist=0.20 m |
+| M3.1d | PASS | player_hit fires and the Player's HP drops (no permadeath: health stays >= 0) | player_hit x9 min_health=23.3/100 |
+
+### M3 cower
+
+| ID | Result | Check | Evidence (last run) |
+|---|---|---|---|
+| M3.2 | PASS | bystander NPC in ALERT uses the 'cower' pose | shot=BULLET 34.0 part=upper_leg_r v=380.0m/s states seen=["IDLE", "ALERT"] cower_in_alert=true pose_now=cower |
+| M3.2b | PASS | cowering NPC stays sane (finite, bounded) |  |
+
+### M3 immortal dummy
+
+| ID | Result | Check | Evidence (last run) |
+|---|---|---|---|
+| M3.3a | PASS | immortal dummy: handgun HEAD shot and sever-level knife NECK slash both land (preconditions) | immortal=true head=BULLET 34.0 part=head v=380.0m/s neck=BLADE_SLASH 48.0 part=neck v=15.9m/s (real knife) can_dismember=true hits=["BLADE_SLASH 48... |
+| M3.3b | PASS | immortal dummy: never DEAD / never died / no lethal report over 60 s of bleeding | dead_ticks=0 died=false lethal=false state=IDLE min_blood=0.72 |
+| M3.3c | PASS | immortal dummy: head not severed or destroyed, neck not severed, parts still attached | head severed=false destroyed=false hp=9.0 \| neck severed=false hp=0.0 |
+| M3.3d | PASS | immortal dummy: wounds still exist and bleed (flow > 0, volume dropped), blood floored above HEAVY (0.70) | wounds=5 max_bleed=1226/s bleed@60s=500.1/s volume after hits 4852, min fraction 0.720 |
+| M3.3e | PASS | immortal dummy stays sane (finite, bounded) after 60 s |  |
+| M3.3f | PASS | control: same headshot kills a normal NPC | state=DEAD |
+
+### M3 no-dismemberment / gore intensity
+
+| ID | Result | Check | Evidence (last run) |
+|---|---|---|---|
+| M3.4a | PASS | control: sever-level knife slash (can_dismember, setting off) severs the hand | ev=BLADE_SLASH 48.0 part=hand_r v=15.9m/s severed=true attached=false |
+| M3.4b | PASS | no_dismemberment: the same slash does not sever (hand attached, wound still recorded) | ev=BLADE_SLASH 48.0 part=hand_r v=15.9m/s severed=false attached=true wounds_on_hand=2 |
+| M3.4c | PASS | gore LOW implies no dismemberment: the same slash does not sever | ev=BLADE_SLASH 48.0 part=hand_r v=15.9m/s severed=false attached=true |
+| M3.4d | PASS | gore LOW spawns fewer particles than HIGH for the same bullet (LOW < MED < HIGH) | particles HIGH=202 MED=101 LOW=24 \| wound emitters 2/2/2 \| decal cap 120/90/60 |
+
+### M3 slow-mo on kill
+
+| ID | Result | Check | Evidence (last run) |
+|---|---|---|---|
+| M3.5a | PASS | slow_mo_on_kill OFF: a kill leaves Engine.time_scale at 1.0 | dead=true min_scale=1.00 |
+| M3.5b | PASS | slow_mo_on_kill ON: kill drops Engine.time_scale to slow_mo_scale (0.3) | dead=true min_scale=0.30 dropped at 0.00s real |
+| M3.5c | PASS | slow-mo restores to 1.0 within about 1.6 s of real time (and lasts >= 1.0 s) | slow-mo lasted 1.51s real (drop 0.00s, restore 1.51s) |
+| M3.5d | PASS | Engine.time_scale is back to 1.0 after the scene is freed | time_scale=1.00 |
+
+### M3 auto cleanup
+
+| ID | Result | Check | Evidence (last run) |
+|---|---|---|---|
+| M3.6a | PASS | auto_cleanup_time 2 s: a dead NPC is still there ~1 s after death and is freed afterwards | dead=true present@0.8s=true freed=true |
+| M3.6b | PASS | auto_cleanup_time 2 s: a severed piece is freed (still present ~0.6 s after the cut) | severed=true present@0.6s=true freed=true |
+| M3.6c | PASS | the living NPC the piece was cut from is not cleaned up | valid=true |
+
+### M3 hit reaction
+
+| ID | Result | Check | Evidence (last run) |
+|---|---|---|---|
+| M3.7 | PASS | head hit while animated: head moves relative to the neck within 0.1 s (>= 2 deg or >= 1.5 cm) and the NPC is not ragd... | hit_tick=14105 max_rot=5.7 deg max_shift=0.075 m (idle noise before hit 0.0001) ragdoll=false state=STAGGER |
+
 ### Debug info / overlay
 
 | ID | Result | Check | Evidence (last run) |
@@ -146,10 +207,10 @@ The test is part-count agnostic: it uses `BodyIds.PART_COUNT` / `BodyIds.KEYS`, 
 | 6.1 | PASS | get_debug_info() has blood volume + level | { "volume": 4948.8, "fraction": 0.99, "external_rate": 12.87, "internal_rate": 89.11, "level": "NORMAL", "heart_rate": 71.5 } |
 | 6.2 | PASS | get_debug_info() has wounds list | { "count": 2, "attached": 2, "wounds": ["torso BULLET sev=0.57 ext=1.5 int=30.0 flow=3.0", "torso BULLET sev=0.85 ext=5.0 int=15.0 flow=9.9 EXIT"] } |
 | 6.3 | PASS | get_debug_info() has state per NPC | state=PANIC_FLEE brain=PANIC_FLEE |
-| 6.4 | PASS | get_debug_info() has body + per-part damage | parts=15/15 body=animated |
+| 6.4 | PASS | get_debug_info() has body + per-part damage | part rows=15/15 (16 keys total, extra keys are counters) body=animated |
 | 6.4b | PASS | every BodyIds part has a damage row and an attached body node with npc/part_id metas | missing=[] keys=15 |
 | 6.5 | PASS | DebugOverlay node exists in main scene | node=Node3D |
-| 6.6 | PASS | overlay text shows state, blood volume and wounds | Npc31 IDLE \| blood 5000/5000 (100%) NORMAL  ext 0.0/s int 0.0/s  hr 70 |
+| 6.6 | PASS | overlay text shows state, blood volume and wounds | Npc48 IDLE \| blood 5000/5000 (100%) NORMAL  ext 0.0/s int 0.0/s  hr 70 |
 | 6.7 | PASS | GameSettings.debug_overlay defaults ON | true |
 
 ### Consistency sweep (all 15 parts)
@@ -174,9 +235,9 @@ The test is part-count agnostic: it uses `BodyIds.PART_COUNT` / `BodyIds.KEYS`, 
 
 | ID | Result | Check | Evidence (last run) |
 |---|---|---|---|
-| X.0-grunt | PASS | 'grunt' cue has a single owning system (no duplicate emitters) | emitted from ["npc_brain.gd:319"] |
-| X.0-gurgle | PASS | 'gurgle' cue has a single owning system (no duplicate emitters) | emitted from ["npc_brain.gd:321"] |
-| X.0-scream | PASS | 'scream' cue has a single owning system (no duplicate emitters) | emitted from ["npc_brain.gd:324", "npc_brain.gd:399", "npc_brain.gd:470"] |
+| X.0-grunt | PASS | 'grunt' cue has a single owning system (no duplicate emitters) | emitted from ["npc_brain.gd:360"] |
+| X.0-gurgle | PASS | 'gurgle' cue has a single owning system (no duplicate emitters) | emitted from ["npc_brain.gd:362"] |
+| X.0-scream | PASS | 'scream' cue has a single owning system (no duplicate emitters) | emitted from ["npc_brain.gd:365", "npc_brain.gd:454", "npc_brain.gd:543"] |
 | X.1 | PASS | scream ON: a body bullet makes the NPC scream (>= 1 scream cue) | scream x1 |
 | X.1b | PASS | one body bullet emits at most 1 grunt and 1 scream cue (entry+exit wound / two systems must not stack) | grunt x1 scream x1 |
 | X.2 | PASS | one neck bullet emits <= 1 gurgle cue | gurgle x1 |
@@ -188,22 +249,28 @@ The test is part-count agnostic: it uses `BodyIds.PART_COUNT` / `BodyIds.KEYS`, 
 
 ## 3. Notes
 
-- Sweep (S.*): one 9mm bullet per part, 30 s observation. Head dies at once, neck collapses at about 7 s, torso survives 30 s at 0.64 blood.
-  Limb bleed 15.0 /s (hands, bleed x0.5) to 29.8 /s (all other limbs/feet); hands and feet break (hand hp 20, foot hp 30) but nobody dies or crawls from a single limb bullet.
-- Hands/feet use real weapons: handgun for H.1/H.6, knife swing (scale 2.5) for H.7 and F.7, bat swing (scale 2.0) for F.1/F.2. Strokes at foot level are yawed 90 degrees
-  (`FOOT_YAW`) so they travel front to back; a lateral swing at ground level sweeps through both legs, hits `lower_leg` too, breaks it and sends the NPC crawling instead of limping.
-- H.8 documents the design choice that the phone stays on the severed right hand (DECISIONS.md); a broken-but-attached right hand drops it instead (`drop_held_item`, seen in H.1).
-- Limp is verified at brain level (`get_limp_side() == "r"`, `is_limping()`) and at pose level (`body.get_debug_info().pose == "limp"` while the NPC flees), see F.3/F.4.
-- Mid-reaction panic toggling still changes an NPC that is already clutching (`_after_clutch`/`_get_up`/post-stumble resume read `panic_enabled`); the body test (section 2) flips it only before the shots.
-- IDLE NPCs within `alert_radius` (8 m) of a wounded NPC turn ALERT and walk away (intended); the sweep fires all shots in one physics tick for this reason, and lanes are 3 m apart.
-- Fixed-seed assertions elsewhere are fragile if `npc.rng` draw order changes (this caused F1 in round 1); the acceptance test avoids seed-dependent thresholds.
+- Sweep (S.*): one 9mm bullet per part, 30 s observation. Head dies at once, neck collapses at about 7 s, torso survives 30 s.
+  Hands break (hp 20) and bleed 15 /s, other limbs/feet 29.8 /s; nobody dies or crawls from one limb bullet.
+- Hands/feet use real weapons. Strokes at foot level are yawed 90 degrees (`FOOT_YAW`) so they travel front to back; a lateral swing at ground level sweeps through both legs, breaks the lower leg and sends the NPC crawling instead of limping.
+- H.8: the phone stays on a severed right hand (DECISIONS.md); a broken-but-attached right hand drops it instead (seen in H.1).
+- M3.1: a bullet gives entry+exit wounds whose pain already exceeds `fight_enter_pain` (0.5), so the fight-back trial uses a light real knife slash (scale 0.7) instead; the stroke also nicks the torso. Aggression is pinned to 1.0 on the brain after spawn.
+  The trial runs inside the real `main.tscn` (real Player in group "player", GameDirector, GoreFX) and counts `GameEvents.player_hit`; the Player regenerates, so the minimum health seen is reported.
+- M3.3: the dummy is spawned with `immortal_dummy` on, then the toggle is switched off (only NPCs spawned while ON are immortal). Head shot first; the dummy is then knocked down, so the neck slash is thrown at the settled ragdoll
+  (real knife, retry from the other side, weapon-equivalent event as last resort; the evidence names which one was used). A bullet fired at the fallen head from the front hits the torso first, so the order "neck slash then head shot" is not usable either.
+- M3.4d counts `GoreFX.particles_spawned` over 2 s after the same torso bullet at HIGH, MED, LOW (LOW has no wound emitters, bursts x0.15).
+- M3.5 polls the real clock (physics ticks are stretched by the time scale it measures). Slow-mo lasts `slow_mo_duration` (1.5 s) and `Engine.time_scale` returns to 1.0.
+- M3.6 uses `auto_cleanup_time = 2`; the dead NPC and the severed hand are freed after about 2 s.
+- M3.7 uses a weak real bat blow on the head (a handgun headshot kills and ragdolls at once, which would not test the animated hit reaction). Head-vs-neck local transform moves by about 5.7 degrees / 7.5 cm within 6 physics ticks of the hit; idle noise is 0.0001.
+- Mid-reaction panic toggling still changes an NPC that is already clutching; the IDLE-NPC alert radius (8 m) makes sweep shots go off in one tick; lanes are 3 m apart.
+- `damage.get_debug_info()` now has a non-part key `sever_dropped` (counter); check 6.4 counts only per-part rows.
+- Not fixed, intermittent: three engine lines "Lambda capture at index 0 was freed" appeared in one of four full runs (sections m3immortal and m3gore, no check failed); they did not reproduce in 12 bisect runs or in the final full run.
 
 ## 4. History
 
-v1 round 1 (review-agent) found four failures, all since fixed and now green:
-- **F1** `ai_test 7a` scream cue: seed-dependent pain tolerance made a fixed test wound too weak. Fixed (ai_test now green, 30 PASS).
-- **F2** duplicate / mis-gated vocal cues (grunt/gurgle/scream emitted by DamageSystem and NpcBrain, per-wound instead of per-event, scream with `scream_enabled` off, neck scream).
-  Fixed: NpcBrain is the only vocal-cue source, once per DamageEvent, never a neck scream (acceptance X.0-*, X.1b, X.2, X.2b, X.3).
-- **F3** a 9mm headshot was not lethal (51 < `lethal_damage` 55). Fixed: head `lethal_damage` 48 (acceptance S.3).
-- **F4** a fracture wound was created on a limb severed by the same hit. Fixed (acceptance 5.7 PASS).
-Milestone 2 changes to this document: acceptance extended from 68 to 104 checks (hands, feet, 15-part sweep, 6.4b part-table check), part counts no longer hard-coded.
+v1 round 1 (review-agent) found four failures, all fixed and green since:
+- **F1** `ai_test 7a` scream cue: seed-dependent pain tolerance made a fixed test wound too weak. Fixed (ai_test green).
+- **F2** duplicate / mis-gated vocal cues (DamageSystem and NpcBrain both emitting, per-wound instead of per-event, scream with `scream_enabled` off, neck scream). Fixed: NpcBrain is the only vocal-cue source (X.0-*, X.1b, X.2, X.2b, X.3).
+- **F3** a 9mm headshot was not lethal (51 < `lethal_damage` 55). Fixed: head `lethal_damage` 48 (S.3).
+- **F4** a fracture wound was created on a limb severed by the same hit. Fixed (5.7).
+Milestone 2: acceptance 68 -> 104 checks (hands, feet, 15-part sweep, 6.4b), part counts no longer hard-coded.
+Milestone 3: acceptance 104 -> 128 checks (M3.1 to M3.7).

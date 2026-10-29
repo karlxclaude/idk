@@ -1,7 +1,7 @@
 ## systems-review-agent: end-to-end acceptance test (milestone 2: 15 parts, hands/feet, limp) (real NPCs, real weapons where practical).
 ## Run: godot --headless --path . res://tests/acceptance_test.tscn
 ## Output: one "ACC|<id>|PASS/FAIL|<name>|<evidence>" line per check plus "INFO|" diagnostics.
-## Exit code 1 if any check FAILs. Optional user arg:  -- only=<section prefix>  (e.g. only=neck)
+## Exit code 1 if any check FAILs. Optional user arg:  -- only=<section prefix>[,<prefix>...]  (e.g. only=neck or only=hands,m3fight)
 extends Node3D
 
 const P := BodyIds.Part
@@ -28,8 +28,8 @@ func _ready() -> void:
 	GameEvents.audio_cue.connect(func(n, c, _p, i): _cues.append([n, c, i]))
 	await get_tree().physics_frame
 	var t0 := Time.get_ticks_msec()
-	for sec in ["neck", "body", "knife", "bat", "sever", "hands", "feet", "debug", "sweep", "ragdoll", "seams"]:
-		if _only != "" and not sec.begins_with(_only):
+	for sec in ["neck", "body", "knife", "bat", "sever", "hands", "feet", "m3fight", "m3cower", "m3immortal", "m3gore", "m3slowmo", "m3cleanup", "m3react", "debug", "sweep", "ragdoll", "seams"]:
+		if _only != "" and not _only_match(sec):
 			continue
 		var s0 := Time.get_ticks_msec()
 		_new_bay()
@@ -42,6 +42,14 @@ func _ready() -> void:
 
 
 # ------------------------------------------------------------------ helpers
+
+## `only=a,b` runs every section whose name starts with one of the comma-separated prefixes.
+func _only_match(sec: String) -> bool:
+	for pre in _only.split(","):
+		if sec.begins_with(pre):
+			return true
+	return false
+
 
 func check(id: String, name: String, ok: bool, evidence := "") -> void:
 	checks += 1
@@ -79,12 +87,24 @@ func _new_bay() -> void:
 func _free_bay() -> void:
 	_bay.queue_free()
 	_bay = null
+	_reset_settings()
 
 
 func _reset_settings() -> void:
 	GameSettings.panic_enabled = true
 	GameSettings.scream_enabled = true
 	GameSettings.ragdoll_only = false
+	# milestone 3 settings (defaults from scripts/core/game_settings.gd)
+	GameSettings.fight_back = false
+	GameSettings.slow_mo_on_kill = false
+	GameSettings.slow_mo_scale = 0.3
+	GameSettings.slow_mo_duration = 1.5
+	GameSettings.immortal_dummy = false
+	GameSettings.gore_intensity = GameSettings.Gore.HIGH
+	GameSettings.no_dismemberment = false
+	GameSettings.auto_cleanup_time = 0.0
+	GameSettings.time_scale = 1.0
+	Engine.time_scale = 1.0
 
 
 ## Physics ticks are counted here (one per _physics_process call) so durations stay exact even if the engine
@@ -805,6 +825,353 @@ func _sec_feet() -> void:
 	await frames(2)
 
 
+# ------------------------------------------------------------------ milestone 3
+
+## The real main scene (arena, Player in group "player", GoreFX, GameDirector, UI). Free it with _free_main.
+func _main_scene() -> Node:
+	var main: Node = (load("res://scenes/main.tscn") as PackedScene).instantiate()
+	_bay.add_child(main)
+	await frames(5)
+	return main
+
+
+func _free_main(main: Node) -> void:
+	main.queue_free()
+	await frames(3)
+	Engine.time_scale = 1.0
+
+
+# --- M3.1 fight back
+
+## One fight-back trial: main scene, real Player, one NPC (aggression pinned) hit by a real handgun bullet.
+## Returns {states, hits (player_hit count), min_health, min_dist, npc}.
+func _fight_trial(fight_back: bool, part: int, seed_value: int, hold := 12.0) -> Dictionary:
+	GameSettings.fight_back = fight_back
+	var main := await _main_scene()
+	var player: Player = main.player
+	var npc: Npc = main.spawn_npc()
+	await frames(3)
+	npc.brain.aggression = 1.0          # pinned: >= fight_aggression_min
+	var res := {"states": {}, "hits": 0, "min_health": player.health, "min_dist": 99.0, "npc": npc, "ev": null, "pain": 0.0}
+	var on_hit := func(n, _a, _p): if n == npc: res.hits += 1
+	GameEvents.player_hit.connect(on_hit)
+	var smp := func() -> void:
+		res.states[_state_name(npc)] = true
+		res.min_health = minf(res.min_health, player.health)
+		var to: Vector3 = npc.get_center() - player.global_position
+		to.y = 0.0
+		res.min_dist = minf(res.min_dist, to.length())
+	_samplers.append(smp)
+	# a light real knife slash (a bullet's entry+exit wounds already exceed fight_enter_pain); strokes travel along X, so the
+	# NPC's far-side arm is hit only. The stroke is yawed 90 deg (front to back) to touch just the one limb.
+	var w := _weapon("knife") as MeleeWeapon
+	var hits: Array = []
+	_record_hits(w, hits)
+	await melee_through(w, _part_pos(npc, part), 0.7, &"swing", 0.75, 90.0)
+	(w.get_parent() as Node).queue_free()
+	for h in hits:
+		if h[0].part_id == part:
+			res.ev = h[0]
+	res["pain0"] = npc.brain.get_pain()
+	res["hits_all"] = hits.map(func(h): return h[0].describe())
+	await seconds(hold)
+	_samplers.erase(smp)
+	GameEvents.player_hit.disconnect(on_hit)
+	res.pain = npc.brain.get_pain()
+	res["aggr"] = npc.brain.aggression
+	await _free_main(main)
+	return res
+
+
+func _sec_m3fight() -> void:
+	var off := await _fight_trial(false, P.UPPER_ARM_L, 201)
+	check("M3.1a", "fight_back OFF: a hit aggressive NPC never enters FIGHT, never approaches the player, never hurts the player",
+		off.ev != null and not off.states.has("FIGHT") and off.hits == 0 and off.min_health >= 100.0,
+		"states=%s player_hits=%d min_health=%.0f min_dist=%.2f aggression=%.2f" % [str(off.states.keys()), off.hits, off.min_health, off.min_dist, off.aggr])
+	var on := await _fight_trial(true, P.UPPER_ARM_L, 202)
+	check("M3.1b", "fight_back ON + aggression 1.0: hit NPC enters FIGHT", on.states.has("FIGHT"),
+		"states=%s pain@hit=%.2f ev=%s all=%s" % [str(on.states.keys()), on.pain0, on.ev.describe() if on.ev else "miss", str(on.hits_all)])
+	check("M3.1c", "fighting NPC approaches the real Player (comes within 1.5 m of it)", on.min_dist < 1.5, "min_dist=%.2f m" % on.min_dist)
+	check("M3.1d", "player_hit fires and the Player's HP drops (no permadeath: health stays >= 0)",
+		on.hits >= 1 and on.min_health < 100.0 and on.min_health >= 0.0, "player_hit x%d min_health=%.1f/100" % [on.hits, on.min_health])
+
+
+# --- M3.2 cower
+
+func _sec_m3cower() -> void:
+	# NPC A (bystander) is 3 m from NPC B; B is shot, A (IDLE inside alert_radius) turns ALERT and cowers.
+	var a := await _spawn(Vector3(-1.5, 0.05, 0), 211)
+	var b := await _spawn(Vector3(1.5, 0.05, 0), 212)
+	var seen: Dictionary = {}
+	var cower_in_alert := [false]
+	var smp := func() -> void:
+		var st := _state_name(a)
+		seen[st] = true
+		if st == "ALERT" and a.body.get_debug_info().pose == "cower":
+			cower_in_alert[0] = true
+	_samplers.append(smp)
+	var ev := await shoot(b, P.UPPER_LEG_R, Vector3(0, 0, 1), 3.0)
+	await seconds(2.5)
+	_samplers.erase(smp)
+	check("M3.2", "bystander NPC in ALERT uses the 'cower' pose", seen.has("ALERT") and cower_in_alert[0],
+		"shot=%s states seen=%s cower_in_alert=%s pose_now=%s" % [ev.describe() if ev else "miss", str(seen.keys()), cower_in_alert[0], a.body.get_debug_info().pose])
+	check("M3.2b", "cowering NPC stays sane (finite, bounded)", _npc_sane(a) == "", _npc_sane(a))
+
+
+# --- M3.3 immortal dummy
+
+func _sec_m3immortal() -> void:
+	GameSettings.immortal_dummy = true
+	var npc := await _spawn(Vector3(0, 0.05, 0), 221)
+	GameSettings.immortal_dummy = false     # only NPCs spawned while ON are immortal
+	var died := [false]
+	var lethal := [false]
+	npc.died.connect(func(_c): died[0] = true)
+	npc.lethal_injury.connect(func(_c): lethal[0] = true)
+	var dead_ticks := [0]
+	var min_frac := [1.0]
+	var max_flow := [0.0]
+	var smp := func() -> void:
+		if npc.is_dead() or npc.get_state() == S.DEAD:
+			dead_ticks[0] += 1
+		min_frac[0] = minf(min_frac[0], npc.blood.state.fraction())
+		max_flow[0] = maxf(max_flow[0], npc.blood.state.external_rate + npc.blood.state.internal_rate)
+	_samplers.append(smp)
+	# head shot first, then wait for the knocked-down dummy to settle and slash its neck with the real knife
+	# (retry from the other side, then fall back to a weapon-equivalent slash event)
+	var hev := await shoot(npc, P.HEAD, Vector3(0, 0, 1), 3.0)
+	await seconds(0.3)
+	var tn := npc.body.get_part_node(P.TORSO) as RigidBody3D
+	await wait_until(func(): return tn == null or tn.linear_velocity.length() < 0.3 or not npc.body.is_ragdoll(), 4.0)
+	await frames(10)
+	var hits: Array = []
+	var neck_hit: DamageEvent = null
+	var how := "real knife"
+	for yaw in [0.0, 90.0]:
+		var w := _weapon("knife") as MeleeWeapon
+		_record_hits(w, hits)
+		await melee_through(w, _part_pos(npc, P.NECK), 2.5, &"swing", 0.75, yaw)
+		(w.get_parent() as Node).queue_free()
+		for h in hits:
+			if h[0].part_id == P.NECK:
+				neck_hit = h[0]
+		if neck_hit != null:
+			break
+	if neck_hit == null:
+		how = "weapon-equivalent event"
+		neck_hit = _slash_event(npc, P.NECK)
+		npc.apply_damage(neck_hit)
+	var head_bp: BodyPart = npc.damage.get_part(P.HEAD)
+	var neck_bp: BodyPart = npc.damage.get_part(P.NECK)
+	var v_after_hits := npc.blood.state.volume
+	var wounds_after_hits := npc.wounds.get_wounds().size()
+	check("M3.3a", "immortal dummy: handgun HEAD shot and sever-level knife NECK slash both land (preconditions)",
+		npc.immortal and hev != null and hev.part_id == P.HEAD and neck_hit != null and neck_hit.can_dismember and neck_hit.part_id == P.NECK,
+		"immortal=%s head=%s neck=%s (%s) can_dismember=%s hits=%s" % [npc.immortal, hev.describe() if hev else "miss", neck_hit.describe() if neck_hit else "none", how,
+			neck_hit.can_dismember if neck_hit else "-", str(hits.map(func(h): return h[0].describe()))])
+	await seconds(60.0)
+	_samplers.erase(smp)
+	var flow_now := npc.blood.state.external_rate + npc.blood.state.internal_rate
+	check("M3.3b", "immortal dummy: never DEAD / never died / no lethal report over 60 s of bleeding",
+		dead_ticks[0] == 0 and not died[0] and not lethal[0] and npc.get_state() != S.DEAD,
+		"dead_ticks=%d died=%s lethal=%s state=%s min_blood=%.2f" % [dead_ticks[0], died[0], lethal[0], _state_name(npc), min_frac[0]])
+	check("M3.3c", "immortal dummy: head not severed or destroyed, neck not severed, parts still attached",
+		not head_bp.severed and not head_bp.destroyed and not neck_bp.severed and npc.body.has_part(P.HEAD) and npc.body.has_part(P.NECK),
+		"head severed=%s destroyed=%s hp=%.1f | neck severed=%s hp=%.1f" % [head_bp.severed, head_bp.destroyed, head_bp.hp, neck_bp.severed, neck_bp.hp])
+	check("M3.3d", "immortal dummy: wounds still exist and bleed (flow > 0, volume dropped), blood floored above HEAVY (0.70)",
+		wounds_after_hits >= 2 and max_flow[0] > 50.0 and v_after_hits < npc.blood.state.max_volume and min_frac[0] > 0.70,
+		"wounds=%d max_bleed=%.0f/s bleed@60s=%.1f/s volume after hits %.0f, min fraction %.3f" % [wounds_after_hits, max_flow[0], flow_now, v_after_hits, min_frac[0]])
+	check("M3.3e", "immortal dummy stays sane (finite, bounded) after 60 s", _npc_sane(npc) == "", _npc_sane(npc))
+	# control: a normal NPC with the same head shot dies at once (proves the dummy flag is what saved it)
+	var ctl := await _spawn(Vector3(6, 0.05, 0), 221)
+	await shoot(ctl, P.HEAD, Vector3(0, 0, 1), 3.0)
+	await seconds(1.0)
+	check("M3.3f", "control: same headshot kills a normal NPC", ctl.is_dead(), "state=%s" % _state_name(ctl))
+
+
+# --- M3.4 gore / no dismemberment
+
+func _sec_m3gore() -> void:
+	# sever-level knife slash on a hand: control, no_dismemberment, gore LOW
+	var rows := {}
+	for cfg in [["control", false, GameSettings.Gore.HIGH], ["no_dismemberment", true, GameSettings.Gore.HIGH], ["gore_low", false, GameSettings.Gore.LOW]]:
+		GameSettings.no_dismemberment = cfg[1]
+		GameSettings.gore_intensity = cfg[2]
+		var notes: Array = []
+		var r := await _knife_stroke(&"swing", 2.5, P.HAND_R, 0.75, Vector3.ZERO, 231)
+		var npc: Npc = r.npc
+		npc.part_severed.connect(func(p, root, _e): notes.append(p))
+		await seconds(1.5)
+		rows[cfg[0]] = {"ev": r.ev, "severed": npc.damage.get_part(P.HAND_R).severed, "attached": npc.body.has_part(P.HAND_R), "notes": notes,
+			"wounds": npc.wounds.get_wounds_on(P.HAND_R).size()}
+		(r.w as Node).get_parent().queue_free()
+		npc.queue_free()
+		await frames(2)
+		_reset_settings()
+	var c: Dictionary = rows.control
+	var nd: Dictionary = rows.no_dismemberment
+	var gl: Dictionary = rows.gore_low
+	check("M3.4a", "control: sever-level knife slash (can_dismember, setting off) severs the hand",
+		c.ev != null and c.ev.can_dismember and c.severed and not c.attached, "ev=%s severed=%s attached=%s" % [c.ev.describe() if c.ev else "none", c.severed, c.attached])
+	check("M3.4b", "no_dismemberment: the same slash does not sever (hand attached, wound still recorded)",
+		nd.ev != null and nd.ev.can_dismember and not nd.severed and nd.attached and nd.wounds >= 1,
+		"ev=%s severed=%s attached=%s wounds_on_hand=%d" % [nd.ev.describe() if nd.ev else "none", nd.severed, nd.attached, nd.wounds])
+	check("M3.4c", "gore LOW implies no dismemberment: the same slash does not sever",
+		gl.ev != null and not gl.severed and gl.attached, "ev=%s severed=%s attached=%s" % [gl.ev.describe() if gl.ev else "none", gl.severed, gl.attached])
+
+	# GoreFX particle counts: same torso bullet at HIGH, MED, LOW (GoreFX of the real main scene)
+	var main := await _main_scene()
+	var gore: GoreFX = main.gore
+	var counts := {}
+	var k := 0
+	for lvl in [GameSettings.Gore.HIGH, GameSettings.Gore.MED, GameSettings.Gore.LOW]:
+		GameSettings.gore_intensity = lvl
+		gore.clear_all()
+		var npc := Npc.spawn(main.npc_root, Transform3D(Basis.IDENTITY, Vector3(-9.0 + 3.0 * k, 0.05, -6.0)), 232)
+		k += 1
+		await frames(3)
+		var p0 := gore.particles_spawned
+		await shoot(npc, P.TORSO, Vector3(0, 0, 1), 3.0, Vector3(0, 0.1, 0))
+		await seconds(2.0)
+		counts[lvl] = {"particles": gore.particles_spawned - p0, "emitters": gore.emitter_count(), "decal_cap": gore.decal_cap()}
+		npc.queue_free()
+		await frames(2)
+	_reset_settings()
+	await _free_main(main)
+	var hi: Dictionary = counts[GameSettings.Gore.HIGH]
+	var me: Dictionary = counts[GameSettings.Gore.MED]
+	var lo: Dictionary = counts[GameSettings.Gore.LOW]
+	check("M3.4d", "gore LOW spawns fewer particles than HIGH for the same bullet (LOW < MED < HIGH)",
+		lo.particles < me.particles and me.particles < hi.particles and hi.particles > 0.0,
+		"particles HIGH=%.0f MED=%.0f LOW=%.0f | wound emitters %d/%d/%d | decal cap %d/%d/%d" % [hi.particles, me.particles, lo.particles,
+			hi.emitters, me.emitters, lo.emitters, hi.decal_cap, me.decal_cap, lo.decal_cap])
+
+
+# --- M3.5 slow-mo on kill
+
+func _sec_m3slowmo() -> void:
+	var main := await _main_scene()
+	var out := {}
+	for on in [false, true]:
+		GameSettings.slow_mo_on_kill = on
+		var npc: Npc = main.spawn_npc()
+		await frames(3)
+		await shoot(npc, P.HEAD, Vector3(0, 0, 1), 3.0)
+		var t0 := Time.get_ticks_msec()
+		var min_scale := 1.0
+		var t_drop := -1.0
+		var t_restore := -1.0
+		# poll the real clock (physics ticks are stretched by the time scale itself)
+		while Time.get_ticks_msec() - t0 < 4000:
+			await get_tree().process_frame
+			var el := (Time.get_ticks_msec() - t0) / 1000.0
+			var ts := Engine.time_scale
+			min_scale = minf(min_scale, ts)
+			if t_drop < 0.0 and ts < 0.99:
+				t_drop = el
+			if t_drop >= 0.0 and t_restore < 0.0 and ts > 0.99:
+				t_restore = el
+				break
+		out[on] = {"dead": npc.is_dead(), "min_scale": min_scale, "t_drop": t_drop, "t_restore": t_restore}
+		npc.queue_free()
+		await frames(2)
+		Engine.time_scale = 1.0
+		await seconds(0.3)
+	GameSettings.slow_mo_on_kill = false
+	var off: Dictionary = out[false]
+	var onr: Dictionary = out[true]
+	check("M3.5a", "slow_mo_on_kill OFF: a kill leaves Engine.time_scale at 1.0", off.dead and off.min_scale > 0.99, "dead=%s min_scale=%.2f" % [off.dead, off.min_scale])
+	check("M3.5b", "slow_mo_on_kill ON: kill drops Engine.time_scale to slow_mo_scale (0.3)", onr.dead and onr.min_scale <= 0.31 and onr.t_drop >= 0.0,
+		"dead=%s min_scale=%.2f dropped at %.2fs real" % [onr.dead, onr.min_scale, onr.t_drop])
+	check("M3.5c", "slow-mo restores to 1.0 within about 1.6 s of real time (and lasts >= 1.0 s)", onr.t_restore >= 0.0 and onr.t_restore - onr.t_drop <= 1.6 and onr.t_restore - onr.t_drop >= 1.0,
+		"slow-mo lasted %.2fs real (drop %.2fs, restore %.2fs)" % [onr.t_restore - onr.t_drop, onr.t_drop, onr.t_restore])
+	await _free_main(main)
+	check("M3.5d", "Engine.time_scale is back to 1.0 after the scene is freed", is_equal_approx(Engine.time_scale, 1.0), "time_scale=%.2f" % Engine.time_scale)
+
+
+# --- M3.6 auto cleanup
+
+func _sec_m3cleanup() -> void:
+	GameSettings.auto_cleanup_time = 2.0
+	var main := await _main_scene()
+	# dead NPC
+	var dead_npc: Npc = main.spawn_npc()
+	await frames(3)
+	await shoot(dead_npc, P.HEAD, Vector3(0, 0, 1), 3.0)
+	await wait_until(func(): return dead_npc.is_dead(), 3.0)
+	var was_dead := dead_npc.is_dead()
+	await seconds(0.8)
+	var alive_at_1 := is_instance_valid(dead_npc) and not dead_npc.is_queued_for_deletion()
+	# severed piece (separate NPC, not killed): knife slash through the left hand
+	var r := await _knife_stroke(&"swing", 2.5, P.HAND_L, 0.75, Vector3.ZERO, 241)
+	var piece: Node = r.npc.body.get_part_node(P.HAND_L)
+	var severed: bool = r.npc.damage.get_part(P.HAND_L).severed and piece != null and piece.get_parent() != r.npc.body
+	(r.w as Node).get_parent().queue_free()
+	await seconds(0.6)
+	var piece_alive_early := is_instance_valid(piece) and not piece.is_queued_for_deletion()
+	var dead_id := dead_npc.get_instance_id()
+	var piece_id := piece.get_instance_id()
+	await wait_until(func(): return not is_instance_id_valid(dead_id) or (instance_from_id(dead_id) as Node).is_queued_for_deletion(), 6.0)
+	var dead_freed := not is_instance_valid(dead_npc) or dead_npc.is_queued_for_deletion()
+	await wait_until(func(): return not is_instance_id_valid(piece_id) or (instance_from_id(piece_id) as Node).is_queued_for_deletion(), 6.0)
+	var piece_freed := not is_instance_valid(piece) or piece.is_queued_for_deletion()
+	check("M3.6a", "auto_cleanup_time 2 s: a dead NPC is still there ~1 s after death and is freed afterwards",
+		was_dead and alive_at_1 and dead_freed, "dead=%s present@0.8s=%s freed=%s" % [was_dead, alive_at_1, dead_freed])
+	check("M3.6b", "auto_cleanup_time 2 s: a severed piece is freed (still present ~0.6 s after the cut)",
+		severed and piece_alive_early and piece_freed, "severed=%s present@0.6s=%s freed=%s" % [severed, piece_alive_early, piece_freed])
+	check("M3.6c", "the living NPC the piece was cut from is not cleaned up", is_instance_valid(r.npc) and not r.npc.is_queued_for_deletion() and not r.npc.is_dead(),
+		"valid=%s" % is_instance_valid(r.npc))
+	await _free_main(main)
+
+
+# --- M3.7 hit reaction
+
+func _sec_m3react() -> void:
+	# A real (weak) bat head blow keeps the NPC animated; the head must visibly move relative to the neck within 0.1 s.
+	var npc := await _spawn(Vector3(0, 0.05, 0), 251)
+	await seconds(1.0)
+	var samples: Array = []         # [tick, local origin, local basis, ragdoll]
+	var smp := func() -> void:
+		var hx: Transform3D = npc.body.get_part_global_transform(P.HEAD)
+		var nx: Transform3D = npc.body.get_part_global_transform(P.NECK)
+		samples.append([tick, nx.affine_inverse() * hx, npc.body.is_ragdoll()])
+	_samplers.append(smp)
+	await seconds(0.3)
+	var base: Transform3D = samples[-1][1]
+	var noise := 0.0
+	for sm in samples:
+		noise = maxf(noise, (sm[1].origin - base.origin).length() + (sm[1].basis.get_rotation_quaternion().angle_to(base.basis.get_rotation_quaternion())))
+	var w := _weapon("bat") as MeleeWeapon
+	var hit_tick := [-1]
+	w.hit_resolved.connect(func(e: DamageEvent, _a): if e.part_id == P.HEAD and hit_tick[0] < 0: hit_tick[0] = tick)
+	await melee_through(w, _part_pos(npc, P.HEAD), 0.5, &"swing", 0.75)
+	_samplers.erase(smp)
+	(w.get_parent() as Node).queue_free()
+	var max_d := 0.0
+	var max_a := 0.0
+	var ragdoll_seen := false
+	for sm in samples:
+		if hit_tick[0] >= 0 and sm[0] >= hit_tick[0] and sm[0] <= hit_tick[0] + 6:
+			var xf: Transform3D = sm[1]
+			max_d = maxf(max_d, (xf.origin - base.origin).length())
+			max_a = maxf(max_a, rad_to_deg(xf.basis.get_rotation_quaternion().angle_to(base.basis.get_rotation_quaternion())))
+			ragdoll_seen = ragdoll_seen or sm[2]
+	check("M3.7", "head hit while animated: head moves relative to the neck within 0.1 s (>= 2 deg or >= 1.5 cm) and the NPC is not ragdolled",
+		hit_tick[0] >= 0 and not ragdoll_seen and (max_a >= 2.0 or max_d >= 0.015),
+		"hit_tick=%d max_rot=%.1f deg max_shift=%.3f m (idle noise before hit %.4f) ragdoll=%s state=%s" % [hit_tick[0], max_a, max_d, noise, ragdoll_seen, _state_name(npc)])
+	npc.queue_free()
+	await frames(2)
+
+
+## Number of per-part rows in a debug dict (non-part keys such as the "sever_dropped" counter are ignored).
+func _part_rows(dmg: Dictionary) -> int:
+	var c := 0
+	for pid in BodyIds.KEYS:
+		if dmg.has(BodyIds.key(pid)):
+			c += 1
+	return c
+
+
 # ------------------------------------------------------------------ 6. debug info + overlay
 
 func _sec_debug() -> void:
@@ -818,8 +1185,8 @@ func _sec_debug() -> void:
 	check("6.1", "get_debug_info() has blood volume + level", has_blood, str(d.get("blood")))
 	check("6.2", "get_debug_info() has wounds list", has_wounds, str(d.get("wounds")))
 	check("6.3", "get_debug_info() has state per NPC", has_state, "state=%s brain=%s" % [d.get("state"), str(d.get("brain", {}).get("state"))])
-	check("6.4", "get_debug_info() has body + per-part damage", d.has("body") and d.has("damage") and d.damage.size() == BodyIds.PART_COUNT,
-		"parts=%d/%d body=%s" % [d.get("damage", {}).size(), BodyIds.PART_COUNT, str(d.get("body", {}).get("mode"))])
+	check("6.4", "get_debug_info() has body + per-part damage", d.has("body") and d.has("damage") and _part_rows(d.get("damage", {})) == BodyIds.PART_COUNT,
+		"part rows=%d/%d (%d keys total, extra keys are counters) body=%s" % [_part_rows(d.get("damage", {})), BodyIds.PART_COUNT, d.get("damage", {}).size(), str(d.get("body", {}).get("mode"))])
 	var missing: Array = []
 	for pid in BodyIds.KEYS:
 		var bp: BodyPart = npc.damage.get_part(pid)
