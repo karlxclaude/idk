@@ -22,3 +22,10 @@ Each item has a `TODO(roadmap: <name>)` comment at its plug-in point.
   Deferred: realistic CC0 humanoid assets (with milestone 4 segmentation), leg severing (milestone 5 heavy weapons).
 - **Next — milestone 3**: hit-reaction additives, fight-back mode, remaining toggles (slow-mo, immortal dummy, gore intensity,
   no-dismember, cleanup timer); injury-consistency overseer pass.
+
+## Tuning backlog (from docs/INJURY_CONSISTENCY.md suggestions; not bugs)
+- Bullet/stab bleed ignores hit strength; bullet penetration constant (0.45 m) regardless of velocity → scale with velocity/caliber (pairs with milestone 5 calibers).
+- Impactor mass ignored by injury (only weapon-side damage uses it) → blunt force should use momentum.
+- Headshot kill margin thin (51 vs 48); single bullet never breaks arm/thigh/shin; chest/abdomen gunshots are slow killers (back to IDLE by 20 s).
+- Torso/neck/limb HP have no standalone consequence; bat to the neck only bruises.
+- Consolidate duplicated sever/immortal/fracture-guard logic and move hard-coded tunables out of bullet/slash/stab/torso rules.
