@@ -116,7 +116,7 @@ func _ready() -> void:
 	for i in cap * 3:
 		GameEvents.world_impact.emit(Vector3(randf() * 10, 0, randf() * 10), Vector3.UP, DamageEvent.new())
 	await get_tree().physics_frame
-	_check("4 decal cap respected", gore.decal_count() == cap and gore.get_child_count() <= cap + 20,
+	_check("4 decal cap respected", gore.decal_count() == cap and gore.get_child_count() <= cap + 60,
 		"decals=%d cap=%d children=%d" % [gore.decal_count(), cap, gore.get_child_count()])
 	var w := Wound.new()
 	w.part_id = BodyIds.Part.TORSO; w.bleed_rate = 10.0; w.current_flow = 12.0; w.severity = 0.6

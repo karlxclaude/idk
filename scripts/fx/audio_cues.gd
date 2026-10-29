@@ -1,19 +1,24 @@
-## Audio hook: listens to GameEvents.audio_cue. v1 logs cues (ring buffer, debug overlay) and plays
-## tiny procedural blips, or a real asset if the path in data/gore.json "audio.cues" exists.
+## Audio hook: listens to GameEvents.audio_cue. Cues are synthesized procedurally by AudioSynth (layered,
+## pitch-randomized, a few cached variants each); a real asset is used instead if the path in
+## data/gore.json "audio.cues" exists. Cues are also logged (ring buffer, shown by the debug overlay).
 class_name AudioCues
 extends Node3D
 
 signal cue_played(cue: StringName)
 
-const MIX_RATE := 22050.0
+const VARIANTS := 3
 
 var recent: Array[String] = []
 var cfg: Dictionary = {}
 var _players: Array[AudioStreamPlayer3D] = []
 var _next := 0
+var _cache: Dictionary = {}       # cue -> Array[AudioStreamWAV]
+var _last_ms: Dictionary = {}     # cue -> last play msec (anti-spam)
+var _rng := RandomNumberGenerator.new()
 
 
 func _ready() -> void:
+	_rng.randomize()
 	cfg = DataDB.table("gore").get("audio", {})
 	for i in int(cfg.get("max_players", 6)):
 		var p := AudioStreamPlayer3D.new()
@@ -31,32 +36,36 @@ func _on_cue(npc: Node, cue: StringName, pos: Vector3, intensity: float) -> void
 	while recent.size() > int(cfg.get("log_recent", 24)):
 		recent.pop_front()
 	cue_played.emit(cue)
-	var entry: Dictionary = cfg.get("cues", {}).get(String(cue), {})
-	if entry.is_empty() or _players.is_empty():
+	if _players.is_empty():
+		return
+	var now := Time.get_ticks_msec()
+	if now - int(_last_ms.get(cue, -1000)) < int(cfg.get("min_gap_ms", 40)):
+		return
+	_last_ms[cue] = now
+	var stream: AudioStream = _stream_for(cue)
+	if stream == null:
 		return
 	var p := _players[_next]
 	_next = (_next + 1) % _players.size()
 	p.global_position = pos
+	p.stream = stream
+	p.pitch_scale = _rng.randf_range(0.93, 1.07)
+	p.volume_db = float(cfg.get("blip_volume_db", -22.0)) + linear_to_db(clampf(intensity, 0.1, 1.5))
+	p.play()
+
+
+func _stream_for(cue: StringName) -> AudioStream:
+	var entry: Dictionary = cfg.get("cues", {}).get(String(cue), {})
 	var path := String(entry.get("path", ""))
 	if path != "" and ResourceLoader.exists(path):
-		p.stream = load(path)
-		p.play()
-		return
-	_blip(p, float(entry.get("freq", 200.0)), float(entry.get("dur", 0.08)), clampf(intensity, 0.1, 1.5))
-
-
-func _blip(p: AudioStreamPlayer3D, freq: float, dur: float, vol: float) -> void:
-	var gen := AudioStreamGenerator.new()
-	gen.mix_rate = MIX_RATE
-	gen.buffer_length = dur + 0.05
-	p.stream = gen
-	p.play()
-	var pb := p.get_stream_playback() as AudioStreamGeneratorPlayback
-	if pb == null:
-		return
-	var n := int(dur * MIX_RATE)
-	var phase := 0.0
-	for i in n:
-		var env := 1.0 - float(i) / n
-		phase += TAU * freq / MIX_RATE
-		pb.push_frame(Vector2.ONE * sin(phase) * env * env * 0.5 * vol)
+		return load(path)
+	if not AudioSynth.has_cue(cue):
+		return null
+	if not _cache.has(cue):
+		_cache[cue] = []
+	var list: Array = _cache[cue]
+	if list.size() < VARIANTS:
+		var w := AudioSynth.to_stream(AudioSynth.render(cue, _rng))
+		list.append(w)
+		return w
+	return list[_rng.randi() % list.size()]

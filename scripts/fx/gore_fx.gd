@@ -10,6 +10,22 @@ var max_decals := 120          # base cap; effective cap = max_decals * intensit
 ## Running total of particles asked for (bursts + emitter rate), for tests/debug.
 var particles_spawned := 0.0
 var chunk_bursts_fired := 0
+var mist_fired := 0
+var spurts_fired := 0
+var blood: BloodSim
+## Emitted whenever the body-blood sim pushes one part (also if the body has no set_part_blood yet).
+signal part_blood_pushed(npc: Node, part_id: int, wounds: PackedVector4Array, stains: PackedVector4Array, runs: PackedFloat32Array, wetness: float)
+var _mist_pool: Array[GPUParticles3D] = []
+var _mist_i := 0
+var _drip_pool: Array[GPUParticles3D] = []
+var _drip_i := 0
+var _pending_drops: Array[Dictionary] = []
+var _fading := 0
+var _last_limited_usec := 0
+var _merged_pieces: Dictionary = {}
+var _tex_entry: Texture2D
+var _tex_exit: Texture2D
+var _tex_drip: Texture2D
 var _bone_bursts: Array[GPUParticles3D] = []
 var _bone_i := 0
 var _decals: Array[Decal] = []
@@ -30,6 +46,10 @@ func _ready() -> void:
 	max_decals = int(cfg.get("max_decals", 120))
 	_blood_color = Color(String(cfg.get("blood_color", "#7a0b0b")))
 	_decal_tex = _make_decal_texture()
+	_tex_entry = _make_splat_texture(false)
+	_tex_exit = _make_splat_texture(true)
+	_tex_drip = _decal_tex
+	blood = BloodSim.new(self, cfg.get("body_blood", {}))
 	_pool_material = _make_pool_material()
 	_build_burst_pool()
 	GameEvents.npc_wounded.connect(_on_wounded)
@@ -62,12 +82,22 @@ func _on_settings_changed(_setting: StringName, _value) -> void:
 func _trim_decals() -> void:
 	while _decals.size() > decal_cap():
 		var old = _decals.pop_front()
-		if is_instance_valid(old):
+		if not is_instance_valid(old):
+			continue
+		if _fading >= 24:
 			old.queue_free()
+			continue
+		_fading += 1
+		var tw: Tween = old.create_tween()
+		tw.tween_property(old, "modulate:a", 0.0, 0.4)
+		tw.tween_callback(func():
+			_fading -= 1
+			old.queue_free())
 
 
 ## Drop FX tied to an NPC that is about to be freed (pool, emitters on its parts).
 func forget_npc(npc: Node) -> void:
+	blood.forget(npc)
 	var id := npc.get_instance_id()
 	if _pools.has(id):
 		if is_instance_valid(_pools[id].node):
@@ -104,22 +134,33 @@ func clear_all() -> void:
 	for k in _pools:
 		if is_instance_valid(_pools[k].node): _pools[k].node.queue_free()
 	_pools.clear()
+	_merged_pieces.clear()
+	_pending_drops.clear()
+	blood.clear()
 
 
-## Add a projected decal; the oldest decals are removed beyond max_decals.
-func add_decal(pos: Vector3, normal: Vector3, size: float, color: Color) -> void:
+## Add a projected decal; the oldest decals fade out beyond the cap. `dir` (optional) aligns streak textures.
+func add_decal(pos: Vector3, normal: Vector3, size: float, color: Color, tex: Texture2D = null, dir := Vector3.ZERO) -> void:
 	var d := Decal.new()
 	d.size = Vector3(size, float(cfg.get("decal_depth", 0.3)), size)
-	d.texture_albedo = _decal_tex
+	d.texture_albedo = tex if tex != null else _decal_tex
 	d.modulate = color
 	d.cull_mask = 1
 	add_child(d)
+	var n := normal.normalized()
 	var q: Basis
-	if normal.dot(Vector3.UP) < -0.999:
-		q = Basis(Vector3.RIGHT, PI)
+	if dir.length_squared() > 0.001:
+		var x := (dir - n * dir.dot(n))
+		if x.length_squared() < 0.0001:
+			x = n.cross(Vector3.RIGHT) if absf(n.dot(Vector3.RIGHT)) < 0.9 else n.cross(Vector3.UP)
+		x = x.normalized()
+		q = Basis(x, n, x.cross(n))
 	else:
-		q = Basis(Quaternion(Vector3.UP, normal.normalized()))
-	q = q * Basis(Vector3.UP, _rng.randf() * TAU)
+		if n.dot(Vector3.UP) < -0.999:
+			q = Basis(Vector3.RIGHT, PI)
+		else:
+			q = Basis(Quaternion(Vector3.UP, n))
+		q = q * Basis(Vector3.UP, _rng.randf() * TAU)
 	d.global_transform = Transform3D(q, pos)
 	_decals.append(d)
 	_trim_decals()
@@ -150,12 +191,66 @@ func _on_wounded(npc: Node, wound: Wound, ev: DamageEvent) -> void:
 		return  # TODO(roadmap: advanced gore) bruise decal for blunt hits
 	var pos := _wound_world_pos(npc, wound, ev)
 	burst(pos, dir, amount, speed)
-	# spatter on whatever is behind an exit wound / below the hit
-	var res := _world_ray(pos, pos + ev.direction.normalized() * 3.0)
-	if not res.is_empty() and wound.is_exit:
-		add_decal(res.position + res.normal * 0.01, res.normal, _rng.randf_range(0.2, 0.5), _blood_decal_color())
+	blood.on_wound(npc, wound)
+	# high-energy bullets: fine red mist, bigger at the exit
+	if ev.type == DamageEvent.Type.BULLET and float(ev.extra.get("energy", 0.0)) > float(cfg.get("mist", {}).get("energy_threshold", 800.0)):
+		_mist(pos, dir, wound.is_exit)
+	_splatter(pos, wound, ev)
 	if wound.bleed_rate > 0.0 or wound.is_stump:
 		_add_wound_emitter(npc, wound, pos)
+
+
+## World splatter: exit sprays along the bullet/cut direction onto what is behind; entry leaves a small
+## blowback spot toward the attacker if a surface is close.
+func _splatter(pos: Vector3, wound: Wound, ev: DamageEvent) -> void:
+	var sp: Dictionary = cfg.get("splatter", {})
+	var d := ev.direction.normalized()
+	if wound.is_exit:
+		var res := _world_ray(pos, pos + d * float(sp.get("exit_range", 4.0)))
+		if not res.is_empty():
+			var sz := _rng.randf_range(float(sp.get("exit_min", 0.5)), float(sp.get("exit_max", 0.9))) * lerpf(0.7, 1.2, clampf(wound.severity, 0.0, 1.0))
+			add_decal(res.position + res.normal * 0.01, res.normal, sz, _blood_decal_color(), _tex_exit, d)
+	elif not wound.is_stump and not wound.is_bruise:
+		var res2 := _world_ray(pos, pos - d * float(sp.get("entry_range", 1.5)))
+		if not res2.is_empty():
+			add_decal(res2.position + res2.normal * 0.01, res2.normal, _rng.randf_range(0.12, 0.25), _blood_decal_color(), _tex_entry, -d)
+
+
+func _mist(pos: Vector3, dir: Vector3, big: bool) -> void:
+	var m := _im("mist_mult")
+	if m <= 0.0 or _mist_pool.is_empty():
+		return
+	var mc: Dictionary = cfg.get("mist", {})
+	var p := _mist_pool[_mist_i]
+	_mist_i = (_mist_i + 1) % _mist_pool.size()
+	var mat := p.process_material as ParticleProcessMaterial
+	mat.direction = dir.normalized() if dir.length() > 0.01 else Vector3.UP
+	mat.initial_velocity_max = float(mc.get("speed", 2.0)) * (1.6 if big else 1.0)
+	mat.initial_velocity_min = mat.initial_velocity_max * 0.4
+	p.amount_ratio = clampf((1.0 if big else 0.4) * m, 0.05, 1.0)
+	p.global_position = pos
+	particles_spawned += p.amount * p.amount_ratio
+	mist_fired += 1
+	p.restart()
+	p.emitting = true
+
+
+## One falling blood drop from `pos`: a particle plus a small floor decal after the fall time.
+func spawn_drip(pos: Vector3) -> void:
+	var res := _world_ray(pos, pos + Vector3.DOWN * 4.0)
+	if res.is_empty() or _pending_drops.size() >= 30:
+		return
+	var h: float = pos.y - res.position.y
+	var fall := sqrt(2.0 * maxf(h, 0.01) / 9.8)
+	if _im("emitter_mult") > 0.0 and not _drip_pool.is_empty():
+		var p := _drip_pool[_drip_i]
+		_drip_i = (_drip_i + 1) % _drip_pool.size()
+		p.lifetime = maxf(fall, 0.05)
+		p.global_position = pos
+		particles_spawned += 1.0
+		p.restart()
+		p.emitting = true
+	_pending_drops.append({"t": fall, "pos": res.position, "n": res.normal})
 
 
 func _on_severed(npc: Node, part_id: int, root: RigidBody3D, ev: DamageEvent) -> void:
@@ -172,7 +267,12 @@ func _on_severed(npc: Node, part_id: int, root: RigidBody3D, ev: DamageEvent) ->
 
 # ---------------- particles ----------------
 
-func burst(pos: Vector3, dir: Vector3, amount: float, speed: float) -> void:
+func burst(pos: Vector3, dir: Vector3, amount: float, speed: float, limited := false) -> void:
+	if limited:
+		var now := Time.get_ticks_usec()
+		if now - _last_limited_usec < int(float(cfg.get("spurt_min_gap_s", 0.04)) * 1e6):
+			return  # repeating sources (arterial spurts) must not overspawn the burst pool
+		_last_limited_usec = now
 	if _bursts.is_empty():
 		return
 	var mult := _im("burst_mult")
@@ -242,6 +342,29 @@ func _build_burst_pool() -> void:
 		(bp.process_material as ParticleProcessMaterial).gravity = Vector3(0, -9.8, 0)
 		add_child(bp)
 		_bone_bursts.append(bp)
+	var mc: Dictionary = cfg.get("mist", {})
+	for i in int(mc.get("max", 6)):
+		var mp := _make_particles(int(mc.get("amount", 28)), float(mc.get("lifetime", 0.55)), true)
+		var mm := mp.process_material as ParticleProcessMaterial
+		mm.spread = 55.0
+		mm.gravity = Vector3(0, -0.8, 0)
+		mm.damping_min = 3.0
+		mm.damping_max = 5.0
+		mm.scale_min = 1.5
+		mm.scale_max = 3.0
+		var sphere := mp.draw_pass_1 as SphereMesh
+		var smat := sphere.material as StandardMaterial3D
+		smat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		smat.albedo_color = Color(0.55, 0.05, 0.05, 0.3)
+		add_child(mp)
+		_mist_pool.append(mp)
+	for i in int(cfg.get("drip", {}).get("max", 8)):
+		var dp := _make_particles(1, 0.4, true)
+		(dp.process_material as ParticleProcessMaterial).initial_velocity_max = 0.0
+		(dp.process_material as ParticleProcessMaterial).spread = 0.0
+		dp.explosiveness = 1.0
+		add_child(dp)
+		_drip_pool.append(dp)
 	var b: Dictionary = cfg.get("burst", {})
 	for i in int(cfg.get("max_bursts", 12)):
 		var p := _make_particles(int(b.get("max_amount", 48)) * 2, float(b.get("lifetime", 0.7)), true)
@@ -278,8 +401,8 @@ func _make_particles(amount: int, lifetime: float, one_shot: bool, bone := false
 		return p
 	sm.albedo_color = _blood_color
 	var sphere := SphereMesh.new()
-	sphere.radius = 0.014
-	sphere.height = 0.028
+	sphere.radius = 0.018
+	sphere.height = 0.036
 	sphere.radial_segments = 6
 	sphere.rings = 3
 	sphere.material = sm
@@ -330,6 +453,14 @@ func _make_emitter(parent: Node3D, local_pos: Vector3, local_dir: Vector3) -> Di
 
 func _physics_process(delta: float) -> void:
 	_update_emitters(delta)
+	blood.update(delta)
+	for i in range(_pending_drops.size() - 1, -1, -1):
+		var d: Dictionary = _pending_drops[i]
+		d.t -= delta
+		if d.t <= 0.0:
+			var ds: Array = cfg.get("drip", {}).get("size", [0.04, 0.09])
+			add_decal(d.pos + d.n * 0.01, d.n, _rng.randf_range(ds[0], ds[1]), _blood_decal_color(), _tex_drip)
+			_pending_drops.remove_at(i)
 	_pool_timer -= delta
 	if _pool_timer <= 0.0:
 		_pool_timer = float(cfg.get("pool", {}).get("update_interval", 0.25))
@@ -360,8 +491,13 @@ func _update_emitters(delta: float) -> void:
 		if on != e.on:
 			e.on = on
 			node.emitting = on
+		var w: Wound = e.wound
+		if w != null and w.is_arterial and emit_mult > 0.0:
+			_arterial_spurt(e, node, flow, flow_ref)
 		if on:
 			var r := clampf(flow / flow_ref, 0.05, 1.0)
+			if w != null and w.is_arterial:
+				r = r * r  # arterial: the continuous trickle tapers hard, the spurts carry the show
 			node.amount_ratio = maxf(r * emit_mult, 0.01)
 			particles_spawned += node.amount * node.amount_ratio * delta / maxf(node.lifetime, 0.01)
 			var mat: ParticleProcessMaterial = e.mat
@@ -374,6 +510,23 @@ func _update_emitters(delta: float) -> void:
 				if _rng.randf() < flow * float(we.get("drop_chance_per_flow", 0.05)):
 					_drop_blood(node.global_position)
 		i -= 1
+
+
+## Arterial wounds: each pulse (flow rising through half its recent peak) throws a strong arcing spurt.
+func _arterial_spurt(e: Dictionary, node: Node3D, flow: float, flow_ref: float) -> void:
+	var sc: Dictionary = cfg.get("spray", {})
+	e.peak = maxf(flow, float(e.get("peak", 0.0)) * 0.985)
+	var thr := maxf(float(sc.get("min_flow", 4.0)), 0.5 * e.peak)
+	var prev: float = e.get("prev", 0.0)
+	e.prev = flow
+	if flow >= thr and prev < thr:
+		var r := clampf(flow / flow_ref, 0.1, 1.0)
+		var local_dir: Vector3 = (e.mat as ParticleProcessMaterial).direction
+		var dir: Vector3 = (node.global_basis * local_dir).normalized()
+		dir = (dir + Vector3.UP * float(sc.get("lift", 0.25))).normalized()
+		spurts_fired += 1
+		burst(node.global_position, dir, lerpf(float(sc.get("min_amount", 20)), float(sc.get("max_amount", 48)), r),
+			lerpf(float(sc.get("min_speed", 2.5)), float(sc.get("max_speed", 6.5)), r), true)
 
 
 func _drop_blood(from: Vector3) -> void:
@@ -445,6 +598,8 @@ func _update_pools(interval: float) -> void:
 			node.global_position = p + Vector3.UP * 0.012
 			pool.placed = true
 		node.scale = Vector3(pool.radius, 1.0, pool.radius)
+	_update_piece_pools(pc, interval)
+	_merge_pools(pc)
 	# forget freed NPCs
 	for id in _pools.keys():
 		if not is_instance_valid(_pools[id].npc):
@@ -452,6 +607,60 @@ func _update_pools(interval: float) -> void:
 				_pools[id].node.queue_free()
 			_pools.erase(id)
 			_last_center.erase(id)
+
+
+## Pools under bleeding severed pieces, fed by the blood those parts actually lost.
+func _update_piece_pools(pc: Dictionary, interval: float) -> void:
+	for src in blood.piece_sources():
+		var node: Node3D = src.node
+		var id := node.get_instance_id()
+		if _merged_pieces.has(id):
+			continue
+		var pos := node.global_position
+		var speed := 0.0
+		if _last_center.has(id):
+			speed = pos.distance_to(_last_center[id]) / maxf(interval, 0.001)
+		_last_center[id] = pos
+		if speed > float(pc.get("slow_speed", 0.6)) or (not src.flowing and not _pools.has(id)):
+			continue
+		var res := _world_ray(pos + Vector3.UP * 0.2, pos + Vector3.DOWN * 3.0)
+		if res.is_empty() or pos.y - res.position.y > float(pc.get("max_piece_height", 0.4)):
+			continue
+		var target := clampf(float(pc.get("radius_per_sqrt_lost", 0.03)) * float(pc.get("piece_radius_mult", 0.8)) * sqrt(src.lost),
+			float(pc.get("min_radius", 0.15)) * 0.6, float(pc.get("max_radius", 1.2))) * _im("pool_radius_mult")
+		var pool: Dictionary = _pools[id] if _pools.has(id) else _create_pool(node, id, int(pc.get("max_pools", 12)))
+		if not is_instance_valid(pool.node):
+			_pools.erase(id)
+			continue
+		pool.radius = maxf(pool.radius, target)
+		if not pool.placed:
+			pool.node.global_position = Vector3(pos.x, res.position.y + 0.012, pos.z)
+			pool.placed = true
+		pool.node.scale = Vector3(pool.radius, 1.0, pool.radius)
+		pool.piece = true
+
+
+## A piece pool that overlaps another pool is absorbed into it (area adds, radius cap kept).
+func _merge_pools(pc: Dictionary) -> void:
+	var cap := float(pc.get("max_radius", 1.2))
+	for a in _pools.keys():
+		if not _pools.has(a) or not _pools[a].get("piece", false):
+			continue
+		var pa: Dictionary = _pools[a]
+		if not is_instance_valid(pa.node):
+			continue
+		for b in _pools.keys():
+			if b == a or not _pools.has(b) or not is_instance_valid(_pools[b].node):
+				continue
+			var pb: Dictionary = _pools[b]
+			var d := Vector2(pa.node.global_position.x - pb.node.global_position.x, pa.node.global_position.z - pb.node.global_position.z).length()
+			if d < (pa.radius + pb.radius) * 0.6:
+				pb.radius = minf(sqrt(pa.radius * pa.radius + pb.radius * pb.radius), cap)
+				pb.node.scale = Vector3(pb.radius, 1.0, pb.radius)
+				pa.node.queue_free()
+				_pools.erase(a)
+				_merged_pieces[a] = true
+				break
 
 
 func _create_pool(npc: Node, id: int, max_pools: int) -> Dictionary:
@@ -496,6 +705,35 @@ func _make_pool_material() -> StandardMaterial3D:
 	m.roughness = float(pc.get("roughness", 0.12))
 	m.metallic_specular = float(pc.get("specular", 0.25))
 	return m
+
+
+## Splatter shapes: entry = round spot with a few satellites; exit = streak along +X with sprayed droplets.
+func _make_splat_texture(exit: bool) -> Texture2D:
+	var sz := 96
+	var img := Image.create(sz, sz, false, Image.FORMAT_RGBA8)
+	var r := RandomNumberGenerator.new()
+	r.seed = 4242 if exit else 99
+	var blobs: Array[Vector3] = []   # x,y centre (-1..1), z radius
+	if exit:
+		blobs.append(Vector3(-0.1, 0.0, 0.16))
+		for i in 44:
+			var t := r.randf()
+			blobs.append(Vector3(lerpf(-0.1, 0.95, t), r.randfn(0.0, 0.1 + 0.25 * t), r.randf_range(0.02, 0.085) * (1.2 - t)))
+	else:
+		blobs.append(Vector3(0.0, 0.0, 0.22))
+		for i in 10:
+			var a := r.randf() * TAU
+			var d := r.randf_range(0.3, 0.85)
+			blobs.append(Vector3(cos(a) * d, sin(a) * d, r.randf_range(0.015, 0.06)))
+	for y in sz:
+		for x in sz:
+			var u := Vector2((x + 0.5) / sz * 2.0 - 1.0, (y + 0.5) / sz * 2.0 - 1.0)
+			var a := 0.0
+			for b in blobs:
+				var d := Vector2(b.x, b.y).distance_to(u)
+				a = maxf(a, clampf((b.z - d) / (b.z * 0.35), 0.0, 1.0))
+			img.set_pixel(x, y, Color(1, 1, 1, a))
+	return ImageTexture.create_from_image(img)
 
 
 func _make_decal_texture() -> Texture2D:

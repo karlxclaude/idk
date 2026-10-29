@@ -1,35 +1,206 @@
 {
-  "max_decals": 120,
-  "decal_size": [0.15, 0.5],
-  "bullet_hole_size": 0.08,
-  "decal_depth": 0.3,
-  "blood_color": "#7a0b0b",
-  "intensity": {
-    "LOW":  {"burst_mult": 0.15, "emitter_mult": 0.0, "decal_cap_mult": 0.5,  "pool_radius_mult": 0.5},
-    "MED":  {"burst_mult": 0.5,  "emitter_mult": 0.5, "decal_cap_mult": 0.75, "pool_radius_mult": 1.0},
-    "HIGH": {"burst_mult": 1.0,  "emitter_mult": 1.0, "decal_cap_mult": 1.0,  "pool_radius_mult": 1.0}
+ "max_decals": 120,
+ "decal_size": [
+  0.15,
+  0.5
+ ],
+ "bullet_hole_size": 0.08,
+ "decal_depth": 0.3,
+ "blood_color": "#7a0b0b",
+ "intensity": {
+  "LOW": {
+   "burst_mult": 0.15,
+   "emitter_mult": 0.0,
+   "decal_cap_mult": 0.5,
+   "pool_radius_mult": 0.5,
+   "stain_run_mult": 0.0,
+   "stain_mult": 0.6,
+   "mist_mult": 0.0
   },
-  "chunk": {"blood_amount": 96, "speed": 6.0, "bone_amount": 24, "bone_speed": 5.0, "max_bone_bursts": 6, "emitter_flow": 25.0, "emitter_duration": 3.0},
-  "max_bursts": 12,
-  "burst": {"min_amount": 12, "max_amount": 48, "exit_mult": 2.0, "lifetime": 0.7, "speed": 3.0, "exit_speed": 5.5},
-  "max_wound_emitters": 40,
-  "wound_emitter": {"amount": 24, "lifetime": 0.6, "min_flow": 0.02, "flow_ref": 25.0, "speed_min": 0.6, "speed_max": 3.5, "drop_interval": 0.3, "drop_chance_per_flow": 0.05},
-  "stump": {"flow": 30.0, "duration": 6.0, "burst": 40},
-  "pool": {"enabled": true, "max_radius": 1.2, "color": "#4a0000", "specular": 0.25, "roughness": 0.25, "opacity": 0.92, "edge_jaggedness": 0.25, "max_torso_height": 0.5, "min_radius": 0.15, "radius_per_sqrt_lost": 0.03, "slow_speed": 0.6, "update_interval": 0.25, "max_pools": 12, "min_external_rate": 0.1},
-  "audio": {
-    "log_recent": 24, "max_players": 6, "blip_volume_db": -22.0,
-    "cues": {
-      "gunshot":   {"path": "res://audio/gunshot.ogg", "freq": 110.0, "dur": 0.09},
-      "knife_hit": {"path": "res://audio/knife_hit.ogg", "freq": 520.0, "dur": 0.05},
-      "bat_hit":   {"path": "res://audio/bat_hit.ogg", "freq": 140.0, "dur": 0.07},
-      "scream":    {"path": "res://audio/scream.ogg", "freq": 780.0, "dur": 0.2},
-      "grunt":     {"path": "res://audio/grunt.ogg", "freq": 200.0, "dur": 0.1},
-      "gurgle":    {"path": "res://audio/gurgle.ogg", "freq": 160.0, "dur": 0.12},
-      "pain_breath": {"path": "res://audio/pain_breath.ogg", "freq": 300.0, "dur": 0.08},
-      "bone_crack": {"path": "res://audio/bone_crack.ogg", "freq": 900.0, "dur": 0.03},
-      "sever":     {"path": "res://audio/sever.ogg", "freq": 240.0, "dur": 0.08},
-      "body_fall": {"path": "res://audio/body_fall.ogg", "freq": 70.0, "dur": 0.1}
-    }
+  "MED": {
+   "burst_mult": 0.5,
+   "emitter_mult": 0.5,
+   "decal_cap_mult": 0.75,
+   "pool_radius_mult": 1.0,
+   "stain_run_mult": 0.6,
+   "stain_mult": 0.8,
+   "mist_mult": 0.5
   },
-  "overlay": {"max_panels": 6, "refresh": 0.2, "label_height": 1.5}
+  "HIGH": {
+   "burst_mult": 1.0,
+   "emitter_mult": 1.0,
+   "decal_cap_mult": 1.0,
+   "pool_radius_mult": 1.0,
+   "stain_run_mult": 1.0,
+   "stain_mult": 1.0,
+   "mist_mult": 1.0
+  }
+ },
+ "chunk": {
+  "blood_amount": 96,
+  "speed": 6.0,
+  "bone_amount": 24,
+  "bone_speed": 5.0,
+  "max_bone_bursts": 6,
+  "emitter_flow": 25.0,
+  "emitter_duration": 3.0
+ },
+ "max_bursts": 12,
+ "burst": {
+  "min_amount": 12,
+  "max_amount": 48,
+  "exit_mult": 2.0,
+  "lifetime": 0.7,
+  "speed": 3.0,
+  "exit_speed": 5.5
+ },
+ "max_wound_emitters": 40,
+ "wound_emitter": {
+  "amount": 24,
+  "lifetime": 0.6,
+  "min_flow": 0.02,
+  "flow_ref": 25.0,
+  "speed_min": 0.6,
+  "speed_max": 3.5,
+  "drop_interval": 0.3,
+  "drop_chance_per_flow": 0.05
+ },
+ "stump": {
+  "flow": 30.0,
+  "duration": 6.0,
+  "burst": 40
+ },
+ "pool": {
+  "enabled": true,
+  "max_radius": 1.2,
+  "color": "#4a0000",
+  "specular": 0.25,
+  "roughness": 0.25,
+  "opacity": 0.92,
+  "edge_jaggedness": 0.25,
+  "max_torso_height": 0.5,
+  "min_radius": 0.15,
+  "radius_per_sqrt_lost": 0.03,
+  "slow_speed": 0.6,
+  "update_interval": 0.25,
+  "max_pools": 12,
+  "min_external_rate": 0.1,
+  "max_piece_height": 0.4,
+  "piece_radius_mult": 0.8
+ },
+ "audio": {
+  "log_recent": 24,
+  "max_players": 6,
+  "blip_volume_db": -22.0,
+  "cues": {
+   "gunshot": {
+    "path": "res://audio/gunshot.ogg",
+    "freq": 110.0,
+    "dur": 0.09
+   },
+   "knife_hit": {
+    "path": "res://audio/knife_hit.ogg",
+    "freq": 520.0,
+    "dur": 0.05
+   },
+   "bat_hit": {
+    "path": "res://audio/bat_hit.ogg",
+    "freq": 140.0,
+    "dur": 0.07
+   },
+   "scream": {
+    "path": "res://audio/scream.ogg",
+    "freq": 780.0,
+    "dur": 0.2
+   },
+   "grunt": {
+    "path": "res://audio/grunt.ogg",
+    "freq": 200.0,
+    "dur": 0.1
+   },
+   "gurgle": {
+    "path": "res://audio/gurgle.ogg",
+    "freq": 160.0,
+    "dur": 0.12
+   },
+   "pain_breath": {
+    "path": "res://audio/pain_breath.ogg",
+    "freq": 300.0,
+    "dur": 0.08
+   },
+   "bone_crack": {
+    "path": "res://audio/bone_crack.ogg",
+    "freq": 900.0,
+    "dur": 0.03
+   },
+   "sever": {
+    "path": "res://audio/sever.ogg",
+    "freq": 240.0,
+    "dur": 0.08
+   },
+   "body_fall": {
+    "path": "res://audio/body_fall.ogg",
+    "freq": 70.0,
+    "dur": 0.1
+   }
+  },
+  "min_gap_ms": 40
+ },
+ "overlay": {
+  "max_panels": 6,
+  "refresh": 0.2,
+  "label_height": 1.5
+ },
+ "body_blood": {
+  "max_npcs": 8,
+  "max_per_part": 8,
+  "max_pushes": 24,
+  "push_interval": 0.2,
+  "min_flow": 0.5,
+  "core_entry_min": 0.006,
+  "core_entry_max": 0.016,
+  "core_exit_min": 0.02,
+  "core_exit_max": 0.05,
+  "stain_base": 0.02,
+  "stain_k": 0.012,
+  "stain_max": 0.14,
+  "run_per_flow": 0.004,
+  "max_run": 0.6,
+  "soak_mult": 2.5,
+  "wet_decay_s": 60.0,
+  "piece_drain_s": 8.0,
+  "drip_chance": 0.25,
+  "spill_lost": 20.0,
+  "spill_share": 0.6,
+  "spill_min_down": 0.3
+ },
+ "mist": {
+  "energy_threshold": 800.0,
+  "max": 6,
+  "amount": 28,
+  "lifetime": 0.55,
+  "speed": 2.0
+ },
+ "spray": {
+  "min_flow": 4.0,
+  "lift": 0.25,
+  "min_amount": 20,
+  "max_amount": 48,
+  "min_speed": 2.5,
+  "max_speed": 6.5
+ },
+ "drip": {
+  "max": 8,
+  "size": [
+   0.04,
+   0.09
+  ]
+ },
+ "splatter": {
+  "exit_range": 6.0,
+  "exit_min": 0.5,
+  "exit_max": 0.9,
+  "entry_range": 1.5
+ },
+ "spurt_min_gap_s": 0.04
 }
