@@ -43,7 +43,8 @@
       "thickness": 0.07,
       "fracture_accum": 22,
       "fracture_force": 25,
-      "dismember": 40
+      "dismember": 40,
+      "bleed_mult": 0.6
     },
     "foot_r": {
       "tissue": "bone",
@@ -52,7 +53,8 @@
       "thickness": 0.07,
       "fracture_accum": 22,
       "fracture_force": 25,
-      "dismember": 40
+      "dismember": 40,
+      "bleed_mult": 0.6
     }
   },
   "high_damage_sever_mult": 2.0

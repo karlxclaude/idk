@@ -45,7 +45,6 @@
       "fracture_force": 18,
       "dismember": 18,
       "bleed_mult": 0.5,
-      "pain": 2.0,
       "break_stun": 0.6
     },
     "hand_r": {
@@ -57,7 +56,6 @@
       "fracture_force": 18,
       "dismember": 18,
       "bleed_mult": 0.5,
-      "pain": 2.0,
       "break_stun": 0.6
     }
   },

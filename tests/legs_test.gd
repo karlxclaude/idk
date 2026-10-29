@@ -81,7 +81,19 @@ func _t_bullet() -> void:
 	for w in ws2:
 		exit = exit or w.is_exit
 	_check("1d overpenetrating foot bullet has exit wound", exit)
+	# T7: feet bleed ~0.6x a lower leg (bleed_mult row field, scaled in limb_base)
+	var foot := _bleed_sum(n2.damage.apply(_hit(n2, DamageEvent.Type.BULLET, BodyIds.Part.FOOT_L, 15.0, 0.02)))
+	var shin := _bleed_sum(n2.damage.apply(_hit(n2, DamageEvent.Type.BULLET, BodyIds.Part.LOWER_LEG_L, 15.0, 0.02)))
+	var ratio := foot / maxf(shin, 0.0001)
+	_check("1e foot bullet bleeds ~0.6x lower-leg bullet", absf(ratio - 0.6) < 0.05, "ratio=%.2f (foot=%.2f shin=%.2f)" % [ratio, foot, shin])
 	n.queue_free(); n2.queue_free()
+
+
+func _bleed_sum(ws: Array) -> float:
+	var t := 0.0
+	for w in ws:
+		t += w.bleed_rate
+	return t
 
 
 func _t_blunt() -> void:

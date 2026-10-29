@@ -31,3 +31,9 @@ func apply(ctx: HitContext) -> void:
 		if accum >= fa or force_hit:
 			ctx.fracture = true
 			ctx.cues.append(&"bone_crack")
+	# Optional per-part row value: scale the mechanism's wound bleed (hands, feet). Absent => unchanged.
+	var bm := float(ctx.part_cfg.get("bleed_mult", 1.0))
+	if bm != 1.0:
+		for w in ctx.wounds:
+			w.bleed_rate *= bm
+			w.internal_bleed_rate *= bm
