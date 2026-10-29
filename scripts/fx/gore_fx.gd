@@ -25,6 +25,7 @@ func _ready() -> void:
 	max_decals = int(cfg.get("max_decals", 120))
 	_blood_color = Color(String(cfg.get("blood_color", "#7a0b0b")))
 	_decal_tex = _make_decal_texture()
+	_pool_material = _make_pool_material()
 	_build_burst_pool()
 	GameEvents.npc_wounded.connect(_on_wounded)
 	GameEvents.npc_part_severed.connect(_on_severed)
@@ -310,6 +311,12 @@ func _update_pools(interval: float) -> void:
 			continue
 		var target := clampf(float(pc.get("radius_per_sqrt_lost", 0.03)) * sqrt(lost),
 			float(pc.get("min_radius", 0.15)), float(pc.get("max_radius", 1.4)))
+		var torso := center
+		if is_instance_valid(npc.body):
+			torso = npc.body.get_part_global_transform(BodyIds.Part.TORSO).origin
+		var res := _world_ray(torso + Vector3.UP * 0.3, torso + Vector3.DOWN * 3.0)
+		if res.is_empty() or torso.y - res.position.y > float(pc.get("max_torso_height", 0.5)):
+			continue  # still falling / not on the floor yet
 		var pool: Dictionary
 		if _pools.has(id):
 			pool = _pools[id]
@@ -317,12 +324,9 @@ func _update_pools(interval: float) -> void:
 			pool = _create_pool(npc, id, int(pc.get("max_pools", 12)))
 		if target > pool.radius:
 			pool.radius = target
-		var res := _world_ray(center + Vector3.UP * 0.5, center + Vector3.DOWN * 3.0)
-		if res.is_empty():
-			continue
 		var node: MeshInstance3D = pool.node
-		var p: Vector3 = res.position
-		if not pool.placed or Vector2(p.x - node.global_position.x, p.z - node.global_position.z).length() > 0.5:
+		var p: Vector3 = Vector3(torso.x, res.position.y, torso.z)
+		if not pool.placed:
 			node.global_position = p + Vector3.UP * 0.012
 			pool.placed = true
 		node.scale = Vector3(pool.radius, 1.0, pool.radius)
@@ -342,23 +346,41 @@ func _create_pool(npc: Node, id: int, max_pools: int) -> Dictionary:
 			_pools[oldest].node.queue_free()
 		_pools.erase(oldest)
 	var mi := MeshInstance3D.new()
-	var cyl := CylinderMesh.new()
-	cyl.top_radius = 1.0
-	cyl.bottom_radius = 1.0
-	cyl.height = 0.004
-	cyl.radial_segments = 20
-	cyl.rings = 1
-	var m := StandardMaterial3D.new()
-	m.albedo_color = Color(_blood_color.r * 0.8, _blood_color.g * 0.8, _blood_color.b * 0.8)
-	m.roughness = 0.15
-	m.metallic_specular = 0.8
-	cyl.material = m
-	mi.mesh = cyl
+	var pm := PlaneMesh.new()
+	pm.size = Vector2(2, 2)
+	pm.material = _pool_material
+	mi.mesh = pm
 	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	add_child(mi)
 	var pool := {"node": mi, "radius": 0.0, "npc": npc, "placed": false}
 	_pools[id] = pool
 	return pool
+
+
+var _pool_material: StandardMaterial3D
+
+
+func _make_pool_material() -> StandardMaterial3D:
+	var pc: Dictionary = cfg.get("pool", {})
+	var n := FastNoiseLite.new()
+	n.frequency = 0.9
+	n.seed = 7
+	var sz := 128
+	var img := Image.create(sz, sz, false, Image.FORMAT_RGBA8)
+	var jag := float(pc.get("edge_jaggedness", 0.25))
+	for y in sz:
+		for x in sz:
+			var v := Vector2((x + 0.5) / sz * 2.0 - 1.0, (y + 0.5) / sz * 2.0 - 1.0)
+			var d := v.length() / (1.0 + jag * n.get_noise_2d(v.x * 3.0, v.y * 3.0))
+			var a := clampf((1.0 - d) / 0.25, 0.0, 1.0)
+			img.set_pixel(x, y, Color(1, 1, 1, a * float(pc.get("opacity", 0.92))))
+	var m := StandardMaterial3D.new()
+	m.albedo_texture = ImageTexture.create_from_image(img)
+	m.albedo_color = Color(String(pc.get("color", "#550505")))
+	m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	m.roughness = float(pc.get("roughness", 0.12))
+	m.metallic_specular = float(pc.get("specular", 0.25))
+	return m
 
 
 func _make_decal_texture() -> Texture2D:

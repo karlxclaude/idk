@@ -49,7 +49,7 @@ func spawn_npc() -> Npc:
 	pos.y = 0.05
 	var to_player := player.global_position - pos
 	to_player.y = 0.0
-	var basis := Basis.looking_at(to_player.normalized() if to_player.length() > 0.1 else Vector3.FORWARD)
+	var basis := Basis.looking_at(to_player.normalized() if to_player.length() > 0.1 else Vector3.FORWARD, Vector3.UP, true)  # +Z = body front
 	_spawn_count += 1
 	return Npc.spawn(npc_root, Transform3D(basis, pos), 1000 + _spawn_count)
 
