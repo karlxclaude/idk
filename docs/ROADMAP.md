@@ -36,3 +36,7 @@ Each item has a `TODO(roadmap: <name>)` comment at its plug-in point.
 - Headshot kill margin thin (51 vs 48); single bullet never breaks arm/thigh/shin; chest/abdomen gunshots are slow killers (back to IDLE by 20 s).
 - Torso/neck/limb HP have no standalone consequence; bat to the neck only bruises.
 - Consolidate duplicated sever/immortal/fracture-guard logic and move hard-coded tunables out of bullet/slash/stab/torso rules.
+- (M5 sweep) Shotgun pellets are judged one by one against head lethal_damage, so a point-blank 5-pellet head blast is not lethal;
+  consider per-event-group (shot) accumulation. One buckshot pellet to the neck bleeds like a full arterial wound.
+- (M5 sweep) Momentum only affects force-based outcomes; HP/bleed ignore impactor mass. Hammer breaks every long bone at a normal swing.
+- (M5 sweep) Consolidate: immortal rule in 11 spots, two part-thickness sources, double chunk type multipliers, three head-lethality routes.
