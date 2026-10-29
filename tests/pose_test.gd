@@ -56,6 +56,11 @@ func _build_layout() -> void:
 		"limits": limits, "half": _half, "hip_height": float(cfg.get("hip_height", 0.88))}
 
 
+## Shoulder joint in torso-centre space, from the layout (never hard-coded).
+func _shoulder(side: String) -> Vector3:
+	return _layout["joint_rest"][BodyIds.from_key("upper_arm_" + side)]
+
+
 static func _v3(a) -> Vector3:
 	return Vector3(float(a[0]), float(a[1]), float(a[2]))
 
@@ -391,7 +396,7 @@ func _ready() -> void:
 	var info11 := ""
 	for s in ["l", "r"]:
 		var tfm: Transform3D = last[P.TORSO]
-		var sh: Vector3 = tfm * Vector3((0.255 if s == "l" else -0.255), 0.27, 0.0)
+		var sh: Vector3 = tfm * _shoulder(s)
 		var hy: float = (last[BodyIds.from_key("hand_" + s)] as Transform3D).origin.y
 		up_ok = up_ok and hy > sh.y + 0.05
 		info11 += " %s hand-shoulder=%.2f" % [s, hy - sh.y]
@@ -399,8 +404,8 @@ func _ready() -> void:
 	d = _driver()
 	d.set_broken_parts([P.LOWER_ARM_L])
 	last = _run(d, &"cower", 0.0, 120, mover)[-1]
-	var shl: Vector3 = (last[P.TORSO] as Transform3D) * Vector3(0.255, 0.27, 0.0)
-	var shr: Vector3 = (last[P.TORSO] as Transform3D) * Vector3(-0.255, 0.27, 0.0)
+	var shl: Vector3 = (last[P.TORSO] as Transform3D) * _shoulder("l")
+	var shr: Vector3 = (last[P.TORSO] as Transform3D) * _shoulder("r")
 	_check("11b cower with a broken arm: only the sound arm guards",
 		(last[P.HAND_L] as Transform3D).origin.y < shl.y and (last[P.HAND_R] as Transform3D).origin.y > shr.y + 0.05)
 
@@ -458,7 +463,7 @@ func _ready() -> void:
 			prev = f
 			lowest = minf(lowest, minf(_sole(f, "l"), _sole(f, "r")) - floor_y)
 			upright = minf(upright, (f[P.TORSO] as Transform3D).basis.y.dot(Vector3.UP))
-			guard = minf(guard, (f[P.HAND_L] as Transform3D).origin.y - ((f[P.TORSO] as Transform3D) * Vector3(0.255, 0.0, 0.0)).y)
+			guard = minf(guard, (f[P.HAND_L] as Transform3D).origin.y - ((f[P.TORSO] as Transform3D) * _shoulder("l")).y)
 	_check("13b fight stable while walking (finite, no pops, feet on floor, fists up)", ok and maxjump < 0.12 and lowest > -0.04 and upright > 0.85 and guard > 0.0,
 		"max per-frame move=%.3f lowest sole=%.3f upright=%.2f guard=%.2f" % [maxjump, lowest, upright, guard])
 
