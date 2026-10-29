@@ -24,3 +24,19 @@
 - Non-slash `can_dismember` severs only at 2× dismember threshold. Neck sever destroys head → `decapitated`. Lethal reported once.
 - Fracture when accumulated damage ≥ `fracture_accum` or blunt `amount` ≥ `fracture_force`. Head HP accumulates (repeated hits kill).
 - `BloodSystem.step(delta)` is public so tests can simulate deterministically.
+
+## Body (body-ragdoll-dismember-agent)
+- Body front is +Z (contract); `get_forward()` returns +Z. The Npc node never moves — a child CharacterBody3D "Mover" does; use `npc.body.get_center()`.
+- Alive = kinematic segments posed by FK each frame (idle/walk/run/clutch/stagger/crawl); ragdoll = unfreeze with tracked velocities. Clutch uses 2-bone IK for the free hand.
+- Crawl is an animated prone pose, not ragdoll-driven. Stability via damping (lin 0.3, ang 4.0) + collision exceptions, default Jolt solver.
+- Severed subtrees are reparented under the NPC's parent with a 120 s cleanup timer; the phone goes with a severed right arm.
+
+## Weapons / FX (weapons-fx-agent)
+- Melee hits: 3 sample points per weapon swept frame-to-frame; each uses its own velocity; knife stab vs slash = angle to blade axis.
+- Below `min_velocity` the event has amount 0 and is not delivered. LMB = scripted arc (speed_scale divides duration), RMB knife = thrust, Shift = mouse-driven free swing.
+- Wound emitters are GPUParticles3D on the part node, rate driven by `wound.current_flow`. Decals capped, oldest removed first. One pool per downed NPC.
+- AudioCues plays an asset from `gore.json` if present, else a procedural blip.
+
+## Review fixes (round 1)
+- NpcBrain is the sole source of vocal cues (grunt/gurgle/scream), once per DamageEvent; neck hits never scream; death scream skipped for headshot/decapitation.
+- Head `lethal_damage` 48 so one 9mm headshot kills; upper-arm sever threshold 45 so a full-speed knife slash can sever it.

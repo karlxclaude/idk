@@ -138,6 +138,7 @@ func _t6() -> void:
 func _t7() -> void:
 	_reset()
 	var n := _spawn()
+	n.brain.pain_tolerance = 1.0
 	var a := _wound(BodyIds.Part.TORSO, 0.4)
 	n.wounded.emit(a[0], a[1])
 	var screamed := cues.any(func(c): return c[0] == n and c[1] == &"scream")

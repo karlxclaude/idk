@@ -28,6 +28,7 @@ var _breath_t := 0.0
 var _clutch_part := -1
 var _leg_down := false
 var _dead_cause: StringName = &""
+var _last_cue_ev := 0
 
 
 func setup(owner_npc: Npc) -> void:
@@ -270,13 +271,18 @@ func _on_wounded(w: Wound, ev: DamageEvent) -> void:
 	_pain_raw = minf(_pain_raw + add, float(_cfg.get("pain_cap_raw", 2.0)))
 	if state == S.UNCONSCIOUS:
 		return
-	var neck_art := w.part_id == BodyIds.Part.NECK and w.is_arterial
-	npc.cue(&"grunt", clampf(w.severity + 0.2, 0.2, 1.0))
-	if neck_art:
-		npc.cue(&"gurgle", clampf(w.severity + 0.3, 0.3, 1.0))
-	elif GameSettings.scream_enabled and (get_pain() >= float(_cfg.get("scream_pain_threshold", 0.35))
-			or w.severity >= float(_cfg.get("scream_severity_threshold", 0.5))):
-		npc.cue(&"scream", maxf(get_pain(), w.severity))
+	# Vocal cues: once per DamageEvent (entry+exit wounds share one ev), brain is the only source.
+	var ev_id := ev.get_instance_id() if ev else 0
+	if ev == null or ev_id != _last_cue_ev:
+		_last_cue_ev = ev_id
+		var neck_hit := w.part_id == BodyIds.Part.NECK or (ev != null and ev.part_id == BodyIds.Part.NECK) \
+				or (is_instance_valid(npc.wounds) and not npc.wounds.get_wounds_on(BodyIds.Part.NECK).is_empty())
+		npc.cue(&"grunt", clampf(w.severity + 0.2, 0.2, 1.0))
+		if neck_hit:
+			npc.cue(&"gurgle", clampf(w.severity + 0.3, 0.3, 1.0))  # cannot scream effectively
+		elif GameSettings.scream_enabled and (get_pain() >= float(_cfg.get("scream_pain_threshold", 0.35))
+				or w.severity >= float(_cfg.get("scream_severity_threshold", 0.5))):
+			npc.cue(&"scream", maxf(get_pain(), w.severity))
 	_react(w, ev)
 
 
@@ -314,6 +320,8 @@ func _on_stunned(duration: float, _cause: StringName) -> void:
 
 
 func _on_lethal(cause: StringName) -> void:
+	if state != S.DEAD and GameSettings.scream_enabled and cause not in [&"head_destroyed", &"decapitation", &"headshot", &"decapitated"]:
+		npc.cue(&"scream", 1.0)  # single death cue (no head left to scream with -> skipped)
 	_die(cause)
 
 
