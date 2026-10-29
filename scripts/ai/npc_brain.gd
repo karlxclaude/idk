@@ -32,6 +32,10 @@ var _limp := {"l": false, "r": false}      # injured (non-crawl) foot/lower leg 
 var _arm_lost := {"l": false, "r": false}  # arm chain (upper/lower/hand) broken or severed per side
 var _dead_cause: StringName = &""
 var _last_cue_ev := 0
+var _jaw_gone := false         # jaw destroyed: cannot scream, every scream cue becomes a gurgle
+var _face_gone := false        # face destroyed: disoriented (random heading, stumbles, no fighting)
+var _chunk_gone := false       # any head chunk destroyed
+var _redirect_t := 0.0
 var _fight_cd := 0.0           # seconds until the next punch may start
 var _attack_t := -1.0          # seconds until the running punch lands (<0: no punch in flight)
 
@@ -49,6 +53,7 @@ func setup(owner_npc: Npc) -> void:
 	npc.part_broken.connect(_on_part_broken)
 	npc.part_severed.connect(_on_part_severed)
 	npc.stunned.connect(_on_stunned)
+	npc.head_chunk_destroyed.connect(_on_head_chunk_destroyed)
 	npc.lethal_injury.connect(_on_lethal)
 	npc.blood_level_changed.connect(_on_blood_level_changed)
 	GameEvents.npc_wounded.connect(_on_other_wounded)
@@ -132,6 +137,8 @@ func get_debug_info() -> Dictionary:
 		"blood_level": _blood_level,
 		"ragdolled": _ragdolled,
 		"aggression": snappedf(aggression, 0.01),
+		"jaw_gone": _jaw_gone,
+		"disoriented": _face_gone,
 		"can_fight": _can_fight(),
 		"limp_side": get_limp_side(),
 		"limping": is_limping(),
@@ -178,7 +185,7 @@ func _player() -> Node3D:
 
 ## Fight-back gate: setting on, aggressive enough, hurting little, an arm to hit with, legs fine, not bleeding badly.
 func _can_fight(break_off := false) -> bool:
-	if not GameSettings.fight_back or _inactive() or _leg_down:
+	if not GameSettings.fight_back or _inactive() or _leg_down or _face_gone:
 		return false
 	if aggression < float(_cfg.get("fight_aggression_min", 0.5)):
 		return false
@@ -188,6 +195,11 @@ func _can_fight(break_off := false) -> bool:
 		return false
 	var pain_max := float(_cfg.get("fight_break_pain" if break_off else "fight_enter_pain", 0.5))
 	return get_pain() < pain_max
+
+
+## All scream cues go through here: without a jaw the NPC can only gurgle.
+func _cue_scream(intensity: float) -> void:
+	npc.cue(&"gurgle" if _jaw_gone else &"scream", intensity)
 
 
 func _random_dir() -> Vector3:
@@ -239,7 +251,7 @@ func _change(new_state: int) -> void:
 				_push_clutch_wound()
 		S.PANIC_FLEE:
 			_scream_t = _rand_range("scream_interval")
-			_stumble_t = _rand_range("stumble_interval")
+			_stumble_t = _rand_range("disoriented_stumble_interval" if _face_gone else "stumble_interval")
 		S.FIGHT:
 			_fight_cd = float(_cfg.get("fight_first_attack_delay", 0.4))
 			_attack_t = -1.0
@@ -269,7 +281,7 @@ func _react(w: Wound, ev: DamageEvent) -> void:
 			_change(S.CLUTCH_WOUND)
 		_push_clutch_wound(w)
 		return
-	if state == S.CRAWL or state == S.CLUTCH_WOUND and _clutch_part == BodyIds.Part.NECK:
+	if state == S.CRAWL or state == S.CLUTCH_WOUND and _clutch_part in [BodyIds.Part.NECK, BodyIds.Part.HEAD]:
 		return
 	if state == S.FIGHT and _can_fight(true) and w.part_id != BodyIds.Part.TORSO:
 		return  # keeps swinging through minor hits; a bad torso hit falls through to clutch
@@ -362,7 +374,7 @@ func _on_wounded(w: Wound, ev: DamageEvent) -> void:
 			npc.cue(&"gurgle", clampf(w.severity + 0.3, 0.3, 1.0))  # cannot scream effectively
 		elif GameSettings.scream_enabled and (get_pain() >= float(_cfg.get("scream_pain_threshold", 0.35))
 				or w.severity >= float(_cfg.get("scream_severity_threshold", 0.5))):
-			npc.cue(&"scream", maxf(get_pain(), w.severity))
+			_cue_scream(maxf(get_pain(), w.severity))
 	_react(w, ev)
 
 
@@ -432,6 +444,22 @@ func _push_clutch_wound(fallback: Wound = null) -> void:
 		npc.body.set_clutch_wound(_clutch_part, best.local_position, best.local_normal)
 
 
+func _on_head_chunk_destroyed(chunk: int, _gib: RigidBody3D, _ev: DamageEvent) -> void:
+	_chunk_gone = true
+	if chunk == BodyIds.HeadChunk.JAW:
+		_jaw_gone = true
+	elif chunk == BodyIds.HeadChunk.FACE:
+		_face_gone = true
+		if state == S.FIGHT:
+			_after_clutch()
+	if _inactive() or state in [S.CRAWL, S.UNCONSCIOUS] or \
+			(state == S.CLUTCH_WOUND and _clutch_part == BodyIds.Part.NECK):
+		return
+	if chunk == BodyIds.HeadChunk.JAW and state != S.CLUTCH_WOUND:
+		_clutch_part = BodyIds.Part.HEAD  # holds the ruined jaw, then flees as usual (_after_clutch)
+		_change(S.CLUTCH_WOUND)
+
+
 func _on_stunned(duration: float, _cause: StringName) -> void:
 	if _inactive() or state == S.UNCONSCIOUS or state == S.CRAWL:
 		return
@@ -451,7 +479,11 @@ func _on_lethal(cause: StringName) -> void:
 		return
 	if state != S.DEAD and GameSettings.scream_enabled and not _head_gone() \
 			and cause not in [&"headshot", &"decapitated"]:
-		npc.cue(&"scream", 1.0)  # single death cue (no head left to scream with -> skipped)
+		# single death cue; no head left -> skipped; jaw gone -> gurgle; other lost chunks (face) -> silent
+		if _jaw_gone:
+			npc.cue(&"gurgle", 1.0)
+		elif not _chunk_gone:
+			npc.cue(&"scream", 1.0)
 	_die(cause)
 
 
@@ -540,10 +572,16 @@ func _physics_process(delta: float) -> void:
 				_scream_t -= delta
 				if _scream_t <= 0.0:
 					_scream_t = _rand_range("scream_interval")
-					npc.cue(&"scream", maxf(0.4, get_pain()))
-			if _blood_level >= BodyIds.BloodLevel.HEAVY:
+					_cue_scream(maxf(0.4, get_pain()))
+			if _face_gone:
+				_redirect_t -= delta
+				if _redirect_t <= 0.0:
+					_redirect_t = _rand_range("disoriented_redirect_interval")
+					_flee_dir = _random_dir()
+			if _blood_level >= BodyIds.BloodLevel.HEAVY or _face_gone:
 				_stumble_t -= delta
 				if _stumble_t <= 0.0:
+					_stumble_t = _rand_range("disoriented_stumble_interval" if _face_gone else "stumble_interval")
 					_stagger_next = S.PANIC_FLEE
 					_change(S.STAGGER)
 					_state_duration = _rand_range("stumble_duration")

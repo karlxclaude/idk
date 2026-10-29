@@ -27,6 +27,7 @@ func _ready() -> void:
 	await _t16()
 	await _t17()
 	await _t18()
+	await _t19()
 	print("AI TEST ", "FAILED" if failures > 0 else "ALL PASSED")
 	get_tree().quit(1 if failures > 0 else 0)
 
@@ -495,3 +496,72 @@ func _t18() -> void:
 	_check("18c head intact -> death scream still fires", k.brain.state == S.DEAD
 		and cues.any(func(c): return c[0] == k and c[1] == &"scream"))
 	n.queue_free(); m.queue_free(); k.queue_free()
+
+
+func _count_cues(n: Npc, cue: StringName) -> int:
+	return cues.filter(func(c): return c[0] == n and c[1] == cue).size()
+
+
+func _t19() -> void:
+	_reset()
+	# JAW destroyed: screams become gurgles (wound reaction, flee timer, death), still reacts
+	var n := _spawn()
+	n.brain.pain_tolerance = 1.0
+	n.head_chunk_destroyed.emit(BodyIds.HeadChunk.JAW, null, null)
+	_check("19a jaw destroyed -> clutches head", n.brain.state == S.CLUTCH_WOUND and n.brain._clutch_part == BodyIds.Part.HEAD,
+		BodyIds.state_name(n.brain.state))
+	cues.clear()
+	var a := _wound(BodyIds.Part.LOWER_ARM_L, 0.7)
+	n.wounded.emit(a[0], a[1])
+	_check("19b jaw gone: wound scream -> gurgle", _count_cues(n, &"scream") == 0 and _count_cues(n, &"gurgle") >= 1)
+	n.brain.force_state(S.PANIC_FLEE)
+	cues.clear()
+	for i in 300:
+		await get_tree().physics_frame
+	_check("19c jaw gone: flee timer gurgles, never screams", _count_cues(n, &"scream") == 0 and _count_cues(n, &"gurgle") >= 1,
+		"scream=%d gurgle=%d" % [_count_cues(n, &"scream"), _count_cues(n, &"gurgle")])
+	cues.clear()
+	n.lethal_injury.emit(&"heart")
+	_check("19d jaw gone: death scream -> gurgle", n.brain.state == S.DEAD and _count_cues(n, &"scream") == 0
+		and _count_cues(n, &"gurgle") == 1)
+	n.queue_free()
+
+	# FACE destroyed: disoriented flee, no fighting
+	GameSettings.fight_back = true
+	var player := _fake_player(Vector3(0, 0, 2.5))
+	var f := _fighter()
+	f.head_chunk_destroyed.emit(BodyIds.HeadChunk.FACE, null, null)
+	var b := _wound(BodyIds.Part.UPPER_ARM_L, 0.3)
+	f.wounded.emit(b[0], b[1])
+	_check("19e face destroyed -> FIGHT refused", f.brain.state != S.FIGHT, BodyIds.state_name(f.brain.state))
+	GameSettings.fight_back = false
+	player.queue_free()
+	f.brain.force_state(S.PANIC_FLEE)
+	var last: Vector3 = f.brain._flee_dir
+	var changes := 0
+	var stumbles := 0
+	var prev: int = f.brain.state
+	for i in 240:
+		await get_tree().physics_frame
+		if f.brain._flee_dir.distance_to(last) > 0.01:
+			changes += 1
+			last = f.brain._flee_dir
+		if f.brain.state == S.STAGGER and prev != S.STAGGER:
+			stumbles += 1
+		prev = f.brain.state
+	_check("19f face destroyed: flee direction changes and stumbles over 4 s", changes >= 2 and stumbles >= 1,
+		"changes=%d stumbles=%d" % [changes, stumbles])
+	f.queue_free()
+
+	# chunk-destroyed deaths: no scream
+	var c := _spawn()
+	c.head_chunk_destroyed.emit(BodyIds.HeadChunk.CRANIUM, null, null)
+	cues.clear()
+	c.lethal_injury.emit(&"cranium_destroyed")
+	_check("19g cranium chunk death: no scream", c.brain.state == S.DEAD and _count_cues(c, &"scream") == 0)
+	var d := _spawn()
+	d.head_chunk_destroyed.emit(BodyIds.HeadChunk.FACE, null, null)
+	cues.clear()
+	d.lethal_injury.emit(&"face_destroyed")
+	_check("19h face chunk death: no scream", d.brain.state == S.DEAD and _count_cues(d, &"scream") == 0)
+	c.queue_free(); d.queue_free()
