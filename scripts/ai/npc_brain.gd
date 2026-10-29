@@ -27,6 +27,8 @@ var _stumble_t := 0.0
 var _breath_t := 0.0
 var _clutch_part := -1
 var _leg_down := false
+var _limp := {"l": false, "r": false}      # injured (non-crawl) foot/lower leg per side
+var _arm_lost := {"l": false, "r": false}  # arm chain (upper/lower/hand) broken or severed per side
 var _dead_cause: StringName = &""
 var _last_cue_ev := 0
 
@@ -75,6 +77,26 @@ func get_shock() -> float:
 	return clampf(_shock / shock_tolerance, 0.0, 1.0)
 
 
+## Which side limps: "l", "r", "both" or "" (not limping). The orchestrator wires this to the body/IK.
+func get_limp_side() -> String:
+	if _limp["l"] and _limp["r"]:
+		return "both"
+	if _limp["l"]:
+		return "l"
+	if _limp["r"]:
+		return "r"
+	return ""
+
+
+func is_limping() -> bool:
+	return not _leg_down and get_limp_side() != ""
+
+
+## Exactly one usable arm (behaviour hook only; nothing branches on it yet).
+func is_one_handed() -> bool:
+	return _arm_lost["l"] != _arm_lost["r"]
+
+
 ## Debug/test hook: jump straight to a state (runs normal enter logic).
 func force_state(new_state: int) -> void:
 	if state == S.DEAD:
@@ -104,6 +126,10 @@ func get_debug_info() -> Dictionary:
 		"flee_dir": _flee_dir,
 		"blood_level": _blood_level,
 		"ragdolled": _ragdolled,
+		"limp_side": get_limp_side(),
+		"limping": is_limping(),
+		"one_handed": is_one_handed(),
+		"usable_arms": int(not _arm_lost["l"]) + int(not _arm_lost["r"]),
 	}
 
 
@@ -121,6 +147,15 @@ func _speed(key: String) -> float:
 func _blood_scale() -> float:
 	var k: String = BodyIds.BloodLevel.keys()[_blood_level].to_lower()
 	return float(_cfg.get("blood_speed_scale", {}).get(k, 1.0))
+
+
+## Pose + speed for upright movement: limp (reduced speed) when a foot/lower leg is hurt, else `pose`.
+func _gait(pose: StringName, speed_key: String) -> Array:
+	if is_limping() and (pose == &"run" or pose == &"walk"):
+		var cap := float(_cfg.get("limp_speed", 1.6))
+		var scale := float(_cfg.get("limp_walk_scale", 0.75)) if pose == &"walk" else 1.0
+		return [&"limp", minf(_speed(speed_key), cap) * scale]
+	return [pose, _speed(speed_key)]
 
 
 func _random_dir() -> Vector3:
@@ -269,6 +304,7 @@ func _on_wounded(w: Wound, ev: DamageEvent) -> void:
 	if w.is_fracture:
 		add += float(_cfg.get("fracture_pain", 0.35))
 	_pain_raw = minf(_pain_raw + add, float(_cfg.get("pain_cap_raw", 2.0)))
+	_note_lower_wound(w)
 	if state == S.UNCONSCIOUS:
 		return
 	# Vocal cues: once per DamageEvent (entry+exit wounds share one ev), brain is the only source.
@@ -295,14 +331,32 @@ func _on_part_broken(part_id: int) -> void:
 func _on_part_severed(part_id: int, _root: RigidBody3D, _ev: DamageEvent) -> void:
 	if _inactive():
 		return
-	_note_limb_loss(part_id)
+	_note_limb_loss(part_id, true)
 
 
-func _note_limb_loss(part_id: int) -> void:
+func _note_limb_loss(part_id: int, severed := false) -> void:
 	if BodyIds.is_leg(part_id):
-		_start_crawl()
-	elif BodyIds.is_arm(part_id) and is_instance_valid(npc.body):
-		npc.body.drop_held_item(BodyIds.side_of(part_id))
+		# Broken foot only -> limp. Broken upper/lower leg, or any severed leg/foot -> crawl.
+		if BodyIds.is_foot(part_id) and not severed:
+			_set_limp(BodyIds.side_of(part_id))
+		else:
+			_start_crawl()
+	elif BodyIds.is_arm(part_id):
+		_arm_lost[BodyIds.side_of(part_id)] = true
+		if is_instance_valid(npc.body):
+			npc.body.drop_held_item(BodyIds.side_of(part_id))
+
+
+## A real (non-trivial) wound on a foot or lower leg makes the NPC limp without breaking anything.
+func _note_lower_wound(w: Wound) -> void:
+	if w.part_id in [BodyIds.Part.FOOT_L, BodyIds.Part.FOOT_R, BodyIds.Part.LOWER_LEG_L, BodyIds.Part.LOWER_LEG_R] \
+			and w.severity >= float(_cfg.get("limp_wound_severity_min", 0.3)):
+		_set_limp(BodyIds.side_of(w.part_id))
+
+
+func _set_limp(side: String) -> void:
+	if side != "":
+		_limp[side] = true
 
 
 func _on_stunned(duration: float, _cause: StringName) -> void:
@@ -381,7 +435,8 @@ func _physics_process(delta: float) -> void:
 		S.IDLE, S.FIGHT:  # TODO(roadmap: fight back)
 			body.set_locomotion(Vector3.ZERO, &"idle")
 		S.ALERT:
-			body.set_locomotion(_flee_dir * _speed("walk"), &"walk")
+			var g := _gait(&"walk", "walk")
+			body.set_locomotion(_flee_dir * g[1] * (bs if g[0] == &"limp" else 1.0), g[0])
 			if _state_time >= _state_duration:
 				_change(S.IDLE)
 		S.PANIC_FLEE:
@@ -399,7 +454,8 @@ func _physics_process(delta: float) -> void:
 					_change(S.STAGGER)
 					_state_duration = _rand_range("stumble_duration")
 					return
-			body.set_locomotion(_flee_dir * _speed("run") * bs, &"run")
+			var g := _gait(&"run", "run")
+			body.set_locomotion(_flee_dir * g[1] * bs, g[0])
 			if _panic_left <= 0.0:
 				_change(S.ALERT)
 		S.CLUTCH_WOUND:

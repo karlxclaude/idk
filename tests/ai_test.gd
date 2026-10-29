@@ -16,6 +16,10 @@ func _ready() -> void:
 	await _t5()
 	await _t6()
 	await _t7()
+	await _t8()
+	await _t9()
+	await _t10()
+	await _t11()
 	print("AI TEST ", "FAILED" if failures > 0 else "ALL PASSED")
 	get_tree().quit(1 if failures > 0 else 0)
 
@@ -157,3 +161,102 @@ func _t7() -> void:
 		await get_tree().physics_frame
 	_check("7c knockdown wakes", ko and k.brain.state != S.UNCONSCIOUS, BodyIds.state_name(k.brain.state))
 	n.queue_free(); m.queue_free(); k.queue_free()
+
+
+func _pose_of(n: Npc) -> String:
+	return str(n.body.get_debug_info().get("pose", ""))
+
+
+func _t8() -> void:
+	_reset()
+	var n := _spawn()
+	await get_tree().physics_frame
+	var held_before: String = str(n.body.get_debug_info().get("held_item", ""))
+	n.part_broken.emit(BodyIds.Part.HAND_R)
+	var held_after: String = str(n.body.get_debug_info().get("held_item", ""))
+	_check("8a broken HAND_R -> held item dropped", held_before != "" and held_after == "",
+		"%s -> %s" % [held_before, held_after])
+	var info: Dictionary = n.brain.get_debug_info()
+	_check("8b one arm lost -> one_handed in debug info", info.get("one_handed") == true and info.get("usable_arms") == 1)
+	n.part_broken.emit(BodyIds.Part.LOWER_ARM_L)
+	_check("8c both arms lost -> not one_handed", n.brain.get_debug_info().get("one_handed") == false
+		and n.brain.get_debug_info().get("usable_arms") == 0)
+	_check("8d hand break does not change state", n.brain.state == S.IDLE)
+	n.queue_free()
+	var m := _spawn()
+	await get_tree().physics_frame
+	m.part_severed.emit(BodyIds.Part.HAND_R, null, null)
+	_check("8e severed hand -> one_handed", m.brain.is_one_handed())
+	m.queue_free()
+	# hands are sensitive: same wound hurts more on a hand than on a thigh
+	var h := _spawn()
+	h.brain.pain_tolerance = 1.0
+	var t := _spawn()
+	t.brain.pain_tolerance = 1.0
+	var wh := _wound(BodyIds.Part.HAND_L, 0.3)
+	var wt := _wound(BodyIds.Part.UPPER_LEG_L, 0.3)
+	h.wounded.emit(wh[0], wh[1])
+	t.wounded.emit(wt[0], wt[1])
+	_check("8f hand pain weight > thigh", h.brain.get_pain() > t.brain.get_pain(),
+		"%.2f vs %.2f" % [h.brain.get_pain(), t.brain.get_pain()])
+	h.queue_free(); t.queue_free()
+
+
+func _t9() -> void:
+	_reset()
+	var n := _spawn()
+	n.part_broken.emit(BodyIds.Part.FOOT_L)
+	var a := _wound(BodyIds.Part.TORSO, 0.4)
+	n.wounded.emit(a[0], a[1])
+	for i in 3:
+		await get_tree().physics_frame
+	var st: int = n.brain.state
+	_check("9a broken FOOT_L, fleeing -> PANIC_FLEE (not CRAWL)", st == S.PANIC_FLEE, BodyIds.state_name(st))
+	_check("9b fleeing pose is limp, not run", _pose_of(n) == "limp", _pose_of(n))
+	_check("9c limp_side == l", n.brain.get_limp_side() == "l" and n.brain.get_debug_info().get("limp_side") == "l")
+	_check("9d exertion stays high", n.get_exertion() > 0.8)
+	var fast := float(DataDB.table("ai").get("speeds", {}).get("run", 4.5))
+	_check("9e limp speed reduced", float(DataDB.table("ai").get("limp_speed", fast)) < fast)
+	n.queue_free()
+	var m := _spawn()
+	_check("9f no injury -> no limp side", m.brain.get_limp_side() == "")
+	var w := _wound(BodyIds.Part.FOOT_R, 0.5)
+	m.wounded.emit(w[0], w[1])
+	_check("9g wounded FOOT_R -> limp_side r", m.brain.get_limp_side() == "r")
+	for i in 3:
+		await get_tree().physics_frame
+	_check("9h wounded foot flee uses limp", m.brain.state == S.PANIC_FLEE and _pose_of(m) == "limp", _pose_of(m))
+	m.queue_free()
+
+
+func _t10() -> void:
+	_reset()
+	var n := _spawn()
+	n.part_broken.emit(BodyIds.Part.LOWER_LEG_L)
+	for i in 3:
+		await get_tree().physics_frame
+	_check("10 broken LOWER_LEG_L -> CRAWL, pose crawl", n.brain.state == S.CRAWL and _pose_of(n) == "crawl",
+		"%s %s" % [BodyIds.state_name(n.brain.state), _pose_of(n)])
+	n.queue_free()
+	var m := _spawn()
+	m.part_broken.emit(BodyIds.Part.UPPER_LEG_R)
+	_check("10b broken UPPER_LEG_R -> CRAWL", m.brain.state == S.CRAWL)
+	m.queue_free()
+
+
+func _t11() -> void:
+	_reset()
+	var n := _spawn()
+	n.part_severed.emit(BodyIds.Part.FOOT_R, null, null)
+	_check("11 severed FOOT_R -> CRAWL", n.brain.state == S.CRAWL, BodyIds.state_name(n.brain.state))
+	n.queue_free()
+	# vocal cues unchanged: one grunt per DamageEvent even with hand/foot wounds
+	_reset()
+	var m := _spawn()
+	var a := _wound(BodyIds.Part.HAND_R, 0.6)
+	cues.clear()
+	m.wounded.emit(a[0], a[1])
+	m.wounded.emit(a[0], a[1])
+	var grunts := cues.filter(func(c): return c[0] == m and c[1] == &"grunt").size()
+	_check("11b one grunt per DamageEvent", grunts == 1, str(grunts))
+	m.queue_free()

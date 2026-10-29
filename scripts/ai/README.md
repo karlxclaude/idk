@@ -10,4 +10,10 @@ Finite state machine for NPC behaviour. Tunables: `data/ai.json`. Test: `tests/a
 - Exertion is a pure function of state (idle 0, alert-walk 0.3, run 1.0, crawl 0.6) read by BloodSystem.
 - Public: `get_exertion()`, `get_pain()`, `get_shock()`, `force_state(s)`, `get_debug_info()`.
 - Knockdown (long stun) = UNCONSCIOUS with a wake timer; blood CRITICAL = UNCONSCIOUS without one.
+- Hands: HAND/arm broken or severed -> `body.drop_held_item(side)`; arm chain loss per side is tracked,
+  exactly one usable arm = `is_one_handed()` (debug info `one_handed`, `usable_arms`; behaviour hook only). Hand pain weight 1.4.
+- Limp: broken FOOT_*, or a wound >= `limp_wound_severity_min` on FOOT_*/LOWER_LEG_*, sets a limp side. While
+  fleeing/walking the brain sends pose `limp` at `limp_speed` (exertion unchanged). Broken upper/lower leg or any
+  severed leg/foot -> CRAWL (overrides limp). `get_limp_side()` -> "l"/"r"/"both"/"" (also `limp_side` in debug info);
+  NpcBody has no side API yet, the orchestrator wires it.
 - FIGHT is a stub (TODO(roadmap: fight back)).
