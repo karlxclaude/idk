@@ -39,7 +39,7 @@
 
 ## Review fixes (round 1)
 - NpcBrain is the sole source of vocal cues (grunt/gurgle/scream), once per DamageEvent; neck hits never scream; death scream skipped for headshot/decapitation.
-- Head `lethal_damage` 48 so one 9mm headshot kills; upper-arm sever threshold 45 so a full-speed knife slash can sever it.
+- Head `lethal_damage` 48 so one 9mm headshot kills; upper-arm sever threshold 45: only a fast Shift free-swing knife slash (~11 m/s) severs arms/neck; a normal LMB slash (7.1 m/s) severs hands (knife `dismember_min_velocity` 6.0).
 
 ## Milestone 2
 - Phase 2 agent roster in `.claude/agents/` (v1 definitions archived in `docs/agents_v1/`). Added **weapons-ui-agent**: the Phase 2 list had no owner for weapons/player/UI.
