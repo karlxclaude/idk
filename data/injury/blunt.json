@@ -1,4 +1,20 @@
 {
   "bruise_per_damage": 0.02,
-  "bruise_bleed_ext": 0.05
+  "bruise_bleed_ext": 0.05,
+  "bruise_min_severity": 0.05,
+  "momentum": {
+    "ref_momentum": 9.0,
+    "weight": 0.6,
+    "exponent": 1.0,
+    "min_factor": 0.25,
+    "max_factor": 4.0
+  },
+  "area": {
+    "ref_area_cm2": 30.0,
+    "min_area_cm2": 0.5,
+    "exponent": 0.5,
+    "min_factor": 0.7,
+    "max_factor": 2.5,
+    "damage_weight": 0.3
+  }
 }
