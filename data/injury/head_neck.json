@@ -33,7 +33,7 @@
     },
     "destroyed_cause": "head_destroyed",
     "concussion": {
-      "per_amount": 0.05,
+      "per_amount": 0.04,
       "min": 1.0,
       "max": 8.0
     }
@@ -45,5 +45,92 @@
       "slash"
     ],
     "decapitated_cause": "decapitated"
+  },
+  "chunks": {
+    "jaw": {
+      "hp": 25,
+      "bleed": 30.0,
+      "wound_severity": 0.9,
+      "bleed_mult": 2.0,
+      "hp_share": 0.4,
+      "lethal_on_destroy": false,
+      "lethal_damage": 0,
+      "stun": 2.5,
+      "stun_cause": "jaw_destroyed",
+      "center": [
+        0,
+        -0.7,
+        0.5
+      ]
+    },
+    "face": {
+      "hp": 30,
+      "bleed": 20.0,
+      "wound_severity": 0.9,
+      "bleed_mult": 1.5,
+      "hp_share": 1.0,
+      "lethal_on_destroy": false,
+      "lethal_damage": 48,
+      "stun": 6.0,
+      "stun_cause": "face_destroyed",
+      "center": [
+        0,
+        0.1,
+        0.7
+      ]
+    },
+    "cranium": {
+      "hp": 40,
+      "bleed": 12.0,
+      "wound_severity": 1.0,
+      "bleed_mult": 1.0,
+      "hp_share": 1.0,
+      "lethal_on_destroy": true,
+      "lethal_damage": 48,
+      "stun": 0.0,
+      "stun_cause": "",
+      "center": [
+        0,
+        0.6,
+        0
+      ]
+    },
+    "occiput": {
+      "hp": 40,
+      "bleed": 12.0,
+      "wound_severity": 1.0,
+      "bleed_mult": 1.0,
+      "hp_share": 1.0,
+      "lethal_on_destroy": true,
+      "lethal_damage": 48,
+      "stun": 0.0,
+      "stun_cause": "",
+      "center": [
+        0,
+        0.1,
+        -0.7
+      ]
+    }
+  },
+  "chunk_rules": {
+    "type_chunk_mult": {
+      "bullet": 1.0,
+      "stab": 0.5,
+      "slash": 0.4,
+      "blunt": 0.6
+    },
+    "energy_scale": 0.075,
+    "spill_energy": 90.0,
+    "spill_types": [
+      "bullet"
+    ],
+    "spill_to": {
+      "jaw": "face",
+      "face": "cranium",
+      "cranium": "occiput",
+      "occiput": "cranium"
+    },
+    "skull_cause": "skull_destroyed",
+    "chunk_cause_priority": false
   }
 }
