@@ -1,4 +1,4 @@
-## review-agent: end-to-end V1 acceptance test (real NPCs, real weapons where practical).
+## systems-review-agent: end-to-end acceptance test (milestone 2: 15 parts, hands/feet, limp) (real NPCs, real weapons where practical).
 ## Run: godot --headless --path . res://tests/acceptance_test.tscn
 ## Output: one "ACC|<id>|PASS/FAIL|<name>|<evidence>" line per check plus "INFO|" diagnostics.
 ## Exit code 1 if any check FAILs. Optional user arg:  -- only=<section prefix>  (e.g. only=neck)
@@ -28,7 +28,7 @@ func _ready() -> void:
 	GameEvents.audio_cue.connect(func(n, c, _p, i): _cues.append([n, c, i]))
 	await get_tree().physics_frame
 	var t0 := Time.get_ticks_msec()
-	for sec in ["neck", "body", "knife", "bat", "sever", "debug", "sweep", "ragdoll", "seams"]:
+	for sec in ["neck", "body", "knife", "bat", "sever", "hands", "feet", "debug", "sweep", "ragdoll", "seams"]:
 		if _only != "" and not sec.begins_with(_only):
 			continue
 		var s0 := Time.get_ticks_msec()
@@ -162,13 +162,15 @@ func shoot(npc: Npc, part: int, from_dir := Vector3(0, 0, 1), dist := 3.0, aim_o
 
 ## Position a melee weapon so its swing/thrust passes through `target` with blade/bat sample fraction f at
 ## mid-stroke, then fire debug_swing(scale, mode). Returns once the stroke is done. Weapon faces -Z.
-func melee_through(w: MeleeWeapon, target: Vector3, scale_v: float, mode: StringName, f := 1.0) -> void:
+func melee_through(w: MeleeWeapon, target: Vector3, scale_v: float, mode: StringName, f := 1.0, yaw_deg := 0.0) -> void:
+	w.get_parent().rotation_degrees.y = yaw_deg
+	var hb: Basis = w.get_parent().global_transform.basis
 	var rt := w.rest_transform
 	var len_ := float(w.def.get("length", 0.2))
-	var tip_rest := rt * Vector3(0, 0, -len_ * f)
+	var tip_rest: Vector3 = hb * (rt * Vector3(0, 0, -len_ * f))
 	var origin := target - tip_rest
 	if mode == &"thrust":
-		var axis := (rt.basis * Vector3(0, 0, -1)).normalized()
+		var axis: Vector3 = (hb * rt.basis * Vector3(0, 0, -1)).normalized()
 		origin -= axis * float(w.def.get("thrust", {}).get("distance", 0.6)) * 0.5
 	w.get_parent().global_position = origin
 	await frames(3)
@@ -372,13 +374,13 @@ func _fresh_torso_npc(seed_value := 31) -> Npc:
 
 
 ## One knife stroke on a fresh NPC torso. Returns {npc, hits(all [ev,applied]), torso_hit (ev or null), ...}
-func _knife_stroke(mode: StringName, scale_v: float, part := P.TORSO, f := 1.0, aim_offset := Vector3(0, 0.1, 0), seed_value := 31) -> Dictionary:
+func _knife_stroke(mode: StringName, scale_v: float, part := P.TORSO, f := 1.0, aim_offset := Vector3(0, 0.1, 0), seed_value := 31, yaw_deg := 0.0) -> Dictionary:
 	var npc := await _spawn(Vector3(0, 0.05, 0), seed_value)
 	var w := _weapon("knife") as MeleeWeapon
 	var hits: Array = []
 	_record_hits(w, hits)
 	var tgt := _part_pos(npc, part) + aim_offset
-	await melee_through(w, tgt, scale_v, mode, f)
+	await melee_through(w, tgt, scale_v, mode, f, yaw_deg)
 	var on_part: DamageEvent = null
 	var applied := false
 	for h in hits:
@@ -453,7 +455,7 @@ func _first_wound(npc: Npc, part: int, type: int) -> Wound:
 
 # ------------------------------------------------------------------ 4. bat
 
-func _bat_stroke(part: int, scale_v: float, f := 0.75, aim_offset := Vector3.ZERO, seed_value := 41) -> Dictionary:
+func _bat_stroke(part: int, scale_v: float, f := 0.75, aim_offset := Vector3.ZERO, seed_value := 41, yaw_deg := 0.0) -> Dictionary:
 	var npc := await _spawn(Vector3(0, 0.05, 0), seed_value)
 	var w := _weapon("bat") as MeleeWeapon
 	var hits: Array = []
@@ -464,7 +466,7 @@ func _bat_stroke(part: int, scale_v: float, f := 0.75, aim_offset := Vector3.ZER
 	npc.part_broken.connect(func(p): broken.append(p))
 	var states: Array = []
 	npc.state_changed.connect(func(_o, n): states.append(BodyIds.state_name(n)))
-	await melee_through(w, _part_pos(npc, part) + aim_offset, scale_v, &"swing", f)
+	await melee_through(w, _part_pos(npc, part) + aim_offset, scale_v, &"swing", f, yaw_deg)
 	var on_part: DamageEvent = null
 	var applied := false
 	for h in hits:
@@ -597,15 +599,15 @@ func _sec_sever() -> void:
 
 
 ## Shared post-sever verification.
-func _sever_checks(npc: Npc, part: int, notes: Array, used_real: bool) -> String:
+func _sever_checks(npc: Npc, part: int, notes: Array, used_real: bool, pfx := "5") -> String:
 	var seg_node := npc.body.get_part_node(part) as RigidBody3D     # BodySegment kept in _segments after severing
 	await seconds(3.0)
 	var bp: BodyPart = npc.damage.get_part(part)
 	var src := "REAL knife stroke" if used_real else "weapon-equivalent DamageEvent"
-	check("5.0", "limb severed (%s)" % src, bp.severed, "severed=%s" % bp.severed)
+	check(pfx + ".0", "limb severed (%s)" % src, bp.severed, "severed=%s" % bp.severed)
 	var is_rb := seg_node != null and seg_node is RigidBody3D
 	var detached_from_body: bool = seg_node != null and seg_node.get_parent() != npc.body
-	check("5.1", "severed piece is a separate RigidBody3D no longer under NpcBody", is_rb and detached_from_body,
+	check(pfx + ".1", "severed piece is a separate RigidBody3D no longer under NpcBody", is_rb and detached_from_body,
 		"class=%s parent=%s attached=%s" % [seg_node.get_class() if seg_node else "null",
 			seg_node.get_parent().name if seg_node and seg_node.get_parent() else "null",
 			npc.body.has_part(part)])
@@ -615,33 +617,192 @@ func _sever_checks(npc: Npc, part: int, notes: Array, used_real: bool) -> String
 		var rb := seg_node as RigidBody3D
 		y = rb.global_position.y
 		spd = rb.linear_velocity.length()
-	check("5.2", "piece rests on the floor (y < 0.35, speed < 0.3 after 3 s)", y < 0.35 and spd < 0.3,
+	check(pfx + ".2", "piece rests on the floor (y < 0.35, speed < 0.3 after 3 s)", y < 0.35 and spd < 0.3,
 		"y=%.3f speed=%.3f sleeping=%s" % [y, spd, str((seg_node as RigidBody3D).sleeping) if is_rb else "n/a"])
 	var layer_ok: bool = is_rb and (seg_node.collision_layer & BodyIds.LAYER_NPC_PARTS) != 0 and seg_node.has_meta(BodyIds.META_NPC)
-	check("5.3", "piece stays on npc_parts layer with npc/part_id metas (can still be hit)", layer_ok,
+	check(pfx + ".3", "piece stays on npc_parts layer with npc/part_id metas (can still be hit)", layer_ok,
 		"layer=%d meta_npc=%s" % [seg_node.collision_layer if is_rb else -1, str(seg_node.has_meta(BodyIds.META_NPC)) if is_rb else "n/a"])
 	var parent_part := BodyIds.parent_of(part)
 	var stump: Wound = null
 	for w in npc.wounds.get_wounds_on(parent_part):
 		if w.is_stump:
 			stump = w
-	check("5.4", "stump wound on parent part, attached (not detached)", stump != null and not stump.detached,
+	check(pfx + ".4", "stump wound on parent part, attached (not detached)", stump != null and not stump.detached,
 		stump.describe() if stump else "no stump wound on %s" % BodyIds.key(parent_part))
-	check("5.5", "stump wound bleeding (current_flow > 0)", stump != null and stump.current_flow > 0.0,
+	check(pfx + ".5", "stump wound bleeding (current_flow > 0)", stump != null and stump.current_flow > 0.0,
 		"flow=%.2f volume=%.0f" % [stump.current_flow if stump else -1.0, npc.blood.state.volume])
 	var v1 := npc.blood.state.volume
 	await seconds(2.0)
-	check("5.6", "blood volume dropping after sever", npc.blood.state.volume < v1,
+	check(pfx + ".6", "blood volume dropping after sever", npc.blood.state.volume < v1,
 		"%.1f -> %.1f ext_rate=%.1f" % [v1, npc.blood.state.volume, npc.blood.state.external_rate])
 	var piece_wounds_detached := true
 	for w in npc.wounds.get_wounds_on(part):
 		if not w.detached:
 			piece_wounds_detached = false
-	check("5.7", "wounds on the severed piece are detached (no longer drain the body)", piece_wounds_detached,
+	check(pfx + ".7", "wounds on the severed piece are detached (no longer drain the body)", piece_wounds_detached,
 		str(npc.wounds.get_debug_info().wounds))
-	check("5.8", "NPC itself survives the sever (not DEAD instantly, body still upright/animated or in a reaction)",
+	check(pfx + ".8", "NPC itself survives the sever (not DEAD instantly, body still upright/animated or in a reaction)",
 		not npc.is_dead() and _npc_sane(npc) == "", "state=%s sane='%s'" % [_state_name(npc), _npc_sane(npc)])
 	return "piece y=%.3f class=%s" % [y, seg_node.get_class() if seg_node else "null"]
+
+
+# ------------------------------------------------------------------ 5b/5c. hands and feet
+
+## DamageEvent built exactly like MeleeWeapon._build_event for a fast knife slash (fallback when the real stroke misses).
+func _slash_event(npc: Npc, part: int, speed := 13.0) -> DamageEvent:
+	var kdef := WeaponDefs.get_def("knife")
+	var e := DamageEvent.new()
+	e.type = DamageEvent.Type.BLADE_SLASH
+	e.weapon_id = &"knife"
+	e.impactor_velocity = Vector3(speed, 0, 0)
+	e.direction = Vector3.RIGHT
+	e.impactor_mass = float(kdef.mass)
+	e.amount = float(kdef.base_damage) * clampf(speed / float(kdef.velocity_ref), 0.0, float(kdef.max_damage_scale))
+	e.penetration = float(kdef.slash_penetration) if kdef.has("slash_penetration") else 0.03
+	e.can_dismember = speed > float(kdef.dismember_min_velocity)
+	e.part_id = part
+	e.hit_position = _part_pos(npc, part)
+	e.hit_normal = Vector3.BACK
+	return e
+
+
+## Real knife slash through `part` (fast stroke). Falls back to a weapon-equivalent event when the stroke does not sever.
+## Returns {npc, real(bool), notes}.
+func _knife_sever(part: int, seed_value: int, aim_offset := Vector3.ZERO, f := 0.75, yaw_deg := 0.0) -> Dictionary:
+	var r := await _knife_stroke(&"swing", 2.5, part, f, aim_offset, seed_value, yaw_deg)
+	var npc: Npc = r.npc
+	info("%s: knife hits=%s" % [BodyIds.key(part), str(r.hits.map(func(h): return h[0].describe() + " can_dismember=%s applied=%s" % [h[0].can_dismember, h[1]]))])
+	var notes: Array = []
+	var real: bool = r.ev != null and npc.damage.get_part(part).severed
+	(r.w as Node).get_parent().queue_free()
+	if not real:
+		info("%s: real knife stroke did not sever (ev=%s) -> weapon-equivalent DamageEvent" % [BodyIds.key(part), r.ev.describe() if r.ev else "none"])
+		npc.queue_free()
+		await frames(2)
+		npc = await _spawn(Vector3(0, 0.05, 0), seed_value)
+		npc.part_severed.connect(func(p, root, _e): notes.append([p, root]))
+		npc.apply_damage(_slash_event(npc, part))
+	return {"npc": npc, "real": real, "notes": notes}
+
+
+func _sec_hands() -> void:
+	# --- H.1 handgun through the right hand (real HitscanWeapon, diagonal so the torso never shadows the hand)
+	var npc := await _spawn(Vector3(0, 0.05, 0), 111)
+	var states: Array = []
+	npc.state_changed.connect(func(_o, n): states.append(BodyIds.state_name(n)))
+	var broken: Array = []
+	npc.part_broken.connect(func(p): broken.append(p))
+	var held_before: String = npc.body.get_debug_info().held_item
+	var ev := await shoot(npc, P.HAND_R, Vector3(-0.6, 0, 1), 3.0)
+	check("H.1", "handgun ray resolves to HAND_R (BULLET)", ev != null and ev.part_id == P.HAND_R and ev.type == DamageEvent.Type.BULLET,
+		ev.describe() if ev else "miss")
+	if ev == null or ev.part_id != P.HAND_R:
+		npc.queue_free()
+		return
+	await seconds(1.0)
+	var bp: BodyPart = npc.damage.get_part(P.HAND_R)
+	var w_on: Array = npc.wounds.get_wounds_on(P.HAND_R)
+	var rate := npc.blood.state.external_rate + npc.blood.state.internal_rate
+	check("H.2", "bullet through hand: hand takes damage (hp lost, or broken/severed) and a wound is recorded on HAND_R",
+		(bp.hp < bp.max_hp or bp.broken or bp.severed) and w_on.size() >= 1,
+		"hp=%.1f/%.1f broken=%s severed=%s destroyed=%s wounds=%s" % [bp.hp, bp.max_hp, bp.broken, bp.severed, bp.destroyed, str(w_on.map(func(w): return w.describe()))])
+	check("H.3", "hand bullet bleeds, but far less than a torso/neck shot, and the NPC is not killed outright",
+		rate > 0.0 and rate < 60.0 and not npc.is_dead(), "bleed(ext+int)=%.1f /s state=%s level=%s" % [rate, _state_name(npc), BodyIds.BloodLevel.keys()[npc.blood.state.level]])
+	check("H.4", "hand hit makes the NPC react (leaves IDLE) and hand loss/fracture does not make it crawl",
+		states.size() > 0 and npc.get_state() != S.CRAWL, "states=%s now=%s broken=%s" % [str(states), _state_name(npc), str(broken)])
+	var fully_gone := bp.severed or not npc.body.has_part(P.HAND_R)
+	info("hands: held item before='%s' after='%s'; hand_r severed=%s broken=%s one_handed=%s" % [held_before,
+		npc.body.get_debug_info().held_item, bp.severed, bp.broken, str(npc.brain.is_one_handed())])
+	if fully_gone or bp.broken:
+		check("H.4b", "broken/lost right hand makes the brain treat the NPC as one-handed", npc.brain.is_one_handed(), "usable arms=%s" % str(npc.brain.get_debug_info().usable_arms))
+	await seconds(3.0)
+	check("H.5", "shot-hand NPC stays sane (finite, bounded)", _npc_sane(npc) == "", _npc_sane(npc))
+	npc.queue_free()
+	await frames(2)
+
+	# --- H.6 left hand too (left/right symmetry of the data rows)
+	var nl := await _spawn(Vector3(0, 0.05, 0), 112)
+	var evl := await shoot(nl, P.HAND_L, Vector3(0.6, 0, 1), 3.0)
+	await seconds(0.5)
+	var bl: BodyPart = nl.damage.get_part(P.HAND_L)
+	check("H.6", "handgun ray resolves to HAND_L and damages it (mirror of H.1)",
+		evl != null and evl.part_id == P.HAND_L and (bl.hp < bl.max_hp or bl.broken or bl.severed), "%s hp=%.1f/%.1f" % [evl.describe() if evl else "miss", bl.hp, bl.max_hp])
+	nl.queue_free()
+	await frames(2)
+
+	# --- H.7 knife slash severs the right hand
+	var d := await _knife_sever(P.HAND_R, 113)
+	var sn: Npc = d.npc
+	await frames(3)
+	var info_s := await _sever_checks(sn, P.HAND_R, d.notes, d.real, "H.7")
+	info("hands: %s | held item after sever='%s'" % [info_s, sn.body.get_debug_info().held_item])
+	var hand_node := sn.body.get_part_node(P.HAND_R)
+	var phone: Node = hand_node.get_node_or_null("Phone") if hand_node else null
+	check("H.8", "hand sever: the held phone leaves with the severed hand (docs/DECISIONS.md) and the NPC is one-handed",
+		phone != null and hand_node.get_parent() != sn.body and sn.brain.is_one_handed(),
+		"phone_on_severed_hand=%s one_handed=%s" % [phone != null, str(sn.brain.is_one_handed())])
+	check("H.9", "hand sever does not make the NPC crawl or become dead", sn.get_state() != S.CRAWL and not sn.is_dead(), "state=%s" % _state_name(sn))
+	sn.queue_free()
+	await frames(2)
+
+
+## Strokes at foot level are turned 90 degrees so they travel front-to-back and cannot sweep through both feet / the other leg.
+const FOOT_YAW := 90.0
+
+
+func _sec_feet() -> void:
+	# --- F.1 bat breaks the right foot -> limp
+	var r := await _bat_stroke(P.FOOT_R, 2.0, 1.0, Vector3.ZERO, 121, FOOT_YAW)
+	var npc: Npc = r.npc
+	var ev: DamageEvent = r.ev
+	info("feet: bat hits=%s" % str(r.hits.map(func(h): return h[0].describe() + " applied=%s" % h[1])))
+	check("F.1", "bat swing connects with FOOT_R (BLUNT)", ev != null and ev.type == DamageEvent.Type.BLUNT and r.applied,
+		"hits=%s" % str(r.hits.map(func(h): return h[0].describe())))
+	if ev != null:
+		var bp: BodyPart = npc.damage.get_part(P.FOOT_R)
+		check("F.2", "bat hard hit breaks the foot (part.broken + part_broken signal), not severed",
+			bp.broken and P.FOOT_R in r.broken and not bp.severed,
+			"amount=%.1f hp=%.1f/%.1f broken=%s signal=%s" % [ev.amount, bp.hp, bp.max_hp, bp.broken, str(r.broken)])
+		var poses := {}
+		var states := {}
+		var smp := func() -> void:
+			poses[npc.body.get_debug_info().pose] = true
+			states[_state_name(npc)] = true
+		_samplers.append(smp)
+		await seconds(4.0)
+		_samplers.erase(smp)
+		var br: NpcBrain = npc.brain
+		check("F.3", "broken foot -> brain limps on that side (limp_side 'r', not crawling)",
+			br.get_limp_side() == "r" and br.is_limping() and not states.has("CRAWL"), "limp_side='%s' states seen=%s" % [br.get_limp_side(), str(states.keys())])
+		check("F.4", "limping NPC is posed with 'limp' when it moves", poses.has("limp"), "poses seen=%s state=%s" % [str(poses.keys()), _state_name(npc)])
+		check("F.5", "limping NPC stays sane (finite, bounded)", _npc_sane(npc) == "", _npc_sane(npc))
+	_cleanup_stroke(r)
+	await frames(2)
+
+	# --- F.6 weak bat hit does not break the foot (force-dependent, like arms)
+	var soft := await _bat_stroke(P.FOOT_R, 0.5, 1.0, Vector3.ZERO, 122, FOOT_YAW)
+	if soft.ev != null:
+		check("F.6", "bat soft hit on foot does NOT break it (no limp)", not (soft.npc as Npc).damage.get_part(P.FOOT_R).broken,
+			"amount=%.1f broken=%s" % [soft.ev.amount, (soft.npc as Npc).damage.get_part(P.FOOT_R).broken])
+	else:
+		check("F.6", "bat soft hit connects with foot", false, "no hit")
+	_cleanup_stroke(soft)
+	await frames(2)
+
+	# --- F.7 knife slash severs the left foot -> CRAWL
+	var d := await _knife_sever(P.FOOT_L, 123, Vector3.ZERO, 0.75, FOOT_YAW)
+	var sn: Npc = d.npc
+	await seconds(1.0)
+	check("F.7", "foot severed -> NPC crawls (CRAWL) and the body reports the foot detached",
+		sn.damage.get_part(P.FOOT_L).severed and sn.get_state() == S.CRAWL and not sn.body.has_part(P.FOOT_L),
+		"state=%s severed=%s attached=%s real_knife=%s" % [_state_name(sn), sn.damage.get_part(P.FOOT_L).severed, str(sn.body.get_debug_info().get("attached")), d.real])
+	await seconds(3.0)
+	check("F.7b", "crawling NPC (foot lost) stays sane and pose is 'crawl'", _npc_sane(sn) == "" and sn.body.get_debug_info().pose == "crawl",
+		"sane='%s' pose=%s" % [_npc_sane(sn), sn.body.get_debug_info().pose])
+	var info_s := await _sever_checks(sn, P.FOOT_L, d.notes, d.real, "F.8")
+	info("feet: %s" % info_s)
+	sn.queue_free()
+	await frames(2)
 
 
 # ------------------------------------------------------------------ 6. debug info + overlay
@@ -657,8 +818,16 @@ func _sec_debug() -> void:
 	check("6.1", "get_debug_info() has blood volume + level", has_blood, str(d.get("blood")))
 	check("6.2", "get_debug_info() has wounds list", has_wounds, str(d.get("wounds")))
 	check("6.3", "get_debug_info() has state per NPC", has_state, "state=%s brain=%s" % [d.get("state"), str(d.get("brain", {}).get("state"))])
-	check("6.4", "get_debug_info() has body + per-part damage", d.has("body") and d.has("damage") and d.damage.size() == 11,
-		"parts=%d body=%s" % [d.get("damage", {}).size(), str(d.get("body", {}).get("mode"))])
+	check("6.4", "get_debug_info() has body + per-part damage", d.has("body") and d.has("damage") and d.damage.size() == BodyIds.PART_COUNT,
+		"parts=%d/%d body=%s" % [d.get("damage", {}).size(), BodyIds.PART_COUNT, str(d.get("body", {}).get("mode"))])
+	var missing: Array = []
+	for pid in BodyIds.KEYS:
+		var bp: BodyPart = npc.damage.get_part(pid)
+		var node := npc.body.get_part_node(pid)
+		if bp == null or not npc.body.has_part(pid) or node == null or BodyIds.part_from_collider(node) != pid or BodyIds.npc_from_collider(node) != npc:
+			missing.append(BodyIds.key(pid))
+	check("6.4b", "every BodyIds part has a damage row and an attached body node with npc/part_id metas",
+		missing.is_empty() and BodyIds.KEYS.size() == BodyIds.PART_COUNT, "missing=%s keys=%d" % [str(missing), BodyIds.KEYS.size()])
 	var main_scene: PackedScene = load("res://scenes/main.tscn")
 	var main := main_scene.instantiate()
 	_bay.add_child(main)
@@ -679,23 +848,29 @@ func _sec_debug() -> void:
 
 # ------------------------------------------------------------------ consistency sweep
 
-const SWEEP_ORDER := [P.HEAD, P.NECK, P.TORSO, P.UPPER_ARM_L, P.LOWER_ARM_L, P.UPPER_ARM_R, P.LOWER_ARM_R,
-	P.UPPER_LEG_L, P.LOWER_LEG_L, P.UPPER_LEG_R, P.LOWER_LEG_R]
+## head, neck, torso first (S.3/S.4 index rows 0..2), then every other part in BodyIds order: new parts join automatically.
+func _sweep_order() -> Array:
+	var out: Array = [P.HEAD, P.NECK, P.TORSO]
+	for pid in BodyIds.KEYS:
+		if not pid in out:
+			out.append(pid)
+	return out
 
 
 func _sec_sweep() -> void:
-	# 11 NPCs in parallel lanes (3 m apart), same bullet at every part, all observed for 30 s of sim time.
+	# One NPC per part in parallel lanes (3 m apart), same bullet at every part, all observed for 30 s of sim time.
+	var order := _sweep_order()
 	var npcs := {}
 	var lane := 0
-	for part in SWEEP_ORDER:
-		npcs[part] = await _spawn(Vector3(-15.0 + 3.0 * lane, 0.05, 0), 71)
+	for part in order:
+		npcs[part] = await _spawn(Vector3(-1.5 * (BodyIds.PART_COUNT - 1) + 3.0 * lane, 0.05, 0), 71)
 		lane += 1
 	var evs := {}
 	_cues.clear()
 	await frames(2)
 	var t_shot := now()
-	# all 11 shots in the same physics tick (NPCs alert each other and walk off otherwise)
-	for part in SWEEP_ORDER:
+	# all shots in the same physics tick (NPCs alert each other and walk off otherwise)
+	for part in order:
 		var dir := Vector3(0, 0, 1)
 		if BodyIds.is_arm(part):   # front-lateral diagonal so the torso never shadows the arm
 			dir = Vector3(0.6 if BodyIds.side_of(part) == "l" else -0.6, 0, 1)
@@ -703,7 +878,7 @@ func _sec_sweep() -> void:
 	var ended := {}      # part -> reason string
 	var insane := {}
 	var smp := func() -> void:
-		for part in SWEEP_ORDER:
+		for part in order:
 			var npc: Npc = npcs[part]
 			if not ended.has(part):
 				if npc.is_dead():
@@ -718,14 +893,14 @@ func _sec_sweep() -> void:
 	await seconds(1.0)
 	var rates := {}
 	var states1 := {}
-	for part in SWEEP_ORDER:
+	for part in order:
 		var npc: Npc = npcs[part]
 		rates[part] = npc.blood.state.external_rate + npc.blood.state.internal_rate
 		states1[part] = _state_name(npc)
 	await seconds(29.0)
 	_samplers.erase(smp)
 	var rows: Array = []
-	for part in SWEEP_ORDER:
+	for part in order:
 		var npc: Npc = npcs[part]
 		var ev: DamageEvent = evs[part]
 		var hit_part: int = ev.part_id if ev else -1
@@ -740,7 +915,7 @@ func _sec_sweep() -> void:
 			BodyIds.key(part), BodyIds.key(hit_part) if hit_part >= 0 else "MISS", row.amount, row.dmg_hp, row.wounds, row.rate,
 			states1[part], end_reason, row.frac, _state_name(npc), "BROKEN " if bp.broken else "", "SEVERED " if bp.severed else "",
 			"DESTROYED " if bp.destroyed else "", "INSANE:" + sane if sane != "" else ""])
-	for part in SWEEP_ORDER:
+	for part in order:
 		(npcs[part] as Npc).queue_free()
 	await frames(2)
 	var all_hit := true
@@ -750,7 +925,8 @@ func _sec_sweep() -> void:
 			all_hit = false
 		if r.sane != "":
 			all_sane = false
-	check("S.1", "sweep: same bullet at all 11 parts resolves to the aimed part, no crash", rows.size() == 11 and all_hit,
+	check("S.1", "sweep: same bullet at all %d parts resolves to the aimed part, no crash" % BodyIds.PART_COUNT,
+		rows.size() == BodyIds.PART_COUNT and all_hit,
 		str(rows.filter(func(r): return r.hit != r.part).map(func(r): return "%s->%s" % [BodyIds.key(r.part), BodyIds.key(r.hit) if r.hit >= 0 else "MISS"])))
 	check("S.2", "sweep: every part leaves NPC physically sane (finite, bounded)", all_sane,
 		str(rows.filter(func(r): return r.sane != "").map(func(r): return BodyIds.key(r.part) + ":" + r.sane)))
