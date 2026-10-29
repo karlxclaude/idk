@@ -472,8 +472,11 @@ func _on_other_wounded(other: Node, _w: Wound, ev: DamageEvent) -> void:
 	var o := other as Node3D
 	if o == null or not is_instance_valid(npc):
 		return
-	var away := _flat(npc.global_position - o.global_position)
-	if npc.global_position.distance_to(o.global_position) > float(_cfg.get("alert_radius", 8.0)):
+	# The Npc nodes stay at their spawn points; compare where the bodies are now.
+	var mine := npc.get_center()
+	var theirs: Vector3 = other.get_center() if other.has_method("get_center") else o.global_position
+	var away := _flat(mine - theirs)
+	if Vector2(mine.x - theirs.x, mine.z - theirs.z).length() > float(_cfg.get("alert_radius", 8.0)):
 		return
 	_flee_dir = away if away != Vector3.ZERO else _random_dir()
 	_change(S.ALERT)

@@ -25,6 +25,7 @@ func _ready() -> void:
 	await _t14()
 	await _t15()
 	await _t16()
+	await _t17()
 	print("AI TEST ", "FAILED" if failures > 0 else "ALL PASSED")
 	get_tree().quit(1 if failures > 0 else 0)
 
@@ -440,3 +441,34 @@ func _t16() -> void:
 		await get_tree().physics_frame
 	_check("16f ALERT uses pose cower", m.brain.state == S.ALERT and _pose_of(m) == "cower", _pose_of(m))
 	m.queue_free()
+
+
+func _spawn_at(x: float) -> Npc:
+	return Npc.spawn(self, Transform3D(Basis.IDENTITY, Vector3(x, 0, 0)), 11)
+
+
+func _teleport(n: Npc, x: float) -> void:
+	n.body._mover.global_position = Vector3(x, n.body._mover.global_position.y, 0)
+
+
+func _t17() -> void:
+	_reset()
+	# Alert radius uses where the bodies are now, not where the Npc nodes spawned.
+	var a := _spawn_at(0.0)
+	var near_spawn_far_now := _spawn_at(3.0)    # spawned inside the radius, then moved away
+	var far_spawn_near_now := _spawn_at(30.0)   # spawned outside the radius, then moved close
+	for i in 3:
+		await get_tree().physics_frame
+	_teleport(near_spawn_far_now, 25.0)
+	_teleport(far_spawn_near_now, 3.0)
+	for i in 4:
+		await get_tree().physics_frame
+	var wv := _wound(BodyIds.Part.LOWER_ARM_L, 0.3)
+	a.emit_wounded(wv[0], wv[1])
+	_check("17a body moved away: stays IDLE despite near spawn", near_spawn_far_now.brain.state == S.IDLE,
+		BodyIds.state_name(near_spawn_far_now.brain.state))
+	_check("17b body moved close: ALERT despite far spawn", far_spawn_near_now.brain.state == S.ALERT,
+		BodyIds.state_name(far_spawn_near_now.brain.state))
+	_check("17c walks away from the wounded NPC (+x)", far_spawn_near_now.brain._flee_dir.x > 0.5,
+		str(far_spawn_near_now.brain._flee_dir))
+	a.queue_free(); near_spawn_far_now.queue_free(); far_spawn_near_now.queue_free()
