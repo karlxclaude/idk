@@ -19,6 +19,9 @@ signal blood_level_changed(old_level: int, new_level: int)
 static var _next_id := 1
 
 var npc_id: int = 0
+## Immortal training dummy: takes wounds and reacts, but never dies or collapses from blood loss.
+## Set at spawn from GameSettings.immortal_dummy; systems read it.
+var immortal := false
 var rng := RandomNumberGenerator.new()
 
 var body: NpcBody
@@ -31,6 +34,7 @@ var brain: NpcBrain
 static func spawn(parent: Node, xform: Transform3D, seed_value: int = -1) -> Npc:
 	var npc := Npc.new()
 	npc.transform = xform
+	npc.immortal = GameSettings.immortal_dummy
 	if seed_value >= 0:
 		npc.rng.seed = seed_value
 	else:

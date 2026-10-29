@@ -84,3 +84,16 @@ hit-reaction additives and IK live in `scripts/body/pose/` behind an internal in
 - NpcBody pass-throughs to the PoseDriver (milestone 2): `set_limp_side(side: String)` ("l","r","both",""),
   `set_part_broken(part_id, broken := true)` (NpcBody also self-feeds from `npc.part_broken`),
   `set_clutch_wound(part_id, local_pos, local_normal)` (exact palm contact; brain calls it with the clutched wound).
+
+## Milestone 3 additions
+- **GameSettings**: `fight_back`, `slow_mo_on_kill` (+`slow_mo_scale`, `slow_mo_duration`), `immortal_dummy`, `gore_intensity`
+  (`Gore.LOW/MED/HIGH`), `no_dismemberment`, `auto_cleanup_time` (0 = keep), `time_scale`; helper `dismemberment_allowed()`.
+- **Npc.immortal** (set at spawn from `immortal_dummy`): DamageSystem never reports lethal / destroys the head / severs head or neck;
+  BloodSystem floors volume above the HEAVY threshold; brain never enters DEAD or blood-loss UNCONSCIOUS. Wounds, FX, pain still happen.
+- **Severing gate**: DamageSystem commit drops `sever` requests unless `GameSettings.dismemberment_allowed()`.
+- **Fight-back**: player node is in group `"player"` (CharacterBody3D). Brain FIGHT state approaches it and attacks;
+  a landed hit emits `GameEvents.player_hit(npc, amount, position)`; the player applies it (health, feedback; no permadeath).
+- **Poses**: locomotion poses add `cower` (arms protecting head/torso) and `fight` (guard stance).
+  New `NpcBody.play_action(action: StringName) -> float` plays a one-shot upper-body action over the current pose and returns
+  the seconds until its impact moment (`punch`; unknown action → 0, nothing played). Pass-through to PoseDriver.
+- **Cleanup**: when `auto_cleanup_time > 0`, severed pieces use it instead of `severed_cleanup_s`; dead NPCs are freed after it (UI/game layer).

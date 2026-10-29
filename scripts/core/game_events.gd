@@ -15,3 +15,5 @@ signal npc_stunned(npc: Node, duration: float, cause: StringName)
 signal audio_cue(npc: Node, cue: StringName, position: Vector3, intensity: float)
 ## Generic impact (any surface) for decals/particles, e.g. bullet hitting the floor.
 signal world_impact(position: Vector3, normal: Vector3, ev: DamageEvent)
+## Fight-back: an NPC landed a hit on the player. Player (group "player") applies it.
+signal player_hit(npc: Node, amount: float, position: Vector3)
