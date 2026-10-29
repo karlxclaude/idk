@@ -62,3 +62,16 @@ Flow: weapon → `npc.apply_damage(ev)` → fills local hit → `damage.apply(ev
 ## Tests
 Scene-based: `tests/<name>.tscn` with a root script that sets up, simulates via `await get_tree().physics_frame`, prints PASS/FAIL lines and calls `get_tree().quit(code)`.
 Run: `godot --headless --path . res://tests/<name>.tscn`. After adding new `class_name` scripts run `godot --headless --path . --import` once.
+
+## Injury pipeline (milestone 2)
+`DamageSystem.apply(ev)`:
+1. Build `HitContext` (`scripts/contracts/hit_context.gd`): part state, part data row, `region`, `detached`, `base_damage`.
+2. **Mechanism rule** for `ev.type` (`scripts/damage/mechanisms/{bullet,stab,slash,blunt}.gd`, each `extends InjuryRule`): sets `damage`, `depth`, `passes_through`, `force`, base `wounds`.
+3. **Region rule** for `ctx.region` (`scripts/damage/regions/{head,neck,torso,arm,leg}.gd`): arterial/organ bleed, fracture/sever/destroy/stun/lethal requests.
+4. **Commit** (DamageSystem): HP, wounds → WoundSystem, fracture → `emit_part_broken`, sever → `notify_part_severed` + stump, stun → `emit_stunned`, lethal → `report_lethal_injury`, `cues` → `npc.cue`, then `emit_wounded` per wound.
+Rules only fill the context; they never mutate state or emit. Each rule reads only its own data file:
+`data/injury/core.json` (pipeline/commit), `penetrating.json`, `blunt.json`, `head_neck.json`, `torso.json`, `arms.json`, `legs.json` (per-part rows live in their region's file).
+
+## Body split (milestone 2)
+`NpcBody` keeps segments, joints, mover, ragdoll, impulses, severing, held item. Procedural posing, locomotion animation,
+hit-reaction additives and IK live in `scripts/body/pose/` behind an internal interface documented in `scripts/body/pose/README.md`.
