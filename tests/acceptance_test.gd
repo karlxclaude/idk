@@ -28,7 +28,7 @@ func _ready() -> void:
 	GameEvents.audio_cue.connect(func(n, c, _p, i): _cues.append([n, c, i]))
 	await get_tree().physics_frame
 	var t0 := Time.get_ticks_msec()
-	for sec in ["neck", "body", "knife", "bat", "sever", "hands", "feet", "m3fight", "m3cower", "m3immortal", "m3gore", "m3slowmo", "m3cleanup", "m3react", "debug", "sweep", "ragdoll", "seams"]:
+	for sec in ["neck", "body", "knife", "bat", "sever", "hands", "feet", "m3fight", "m3cower", "m3immortal", "m3gore", "m3slowmo", "m3cleanup", "m3react", "m5rifle", "m5shotgun", "m5machete", "m5hammer", "m5jaw", "m5face", "m5regress", "debug", "sweep", "ragdoll", "seams"]:
 		if _only != "" and not _only_match(sec):
 			continue
 		var s0 := Time.get_ticks_msec()
@@ -623,7 +623,7 @@ func _sever_checks(npc: Npc, part: int, notes: Array, used_real: bool, pfx := "5
 	var seg_node := npc.body.get_part_node(part) as RigidBody3D     # BodySegment kept in _segments after severing
 	await seconds(3.0)
 	var bp: BodyPart = npc.damage.get_part(part)
-	var src := "REAL knife stroke" if used_real else "weapon-equivalent DamageEvent"
+	var src := "REAL weapon stroke" if used_real else "weapon-equivalent DamageEvent"
 	check(pfx + ".0", "limb severed (%s)" % src, bp.severed, "severed=%s" % bp.severed)
 	var is_rb := seg_node != null and seg_node is RigidBody3D
 	var detached_from_body: bool = seg_node != null and seg_node.get_parent() != npc.body
@@ -1170,6 +1170,347 @@ func _part_rows(dmg: Dictionary) -> int:
 		if dmg.has(BodyIds.key(pid)):
 			c += 1
 	return c
+
+
+# ------------------------------------------------------------------ milestone 5: weapons and head chunks
+
+## Fire a real hitscan weapon (any id) from `origin` along `dir`; returns the DamageEvents of the whole shot
+## (one per pellet per body hit). Seeded so pellet patterns are repeatable.
+func fire_events(id: String, origin: Vector3, dir: Vector3, seed_value := 5) -> Array:
+	var gun := _weapon(id) as HitscanWeapon
+	gun.rng.seed = seed_value
+	await frames(1)
+	gun.fire_ray(origin, dir)
+	var evs: Array = gun.last_events.duplicate()
+	gun.get_parent().queue_free()
+	return evs
+
+
+## One melee stroke of any real melee weapon through `target` on an existing NPC. Returns {hits, w}; the weapon holder is freed.
+func stroke_on(npc: Npc, id: String, part: int, scale_v: float, f: float, yaw_deg := 0.0, offset := Vector3.ZERO, mode := &"swing") -> Dictionary:
+	var w := _weapon(id) as MeleeWeapon
+	var hits: Array = []
+	_record_hits(w, hits)
+	await melee_through(w, _part_pos(npc, part) + offset, scale_v, mode, f, yaw_deg)
+	(w.get_parent() as Node).queue_free()
+	return {"hits": hits, "ev": _ev_on(hits, part)}
+
+
+func _ev_on(hits: Array, part: int) -> DamageEvent:
+	var out: DamageEvent = null
+	for h in hits:
+		if h[0].part_id == part:
+			out = h[0]
+	return out
+
+
+## Sum of nominal bleed rates (external + internal) of an NPC's wounds, and the number of entry wounds (no exit / fracture).
+func _bleed_total(npc: Npc) -> Dictionary:
+	var total := 0.0
+	var entries := 0
+	for w in npc.wounds.get_wounds():
+		total += w.bleed_rate + w.internal_bleed_rate
+		if not w.is_exit and not w.is_fracture and not w.is_stump:
+			entries += 1
+	return {"total": total, "entries": entries}
+
+
+func _head_chunk_name(ev: DamageEvent) -> String:
+	return BodyIds.head_chunk_key(BodyIds.head_chunk_from_local(ev.hit_local_normalized)) if ev else "-"
+
+
+# --- M5.1 rifle: one bullet through two NPCs
+
+func _sec_m5rifle() -> void:
+	var a := await _spawn(Vector3(0, 0.05, 0), 301)
+	var b := await _spawn(Vector3(0, 0.05, -1.5), 302)
+	var origin := _part_pos(a, P.TORSO) + Vector3(0, 0.1, 4.0)
+	var evs := await fire_events("rifle", origin, Vector3(0, 0, -1))
+	await seconds(0.5)
+	var ev_a: DamageEvent = null
+	var ev_b: DamageEvent = null
+	for e in evs:
+		if e.hit_position.z > -0.9 and ev_a == null:
+			ev_a = e
+		elif e.hit_position.z < -0.9 and ev_b == null:
+			ev_b = e
+	var wa := a.wounds.get_wounds().size()
+	var wb := b.wounds.get_wounds().size()
+	check("M5.1a", "rifle: ONE shot hits both lined-up NPCs and wounds (or kills) both",
+		ev_a != null and ev_b != null and (wa > 0 or a.is_dead()) and (wb > 0 or b.is_dead()),
+		"events=%d first=%s second=%s | A wounds=%d dead=%s | B wounds=%d dead=%s" % [evs.size(), ev_a.describe() if ev_a else "none",
+			ev_b.describe() if ev_b else "none", wa, a.is_dead(), wb, b.is_dead()])
+	if ev_a != null and ev_b != null:
+		var e1: float = ev_a.extra.get("energy", 0.0)
+		var e2: float = ev_b.extra.get("energy", 0.0)
+		check("M5.1b", "rifle: the second hit has lower energy and lower damage than the first",
+			e2 > 0.0 and e2 < e1 and ev_b.amount < ev_a.amount,
+			"energy %.0f J -> %.0f J (%.0f%%), amount %.1f -> %.1f, penetration %.2f -> %.2f" % [e1, e2, 100.0 * e2 / maxf(e1, 1.0), ev_a.amount, ev_b.amount, ev_a.penetration, ev_b.penetration])
+	check("M5.1c", "rifle: stays sane (finite, bounded) for both NPCs", _npc_sane(a) == "" and _npc_sane(b) == "", "%s %s" % [_npc_sane(a), _npc_sane(b)])
+
+
+# --- M5.2 shotgun
+
+func _sec_m5shotgun() -> void:
+	var close := await _spawn(Vector3(-9, 0.05, 0), 311)
+	var hand := await _spawn(Vector3(0, 0.05, 0), 311)
+	var far := await _spawn(Vector3(9, 0.05, 0), 311)
+	var aim := Vector3(0, 0.1, 0)
+	var ev_c := await fire_events("shotgun", _part_pos(close, P.TORSO) + aim + Vector3(0, 0, 1.5), Vector3(0, 0, -1))
+	var ev_h := await fire_events("handgun", _part_pos(hand, P.TORSO) + aim + Vector3(0, 0, 1.5), Vector3(0, 0, -1))
+	var ev_f := await fire_events("shotgun", _part_pos(far, P.TORSO) + aim + Vector3(0, 0, 20.0), Vector3(0, 0, -1))
+	await frames(3)
+	var bc := _bleed_total(close)
+	var bh := _bleed_total(hand)
+	var bf := _bleed_total(far)
+	var torso_entries := 0
+	for w in close.wounds.get_wounds_on(P.TORSO):
+		if not w.is_exit and not w.is_fracture:
+			torso_entries += 1
+	check("M5.2a", "shotgun at 1.5 m: several pellet wounds on the torso (>= 3 entry wounds)", torso_entries >= 3 and ev_c.size() >= 3,
+		"pellet events=%d torso entry wounds=%d all entries=%d" % [ev_c.size(), torso_entries, bc.entries])
+	check("M5.2b", "shotgun close total bleed is greater than ONE handgun shot", bc.total > bh.total,
+		"shotgun %.0f /s (%d wounds) vs handgun %.0f /s (%d wounds)" % [bc.total, bc.entries, bh.total, bh.entries])
+	var amt_c := 0.0
+	for e in ev_c:
+		amt_c += e.amount
+	var amt_f := 0.0
+	for e in ev_f:
+		amt_f += e.amount
+	check("M5.2c", "shotgun at 20 m does much less (fewer hits, total bleed < 25% of close, total damage < 25%)",
+		ev_f.size() < ev_c.size() and bf.total < 0.25 * bc.total and amt_f < 0.25 * amt_c,
+		"20 m: %d pellet hits, bleed %.0f /s, damage %.1f | 1.5 m: %d hits, bleed %.0f /s, damage %.1f" % [ev_f.size(), bf.total, amt_f, ev_c.size(), bc.total, amt_c])
+	check("M5.2d", "shotgun victims stay sane (finite, bounded)", _npc_sane(close) == "" and _npc_sane(far) == "", "%s %s" % [_npc_sane(close), _npc_sane(far)])
+
+
+# --- M5.3 machete
+
+func _caps_state(npc: Npc, part: int) -> String:
+	var piece := npc.body.get_part_node(part) as BodySegment
+	var par := npc.body.get_part_node(BodyIds.parent_of(part)) as BodySegment
+	var stump: MeshInstance3D = par.stump_caps.get(part) if par else null
+	var cut: MeshInstance3D = piece.severed_cap if piece else null
+	return "stump_cap(on parent)=%s severed_cap(on piece)=%s" % [
+		str(stump.visible) if stump else "none", str(cut.visible) if cut else "none"]
+
+
+func _sec_m5machete() -> void:
+	# --- normal slash through an upper arm
+	var arm := await _spawn(Vector3(0, 0.05, 0), 321)
+	var r := await stroke_on(arm, "machete", P.UPPER_ARM_R, 1.0, 0.65)
+	var aev: DamageEvent = r.ev
+	await seconds(1.5)
+	var abp: BodyPart = arm.damage.get_part(P.UPPER_ARM_R)
+	check("M5.3a", "machete, normal slash (scale 1.0): severs an upper arm",
+		aev != null and abp.severed and not arm.is_dead(),
+		"ev=%s can_dismember=%s speed=%.1f severed=%s | hits=%s" % [aev.describe() if aev else "none", aev.can_dismember if aev else "-",
+			aev.extra.get("speed", 0.0) if aev else 0.0, abp.severed, str(r.hits.map(func(h): return h[0].describe()))])
+	arm.queue_free()
+	await frames(2)
+
+	# --- normal slash does not reach the thigh (threshold 70) ...
+	var th0 := await _spawn(Vector3(0, 0.05, 0), 322)
+	var r0 := await stroke_on(th0, "machete", P.UPPER_LEG_R, 1.0, 0.65, 90.0)
+	await seconds(1.0)
+	var tev0: DamageEvent = r0.ev
+	check("M5.3b", "machete, normal slash: does NOT sever a thigh (thigh needs a fast slash)",
+		tev0 != null and not th0.damage.get_part(P.UPPER_LEG_R).severed,
+		"ev=%s severed=%s" % [tev0.describe() if tev0 else "none", th0.damage.get_part(P.UPPER_LEG_R).severed])
+	th0.queue_free()
+	await frames(2)
+
+	# --- ... a fast one (free-swing speed) does
+	var th := await _spawn(Vector3(0, 0.05, 0), 323)
+	var rf := await stroke_on(th, "machete", P.UPPER_LEG_R, 2.0, 0.65, 90.0)
+	var tev: DamageEvent = rf.ev
+	var notes: Array = []
+	await seconds(1.0)
+	var tbp: BodyPart = th.damage.get_part(P.UPPER_LEG_R)
+	check("M5.3c", "machete, fast slash (scale 2.0): severs a thigh and the NPC crawls",
+		tev != null and tbp.severed and th.get_state() == S.CRAWL and not th.body.has_part(P.UPPER_LEG_R),
+		"ev=%s speed=%.1f severed=%s state=%s | hits=%s" % [tev.describe() if tev else "none", tev.extra.get("speed", 0.0) if tev else 0.0, tbp.severed,
+			_state_name(th), str(rf.hits.map(func(h): return h[0].describe()))])
+	if tbp.severed:
+		var info_s := await _sever_checks(th, P.UPPER_LEG_R, notes, true, "M5.3d")
+		check("M5.3e", "severed thigh: stump cap on the torso and cut-end cap on the leg piece are visible", _caps_state(th, P.UPPER_LEG_R).count("true") == 2,
+			_caps_state(th, P.UPPER_LEG_R))
+		info("machete: %s" % info_s)
+	th.queue_free()
+	await frames(2)
+
+
+# --- M5.4 hammer vs bat
+
+## Repeated lateral blows on the head until the cranium chunk is destroyed (max 12). Returns {n, destroyed, dead, gib, secs}.
+func _head_smash(id: String, f: float, seed_value: int) -> Dictionary:
+	var npc := await _spawn(Vector3(0, 0.05, 0), seed_value)
+	var res := {"n": 0, "destroyed": false, "dead": false, "gib": null, "chunks": [], "secs": 0.0, "npc": npc, "log": []}
+	npc.head_chunk_destroyed.connect(func(c, g, _e):
+		res.chunks.append(BodyIds.head_chunk_key(c))
+		if c == BodyIds.HeadChunk.CRANIUM:
+			res.destroyed = true
+			res.gib = g)
+	var t0 := now()
+	while res.n < 12 and not res.destroyed and not npc.is_dead():
+		res.n += 1
+		var r := await stroke_on(npc, id, P.HEAD, 1.0, f, 180.0, Vector3(0, 0.05, 0))   # side-rear blow on the upper head: cranium
+		res.log.append(_head_chunk_name(r.ev) if r.ev else "miss")
+		await seconds(0.5)
+	await seconds(1.0)
+	res.dead = npc.is_dead()
+	res.secs = now() - t0
+	return res
+
+
+func _sec_m5hammer() -> void:
+	var hm := await _head_smash("hammer", 1.0, 331)
+	var bt := await _head_smash("bat", 0.75, 331)
+	info("hammer: strokes=%d chunk hit log=%s chunks destroyed=%s dead=%s" % [hm.n, str(hm.log), str(hm.chunks), hm.dead])
+	info("bat: strokes=%d chunk hit log=%s chunks destroyed=%s dead=%s" % [bt.n, str(bt.log), str(bt.chunks), bt.dead])
+	check("M5.4a", "hammer: head blows destroy the cranium chunk within 3 strokes and the NPC dies",
+		hm.destroyed and hm.dead and hm.n <= 3, "strokes=%d chunks destroyed=%s dead=%s (%.1fs)" % [hm.n, str(hm.chunks), hm.dead, hm.secs])
+	check("M5.4b", "hammer destroys the cranium sooner (fewer strokes) than the bat does",
+		hm.destroyed and (not bt.destroyed or hm.n < bt.n), "hammer %d strokes (destroyed=%s) vs bat %d strokes (destroyed=%s)" % [hm.n, hm.destroyed, bt.n, bt.destroyed])
+	var gib: RigidBody3D = hm.gib
+	var ok_gib := gib != null and is_instance_valid(gib)
+	check("M5.4c", "hammer: a gib is spawned (RigidBody3D on the debris layer, not a hittable body part) and comes to rest on the floor",
+		ok_gib and (gib.collision_layer & BodyIds.LAYER_DEBRIS) != 0 and not gib.has_meta(BodyIds.META_PART_ID) and gib.global_position.y < 0.5,
+		"gib=%s y=%.2f layer=%d" % [gib.name if ok_gib else "none", gib.global_position.y if ok_gib else -9.0, gib.collision_layer if ok_gib else -1])
+	(hm.npc as Npc).queue_free()
+	(bt.npc as Npc).queue_free()
+	await frames(2)
+
+
+# --- M5.5 jaw shot
+
+## Point on the front of the head in head-local normalised coordinates (x right, y up, z front), world space.
+func _head_point(npc: Npc, n: Vector3) -> Vector3:
+	var xf := npc.body.get_part_global_transform(P.HEAD)
+	var h := npc.body.get_part_half_extents(P.HEAD)
+	return xf * Vector3(n.x * h.x, n.y * h.y, n.z * h.z)
+
+
+func _sec_m5jaw() -> void:
+	var npc := await _spawn(Vector3(0, 0.05, 0), 341)
+	var chunks: Array = []
+	var gibs: Array = []
+	npc.head_chunk_destroyed.connect(func(c, g, _e):
+		chunks.append(BodyIds.head_chunk_key(c))
+		gibs.append(g))
+	var target := _head_point(npc, Vector3(0, -0.65, 0.9))
+	var gun := _weapon("handgun") as HitscanWeapon
+	await frames(1)
+	var ev := gun.fire_ray(target + Vector3(0, 0, 3.0), Vector3(0, 0, -1))
+	gun.get_parent().queue_free()
+	await seconds(0.5)
+	var head: BodyPart = npc.damage.get_part(P.HEAD)
+	check("M5.5a", "handgun at the lower front of the head lands in the JAW chunk and destroys it",
+		ev != null and ev.part_id == P.HEAD and _head_chunk_name(ev) == "jaw" and "jaw" in chunks,
+		"ev=%s chunk=%s destroyed=%s chunk_hp=%s" % [ev.describe() if ev else "miss", _head_chunk_name(ev), str(chunks), str(head.chunk_hp)])
+	await seconds(2.5)
+	check("M5.5b", "jaw destroyed: the NPC lives (not dead), head still attached, heavy bleeding",
+		not npc.is_dead() and not head.severed and npc.body.has_part(P.HEAD) and (npc.blood.state.external_rate + npc.blood.state.internal_rate) > 20.0,
+		"state=%s dead=%s head severed=%s bleed=%.0f /s" % [_state_name(npc), npc.is_dead(), head.severed, npc.blood.state.external_rate + npc.blood.state.internal_rate])
+	var gib: RigidBody3D = gibs[0] if gibs.size() > 0 else null
+	var ok_gib := gib != null and is_instance_valid(gib)
+	check("M5.5c", "jaw gib exists on the floor (RigidBody3D, debris layer, y < 0.3, at rest)",
+		ok_gib and gib.global_position.y < 0.3 and (gib.collision_layer & BodyIds.LAYER_DEBRIS) != 0 and gib.linear_velocity.length() < 0.5,
+		"gib=%s y=%.2f speed=%.2f" % [gib.name if ok_gib else "none", gib.global_position.y if ok_gib else -9.0, gib.linear_velocity.length() if ok_gib else -1.0])
+	# a later wound: the NPC cannot scream any more, every vocal cue is a gurgle (control: an NPC with a jaw screams)
+	_cues.clear()
+	var leg_ev := await shoot(npc, P.UPPER_LEG_L, Vector3(0.6, 0, 1), 3.0)
+	await seconds(4.0)
+	var scr := _count_cues(npc, &"scream")
+	var gur := _count_cues(npc, &"gurgle")
+	var ctl := await _spawn(Vector3(6, 0.05, 0), 341)
+	_cues.clear()
+	await shoot(ctl, P.UPPER_LEG_L, Vector3(0.6, 0, 1), 3.0)
+	await seconds(4.0)
+	var scr_c := _count_cues(ctl, &"scream")
+	check("M5.5d", "jaw destroyed: a later wound makes the NPC gurgle instead of scream (control NPC with a jaw screams)",
+		leg_ev != null and scr == 0 and gur >= 1 and scr_c >= 1,
+		"jawless: scream x%d gurgle x%d | control: scream x%d (brain jaw_gone=%s)" % [scr, gur, scr_c, str(npc.brain.get_debug_info().get("jaw_gone"))])
+	check("M5.5e", "jaw-shot NPC stays sane (finite, bounded)", _npc_sane(npc) == "", _npc_sane(npc))
+
+
+# --- M5.6 face destroyed, not lethal: disoriented, no fight-back
+
+func _sec_m5face() -> void:
+	GameSettings.fight_back = true
+	var main := await _main_scene()
+	var player: Player = main.player
+	var npc: Npc = main.spawn_npc()
+	await frames(3)
+	npc.brain.aggression = 1.0
+	npc.brain.pain_tolerance = 50.0     # pinned: pain must not be what stops the fight, only the missing face
+	var states: Dictionary = {}
+	var min_health := [player.health]
+	var chunks: Array = []
+	npc.head_chunk_destroyed.connect(func(c, _g, _e): chunks.append(BodyIds.head_chunk_key(c)))
+	# 1. provoke a fight with a light real knife slash (as in M3.1), wait until the NPC stands in front of the player
+	var prov := await stroke_on(npc, "knife", P.UPPER_ARM_L, 0.7, 0.75, 90.0)
+	await wait_until(func(): return npc.get_state() == S.FIGHT, 3.0)
+	var was_fighting := npc.get_state() == S.FIGHT
+	await wait_until(func(): return (npc.get_center() - player.global_position).length() < 1.4, 6.0)
+	# 2. one full-speed hammer blow to the FACE (a front-side stroke; the second yaw is only a retry if it missed)
+	var face_ev: DamageEvent = null
+	for yaw in [90.0, 0.0]:
+		var r := await stroke_on(npc, "hammer", P.HEAD, 1.0, 1.0, yaw)
+		face_ev = r.ev
+		if "face" in chunks or npc.is_dead():
+			break
+		await seconds(0.8)
+	await seconds(0.3)
+	var face_gone: bool = "face" in chunks
+	var lethal: bool = npc.is_dead()
+	var smp := func() -> void:
+		states[_state_name(npc)] = true
+		min_health[0] = minf(min_health[0], player.health)
+	_samplers.append(smp)
+	var h0: float = player.health
+	# 3. observe: flee direction must keep changing; no FIGHT
+	var dirs: Array = []
+	for i in 36:       # 18 s: the face blow stuns for about 6 s (UNCONSCIOUS), then the NPC gets up and flees blindly
+		await seconds(0.5)
+		if npc.get_state() in [S.PANIC_FLEE, S.STAGGER]:
+			dirs.append(npc.brain.get_debug_info().get("flee_dir", Vector3.ZERO))
+	_samplers.erase(smp)
+	var changes := 0
+	for i in range(1, dirs.size()):
+		if (dirs[i] as Vector3).angle_to(dirs[i - 1]) > deg_to_rad(30.0):
+			changes += 1
+	var bi: Dictionary = npc.brain.get_debug_info()
+	check("M5.6a", "precondition: the NPC was fighting, then a hammer blow destroys the FACE without killing it",
+		was_fighting and face_gone and not lethal, "was_fighting=%s chunks destroyed=%s dead=%s ev=%s chunk=%s" % [was_fighting, str(chunks), lethal, face_ev.describe() if face_ev else "none", _head_chunk_name(face_ev)])
+	check("M5.6b", "face destroyed: brain reports disoriented and the flee direction keeps changing (>= 2 turns > 30 deg while up)",
+		bool(bi.get("disoriented", false)) and changes >= 2, "disoriented=%s direction changes=%d over %d samples while up, state=%s" % [str(bi.get("disoriented")), changes, dirs.size(), _state_name(npc)])
+	check("M5.6c", "face destroyed: the NPC leaves FIGHT, never fights again and the player takes no more damage",
+		not states.has("FIGHT") and min_health[0] >= h0, "states after=%s player health %.0f -> min %.0f" % [str(states.keys()), h0, min_health[0]])
+	await _free_main(main)
+
+
+# --- M5.7 regressions
+
+func _sec_m5regress() -> void:
+	# handgun headshot is still lethal from the front, the side (cranium) and the back (occiput)
+	var rows: Array = []
+	var all_dead := true
+	var i := 0
+	for dir in [Vector3(0, 0, 1), Vector3(1, 0, 0), Vector3(0, 0, -1)]:
+		var npc := await _spawn(Vector3(-6 + 6 * i, 0.05, 0), 351 + i)
+		i += 1
+		var ev := await shoot(npc, P.HEAD, dir, 3.0)
+		await seconds(1.0)
+		rows.append("%s: %s chunk=%s dead=%s" % [dir, ev.describe() if ev else "miss", _head_chunk_name(ev), npc.is_dead()])
+		all_dead = all_dead and npc.is_dead() and ev != null
+	check("M5.7a", "handgun headshot is still lethal (front, side, back)", all_dead, " | ".join(rows))
+	# neck bleed-out time
+	var n := await _spawn(Vector3(0, 0.05, 6), 358)
+	var t0 := now()
+	await shoot(n, P.NECK)
+	await wait_until(func(): return n.is_dead(), 40.0)
+	var t := now() - t0
+	check("M5.7b", "neck shot still bleeds out in 10-25 s", n.is_dead() and t >= 10.0 and t <= 25.0, "dead=%s t=%.1fs" % [n.is_dead(), t])
 
 
 # ------------------------------------------------------------------ 6. debug info + overlay
