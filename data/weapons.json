@@ -22,7 +22,7 @@
       "base_damage": 24.0, "mass": 0.25, "length": 0.22,
       "velocity_ref": 6.0, "min_velocity": 1.5, "damage_velocity_exponent": 1.0, "max_damage_scale": 2.0,
       "penetration": 0.2, "stab_depth_per_mps": 0.03,
-      "can_dismember": true, "dismember_min_velocity": 7.0,
+      "can_dismember": true, "dismember_min_velocity": 6.0,
       "stab_cone_deg": 30.0, "fire_rate": 2.5, "muzzle_velocity": 0.0, "impulse_scale": 0.6,
       "hit_samples": [0.4, 0.7, 1.0],
       "swing": {"arc_deg": 100.0, "duration": 0.16},
