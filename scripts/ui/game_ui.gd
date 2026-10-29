@@ -4,7 +4,13 @@ class_name GameUI
 extends CanvasLayer
 
 signal spawn_requested
-signal clear_requested
+signal clear_requested            # clear all
+signal spawn_n_requested(n: int)
+signal prop_requested(kind: String)
+signal clear_npcs_requested
+signal clear_props_requested
+signal clear_gore_requested
+signal show_warning_again
 
 const CLEANUP_STEPS := [0.0, 10.0, 30.0, 60.0, 120.0]
 
@@ -13,6 +19,7 @@ var hp_bar: ProgressBar
 var flash: ColorRect
 var fade: ColorRect
 var panel: VBoxContainer
+var spawner_panel: VBoxContainer
 var _player: Player = null
 var _cleanup_label: Label
 var _scale_label: Label
@@ -53,6 +60,14 @@ func _ready() -> void:
 	box.add_child(row)
 	_button(row, "Spawn NPC (N)", func(): spawn_requested.emit())
 	_button(row, "Clear all", func(): clear_requested.emit())
+	var stoggle := _button(box, "Spawner  [+]", Callable())
+	spawner_panel = VBoxContainer.new()
+	spawner_panel.visible = false
+	box.add_child(spawner_panel)
+	stoggle.pressed.connect(func():
+		spawner_panel.visible = not spawner_panel.visible
+		stoggle.text = "Spawner  [-]" if spawner_panel.visible else "Spawner  [+]")
+	_build_spawner()
 	var toggle := _button(box, "Settings  [+]", Callable())
 	panel = VBoxContainer.new()
 	panel.visible = false
@@ -62,7 +77,7 @@ func _ready() -> void:
 		toggle.text = "Settings  [-]" if panel.visible else "Settings  [+]")
 	_build_panel()
 	var help := Label.new()
-	help.text = "WASD move, Space jump, 1-7 weapon, LMB attack, RMB stab\nShift+mouse free swing, F1 debug, Esc frees mouse"
+	help.text = "WASD move, Space jump, 1-7 weapon, LMB attack, RMB stab, E grab, LMB throw\nShift+mouse free swing, F1 debug, Esc frees mouse"
 	help.add_theme_font_size_override("font_size", 12)
 	box.add_child(help)
 
@@ -76,10 +91,8 @@ func _ready() -> void:
 func _build_panel() -> void:
 	_toggle("Panic", &"panic_enabled")
 	_toggle("Scream", &"scream_enabled")
-	_toggle("Ragdoll only", &"ragdoll_only")
 	_toggle("Fight back", &"fight_back")
 	_toggle("Slow-mo on kill", &"slow_mo_on_kill")
-	_toggle("Immortal dummy (new spawns)", &"immortal_dummy")
 	_toggle("No dismemberment", &"no_dismemberment")
 	var gr := HBoxContainer.new()
 	panel.add_child(gr)
@@ -105,8 +118,36 @@ func _build_panel() -> void:
 	cs.value = maxi(idx, 0)
 	_cleanup_label.text = "Auto-cleanup: " + ("off" if GameSettings.auto_cleanup_time <= 0.0 else "%d s" % int(GameSettings.auto_cleanup_time))
 	panel.add_child(cs)
+	var again := CheckBox.new()
+	again.text = "Show content warning next start"
+	again.focus_mode = Control.FOCUS_NONE
+	again.toggled.connect(func(on: bool): if on: show_warning_again.emit())
+	panel.add_child(again)
+
+
+func _build_spawner() -> void:
+	var r1 := HBoxContainer.new()
+	spawner_panel.add_child(r1)
+	var l := Label.new(); l.text = "NPCs:"; r1.add_child(l)
+	for n in [1, 5, 10]:
+		_button(r1, "x%d" % n, func(): spawn_n_requested.emit(n))
+	_toggle("Immortal dummy (new spawns)", &"immortal_dummy", spawner_panel)
+	_toggle("Ragdoll only", &"ragdoll_only", spawner_panel)
+	var r2 := HBoxContainer.new()
+	spawner_panel.add_child(r2)
+	var pl := Label.new(); pl.text = "Props:"; r2.add_child(pl)
+	for k in ["crate", "barrel", "plank"]:
+		_button(r2, k, func(): prop_requested.emit(k))
+	var r3 := HBoxContainer.new()
+	spawner_panel.add_child(r3)
+	_button(r3, "Clear NPCs", func(): clear_npcs_requested.emit())
+	_button(r3, "Clear props", func(): clear_props_requested.emit())
+	var r4 := HBoxContainer.new()
+	spawner_panel.add_child(r4)
+	_button(r4, "Clear gore", func(): clear_gore_requested.emit())
+	_button(r4, "Clear all", func(): clear_requested.emit())
 	_scale_label = Label.new()
-	panel.add_child(_scale_label)
+	spawner_panel.add_child(_scale_label)
 	var ts := HSlider.new()
 	ts.min_value = 0.1; ts.max_value = 1.0; ts.step = 0.05
 	ts.custom_minimum_size.x = 200
@@ -116,7 +157,7 @@ func _build_panel() -> void:
 		_scale_label.text = "Time scale: %.2f" % v)
 	ts.value = GameSettings.time_scale
 	_scale_label.text = "Time scale: %.2f" % GameSettings.time_scale
-	panel.add_child(ts)
+	spawner_panel.add_child(ts)
 
 
 func bind_player(p: Player) -> void:
@@ -163,10 +204,10 @@ func _button(parent: Control, text: String, cb: Callable) -> Button:
 	return b
 
 
-func _toggle(label: String, setting: StringName) -> void:
+func _toggle(label: String, setting: StringName, into: Control = null) -> void:
 	var cb := CheckBox.new()
 	cb.text = label
 	cb.focus_mode = Control.FOCUS_NONE
 	cb.button_pressed = GameSettings.get(setting)
 	cb.toggled.connect(func(on: bool): GameSettings.set_setting(setting, on))
-	panel.add_child(cb)
+	(into if into != null else panel).add_child(cb)

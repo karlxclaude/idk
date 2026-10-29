@@ -124,6 +124,11 @@ func _deliver(ev: DamageEvent, collider: Object, pos: Vector3, normal: Vector3, 
 			npc.apply_damage(ev)
 			applied = true
 	elif allow_apply and ev.amount > 0.0:
+		if collider is RigidBody3D:  # props, gibs: shove them (clamped)
+			var imp: Vector3 = ev.impactor_velocity * ev.impactor_mass * float(def.get("impulse_scale", 1.0))
+			if imp.length() > 40.0:
+				imp = imp.normalized() * 40.0
+			(collider as RigidBody3D).apply_impulse(imp, pos - (collider as RigidBody3D).global_position)
 		GameEvents.world_impact.emit(pos, normal, ev)
 		applied = true
 	hit_resolved.emit(ev, applied)

@@ -20,6 +20,8 @@ var weapons: Array[Weapon] = []
 var current: Weapon = null
 var _pitch := 0.0
 var _free_swing := false
+var input_enabled := true      # false while the content warning is up
+var grabber: Grabber
 var cfg: Dictionary = {}
 var max_health := 100.0
 var health := 100.0
@@ -50,6 +52,10 @@ func _ready() -> void:
 	camera.position.y = 1.6
 	camera.current = true
 	add_child(camera)
+	grabber = Grabber.new()
+	grabber.name = "Grabber"
+	add_child(grabber)
+	grabber.setup(camera, self)
 	hand = Node3D.new()
 	hand.name = "Hand"
 	camera.add_child(hand)
@@ -100,6 +106,20 @@ func capture_mouse(on: bool) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if not input_enabled:
+		return
+	if event is InputEventKey and event.physical_keycode == KEY_E and not event.echo:
+		if event.pressed:
+			grabber.try_grab()
+		else:
+			grabber.release()
+		return
+	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_MIDDLE:
+		if event.pressed:
+			grabber.try_grab()
+		else:
+			grabber.release()
+		return
 	if event is InputEventKey and event.pressed and not event.echo:
 		match event.physical_keycode:
 			KEY_ESCAPE:
@@ -109,6 +129,9 @@ func _unhandled_input(event: InputEvent) -> void:
 	elif event is InputEventMouseButton and event.pressed:
 		if Input.mouse_mode != Input.MOUSE_MODE_CAPTURED:
 			capture_mouse(true)
+		elif grabber.is_holding():
+			if event.button_index == MOUSE_BUTTON_LEFT:
+				grabber.throw()
 		elif current:
 			if event.button_index == MOUSE_BUTTON_LEFT:
 				current.primary_action()
@@ -131,6 +154,12 @@ func _physics_process(delta: float) -> void:
 		if current:
 			current.set_free_swing(shift)
 	var dir := Vector2.ZERO
+	if not input_enabled:
+		velocity.x = 0.0
+		velocity.z = 0.0
+		velocity.y = 0.0 if is_on_floor() else velocity.y - 9.8 * delta
+		move_and_slide()
+		return
 	if Input.is_physical_key_pressed(KEY_W): dir.y -= 1
 	if Input.is_physical_key_pressed(KEY_S): dir.y += 1
 	if Input.is_physical_key_pressed(KEY_A): dir.x -= 1

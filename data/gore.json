@@ -147,9 +147,13 @@
   "min_gap_ms": 40
  },
  "overlay": {
-  "max_panels": 6,
+  "max_panels": 4,
   "refresh": 0.2,
-  "label_height": 1.5
+  "label_height": 1.5,
+  "per_frame": 1,
+  "list_refresh": 0.5,
+  "far_refresh": 1.0,
+  "world_labels": true
  },
  "body_blood": {
   "max_npcs": 8,

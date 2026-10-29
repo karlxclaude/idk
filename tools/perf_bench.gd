@@ -17,6 +17,7 @@ func _ready() -> void:
 			args[kv[0]] = kv[1]
 	var n := int(args.get("npcs", "20"))
 	var secs := float(args.get("seconds", "8"))
+	OS.set_environment("GORE_SKIP_WARNING", "1")
 	main = load("res://scenes/main.tscn").instantiate()
 	add_child(main)
 	await get_tree().process_frame

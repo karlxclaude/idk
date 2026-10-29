@@ -8,6 +8,7 @@ var main: Node3D
 
 func _ready() -> void:
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(OUT))
+	OS.set_environment("GORE_SKIP_WARNING", "1")
 	main = load("res://scenes/main.tscn").instantiate()
 	add_child(main)
 	await _frames(10)
