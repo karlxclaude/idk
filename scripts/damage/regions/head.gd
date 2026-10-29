@@ -29,32 +29,29 @@ func apply(ctx: HitContext) -> void:
 	var post_hp := maxf(0.0, ctx.part.hp - ctx.damage)
 	var chunk_cause := _chunk_lethal_cause(destroyed_now)
 	var chunk_first := bool(cfg.chunk_rules.get("chunk_cause_priority", false))
+	# the stun this hit produces on its own (also set on lethal hits, so an immortal gate's knockdown only ever raises it)
 	if blunt:
-		if post_hp <= 0.0 or lethal or chunk_cause != &"":
-			ctx.destroy = true
-			ctx.lethal_cause = chunk_cause if chunk_cause != &"" and (chunk_first or not lethal) else cause
-		else:
-			var c: Dictionary = h.concussion
-			ctx.stun_duration = clampf(_blunt_force(ctx) * float(c.per_amount), float(c.min), float(c.max))
-			ctx.stun_cause = &"concussion"
+		var c: Dictionary = h.concussion
+		ctx.stun_duration = clampf(_blunt_force(ctx) * float(c.per_amount), float(c.min), float(c.max))
+		ctx.stun_cause = &"concussion"
 	else:
-		if lethal or chunk_cause != &"":
-			ctx.destroy = true
-			ctx.lethal_cause = chunk_cause if chunk_cause != &"" and (chunk_first or not lethal) else cause
-		else:
-			ctx.stun_duration = lerpf(float(h.stun_min), float(h.stun_max), clampf(ev.amount / float(h.stun_amount_ref), 0.0, 1.0))
-			ctx.stun_cause = &"head_graze"
+		ctx.stun_duration = lerpf(float(h.stun_min), float(h.stun_max), clampf(ev.amount / float(h.stun_amount_ref), 0.0, 1.0))
+		ctx.stun_cause = &"head_graze"
+	if lethal or chunk_cause != &"" or (blunt and post_hp <= 0.0):
+		ctx.destroy = true
+		ctx.lethal_cause = chunk_cause if chunk_cause != &"" and (chunk_first or not lethal) else cause
 	# accumulated damage destroyed the skull
 	if not ctx.destroy and post_hp <= 0.0 and not ctx.part.destroyed:
 		ctx.destroy = true
 		ctx.lethal_cause = StringName(h.destroyed_cause)
-	# a destroyed jaw/face (not lethal) knocks the victim down for longer than any graze
-	if not ctx.destroy:
-		for c in destroyed_now:
-			var r := _row(c)
-			if float(r.get("stun", 0.0)) > 0.0:
-				ctx.stun_duration = maxf(ctx.stun_duration, float(r.stun))
-				ctx.stun_cause = StringName(r.get("stun_cause", "head_graze"))
+	if ctx.destroy and ctx.stun_cause == &"head_graze":
+		ctx.stun_cause = &"concussion"  # a killing blow that is gated (immortal) is a knockout, not a graze
+	# a destroyed jaw/face knocks the victim down for longer than any graze (also on lethal hits: gates only raise it)
+	for c in destroyed_now:
+		var r := _row(c)
+		if float(r.get("stun", 0.0)) > 0.0:
+			ctx.stun_duration = maxf(ctx.stun_duration, float(r.stun))
+			ctx.stun_cause = StringName(r.get("stun_cause", "head_graze"))
 
 
 ## Damage the hit chunk, scale entry-wound bleed by chunk, decide which chunks are destroyed (hit chunk, plus the
