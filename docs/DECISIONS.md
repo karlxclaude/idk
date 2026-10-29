@@ -49,3 +49,7 @@
 - "Better assets" deferred to milestone 4 with the Blender segmentation pipeline: swapping meshes before segmentation exists would be redone.
 - Pipeline details: shared fracture/sever-threshold logic in `regions/limb_base.gd` (arm/leg/neck); rules are `preload`ed, not `class_name`d. Slash stores unscaled bleed in `ctx.tags.base_ext` so the neck rule keeps arterial flow unscaled; blunt bruise passes via `ctx.tags.bruise`. `high_damage_sever_mult` repeated per region file (each rule reads only its own data). EXPLOSIVE still routes through slash.
 - PoseDriver (RefCounted owned by NpcBody) returns per-part target transforms; parts without a pose rotation stay at rest relative to parent.
+- Hands/feet: hand 0.5 kg, foot 1.0 kg; lower arms/legs shortened to keep 1.81 m / 75 kg. Phone held in `hand_r`. Collision exceptions extend 3 ancestors up + siblings. `col_pad` fattens small colliders without changing hit half-extents.
+- Hand: 20 HP, sever threshold 18 (fast knife slash), bleed ×0.5. Foot: 30 HP, fracture_force 25, sever 40. Foot fracture => limp (brain), leg bone break / leg or foot loss => crawl.
+- Limp is a pose + speed modifier with a side ("l"/"r"/"both"), not an NpcState. Clutch uses the nearest sound arm.
+- body_test corpse-drift threshold relaxed to 4 m (drift is chaotic, 1.2–3 m); the launch regression is guarded by the peak-speed ≤ 25 m/s check.
