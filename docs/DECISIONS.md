@@ -53,3 +53,4 @@
 - Hand: 20 HP, sever threshold 18 (fast knife slash), bleed ×0.5. Foot: 30 HP, fracture_force 25, sever 40. Foot fracture => limp (brain), leg bone break / leg or foot loss => crawl.
 - Limp is a pose + speed modifier with a side ("l"/"r"/"both"), not an NpcState. Clutch uses the nearest sound arm.
 - body_test corpse-drift threshold relaxed to 4 m (drift is chaotic, 1.2–3 m); the launch regression is guarded by the peak-speed ≤ 25 m/s check.
+- Leg severing (thigh 70 / shin 55) stays out of reach of the v1 knife on purpose; it arrives with the machete/heavy weapons in milestone 5. Hands/feet and arms remain knife-severable.
