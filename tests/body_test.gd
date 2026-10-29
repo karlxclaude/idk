@@ -46,6 +46,74 @@ func _ready() -> void:
 	var head_top: float = body.get_part_global_transform(BodyIds.Part.HEAD).origin.y + body.get_part_half_extents(BodyIds.Part.HEAD).y
 	_check("1a2 feet on floor, height ~1.8", foot_y < 0.08 and absf(head_top - 0.02 - 1.8) < 0.1,
 		"foot_y=%.3f head_top=%.3f" % [foot_y, head_top])
+
+	# 1c. baked visual meshes (assets/body, tools/bake_body_meshes.tscn)
+	var bparts: Dictionary = DataDB.table("body_parts")["parts"]
+	var man: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://assets/body/manifest.json"))
+	var meshes := {}
+	var all_load := true
+	var tri_sum := 0
+	for p in BodyIds.PART_COUNT:
+		var seg := body.get_part_node(p)
+		var mi: MeshInstance3D = null
+		for kid in seg.get_children():
+			if kid is MeshInstance3D and kid.mesh is ArrayMesh and kid.name.begins_with("@MeshInstance3D"):
+				mi = kid
+			elif kid is MeshInstance3D and kid.mesh is ArrayMesh and kid.mesh.resource_path.ends_with(".mesh.res"):
+				mi = kid
+		var m: ArrayMesh = load("res://assets/body/%s.mesh.res" % BodyIds.key(p))
+		if m == null or mi == null or mi.mesh != m:
+			all_load = false
+			continue
+		meshes[p] = m
+		tri_sum += (m.surface_get_arrays(0)[Mesh.ARRAY_INDEX] as PackedInt32Array).size() / 3
+	_check("1c all 15 baked meshes load and are used by the segments", all_load and meshes.size() == 15,
+		"loaded=%d" % meshes.size())
+	var ball_tris := 0
+	for k in man["joints"]:
+		var bm: ArrayMesh = load(man["joints"][k]["ball"])
+		ball_tris += (bm.surface_get_arrays(0)[Mesh.ARRAY_INDEX] as PackedInt32Array).size() / 3
+	_check("1c2 triangle budget (visible body = parts + joint balls, 6k..15k)", all_load \
+		and tri_sum + ball_tris >= 6000 and tri_sum + ball_tris <= 15000 and tri_sum == int(man["body_tris"]),
+		"body=%d balls=%d caps(manifest)=%d" % [tri_sum, ball_tris, int(man["cap_tris"])])
+	# seams: every child start ring must coincide with the parent's end ring when assembled at rest
+	var seam_worst := 0.0
+	var seam_ring_ok := true
+	for ck in man["joints"]:
+		var jinfo: Dictionary = man["joints"][ck]
+		var c := BodyIds.from_key(ck)
+		var par: int = BodyIds.PARENT[c]
+		var cc := Vector3(jinfo["centre_child"][0], jinfo["centre_child"][1], jinfo["centre_child"][2])
+		var pc := Vector3(jinfo["centre_parent"][0], jinfo["centre_parent"][1], jinfo["centre_parent"][2])
+		var crest := Vector3(bparts[ck]["rest"][0], bparts[ck]["rest"][1], bparts[ck]["rest"][2])
+		var prest := Vector3(bparts[BodyIds.key(par)]["rest"][0], bparts[BodyIds.key(par)]["rest"][1], bparts[BodyIds.key(par)]["rest"][2])
+		var rad := maxf(float(jinfo["rx"]), float(jinfo["rz"])) + 0.002
+		var cv: PackedVector3Array = meshes[c].surface_get_arrays(0)[Mesh.ARRAY_VERTEX]
+		var pv: PackedVector3Array = meshes[par].surface_get_arrays(0)[Mesh.ARRAY_VERTEX]
+		var ring: Array[Vector3] = []
+		for v in cv:
+			if absf(v.y - cc.y) < 0.001 and Vector2(v.x - cc.x, v.z - cc.z).length() <= rad:
+				ring.append(crest + v)
+		var worst := 0.0
+		for w in ring:
+			var best := 1e9
+			for v in pv:
+				best = minf(best, (prest + v).distance_to(w))
+			worst = maxf(worst, best)
+		seam_worst = maxf(seam_worst, worst)
+		seam_ring_ok = seam_ring_ok and ring.size() >= int(man["ring_verts"]) and cc.is_finite() and pc.is_finite()
+	_check("1c3 assembled seams: child start ring vs parent end ring < 5 mm", seam_ring_ok and seam_worst < 0.005,
+		"worst=%.4f m" % seam_worst)
+	var caps_hidden := 0
+	var caps_total := 0
+	for p in BodyIds.PART_COUNT:
+		for kid in body.get_part_node(p).get_children():
+			if kid is MeshInstance3D and (kid.name.begins_with("StumpCap_") or kid.name == "SeveredCap"):
+				caps_total += 1
+				caps_hidden += 0 if kid.visible else 1
+	_check("1c4 caps exist (14 stump + 14 severed) and are hidden at spawn", caps_total == 28 and caps_hidden == 28,
+		"total=%d hidden=%d" % [caps_total, caps_hidden])
+
 	var q := PhysicsRayQueryParameters3D.create(Vector3(0, 1.3, 2), Vector3(0, 1.3, 0), BodyIds.LAYER_NPC_PARTS)
 	var hit := get_world_3d().direct_space_state.intersect_ray(q)
 	var hit_ok := false
@@ -224,6 +292,39 @@ func _ready() -> void:
 	_check("4f2 auto_cleanup_time=1 frees a severed hand within ~1.5 s", alive_early
 		and freed_after < 1.5, "freed after %.2f s" % freed_after)
 	npc8.queue_free()
+
+
+	# 4g. caps: severing the forearm shows the stump on the upper arm and the cut end on the piece, both at the elbow
+	var npc10 := Npc.spawn(self, Transform3D(Basis(), Vector3(-180, 0.02, 0)), 10)
+	await _frames(5)
+	var evk := DamageEvent.new()
+	evk.type = DamageEvent.Type.BLADE_SLASH
+	evk.part_id = BodyIds.Part.LOWER_ARM_L
+	evk.impactor_velocity = Vector3.ZERO
+	evk.impactor_mass = 1.0
+	evk.can_dismember = true
+	evk.hit_position = npc10.body.get_part_global_transform(evk.part_id).origin
+	var ua := npc10.body.get_part_node(BodyIds.Part.UPPER_ARM_L)
+	var la := npc10.body.get_part_node(BodyIds.Part.LOWER_ARM_L)
+	var elbow_world: Vector3 = ua.global_transform * Vector3(0, -0.15, 0)  # joint at the lower end of the upper arm
+	var stump_mi := ua.get_node_or_null("StumpCap_lower_arm_l") as MeshInstance3D
+	var cut_mi := la.get_node_or_null("SeveredCap") as MeshInstance3D
+	var hidden_before := stump_mi != null and cut_mi != null and not stump_mi.visible and not cut_mi.visible
+	npc10.body.sever_part(BodyIds.Part.LOWER_ARM_L, evk)
+	var d_stump := 9.0
+	var d_cut := 9.0
+	if stump_mi != null:
+		d_stump = (stump_mi.global_transform * stump_mi.mesh.get_aabb().get_center()).distance_to(elbow_world)
+	if cut_mi != null:
+		d_cut = (cut_mi.global_transform * cut_mi.mesh.get_aabb().get_center()).distance_to(elbow_world)
+	var other_hidden := true
+	for kid in ua.get_children():
+		if kid is MeshInstance3D and kid.name.begins_with("StumpCap_") and kid != stump_mi and kid.visible:
+			other_hidden = false
+	_check("4g sever LOWER_ARM_L shows stump cap (upper_arm_l) and cut cap (lower_arm_l) at the elbow",
+		hidden_before and stump_mi.visible and cut_mi.visible and other_hidden and d_stump < 0.02 and d_cut < 0.02,
+		"d_stump=%.4f d_cut=%.4f" % [d_stump, d_cut])
+	npc10.queue_free()
 
 	# 4c. sever a hand, and a lower leg takes its foot
 	var evh := DamageEvent.new()

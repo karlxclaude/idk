@@ -32,6 +32,8 @@ var _pose: StringName = &"idle"
 var _desired_vel := Vector3.ZERO
 var _clutch_target := -1
 var _pose_driver := PoseDriver.new()  # procedural posing (scripts/body/pose/)
+var _body_mat: Material = null    # shared per-NPC shader material (baked visuals)
+var _baked := false              # baked meshes (assets/body, tools/bake_body_meshes.tscn) in use
 var _held: MeshInstance3D = null
 var _held_part := -1
 
@@ -61,11 +63,24 @@ func _build() -> void:
 	var skin := _col(cols.get("skin", [0.85, 0.66, 0.55]), skin_mul)
 	var shirts: Array = cols.get("shirt_list", [[0.3, 0.3, 0.5]])
 	var pants: Array = cols.get("pants_list", [[0.2, 0.2, 0.25]])
-	var mats := {
-		"skin": _mat(skin),
-		"shirt": _mat(_col(shirts[npc.rng.randi() % shirts.size()])),
-		"pants": _mat(_col(pants[npc.rng.randi() % pants.size()])),
-	}
+	var shirt_c := _col(shirts[npc.rng.randi() % shirts.size()])
+	var pants_i: int = npc.rng.randi() % pants.size()
+	var pants_c := _col(pants[pants_i])
+	var mats := {"skin": _mat(skin), "shirt": _mat(shirt_c), "pants": _mat(pants_c)}
+	var baked_meshes := _load_baked()
+	_baked = not baked_meshes.is_empty()
+	if _baked:
+		# one shader material per NPC (colours carry the per-NPC variation); region weights live in vertex colours
+		var shoes: Array = cols.get("shoe_list", [[0.1, 0.08, 0.07]])
+		var vm := ShaderMaterial.new()
+		vm.shader = load("res://scripts/body/body_vc.gdshader")
+		vm.set_shader_parameter("skin_color", skin)
+		vm.set_shader_parameter("shirt_color", shirt_c)
+		vm.set_shader_parameter("pants_color", pants_c)
+		vm.set_shader_parameter("shoe_color", _col(shoes[pants_i % shoes.size()]))
+		for k in mats:
+			mats[k] = vm
+		_body_mat = vm
 	var npc_fwd := npc.global_basis.z
 	var root := Transform3D(Basis(Vector3.UP, atan2(npc_fwd.x, npc_fwd.z)), npc.global_position)
 
@@ -97,7 +112,7 @@ func _build() -> void:
 				"x_min": deg_to_rad(float(lim["x"][0])), "x_max": deg_to_rad(float(lim["x"][1])),
 				"y": deg_to_rad(float(lim["y"])), "z": deg_to_rad(float(lim["z"]))}
 		var seg := BodySegment.new()
-		seg.build(pid, npc, d, mats[d.get("color", "skin")], _cfg)
+		seg.build(pid, npc, d, mats[d.get("color", "skin")], _cfg, baked_meshes.get(pid))
 		_segments[pid] = seg
 	for pid in ORDER:
 		if pid == P.TORSO:
@@ -123,7 +138,65 @@ func _build() -> void:
 		if pid != P.TORSO:
 			_make_joint(pid, root.basis)
 	_add_exceptions()
+	if _baked:
+		_make_caps()
 	_make_held_item()
+
+
+## Baked part meshes keyed by part id, or {} (primitive fallback) when disabled or any asset is missing.
+func _load_baked() -> Dictionary:
+	if String(_cfg.get("visual", "primitive")) != "baked":
+		return {}
+	var out := {}
+	for pid in ORDER:
+		var path := "res://assets/body/%s.mesh.res" % BodyIds.key(pid)
+		if not ResourceLoader.exists(path):
+			return {}
+		out[pid] = load(path)
+	return out
+
+
+static var _cap_mat: StandardMaterial3D = null
+
+
+## Hidden stump caps (on the parent, at each child joint) and severed-end caps (on the child), shown by sever_part.
+func _make_caps() -> void:
+	if _cap_mat == null:
+		_cap_mat = StandardMaterial3D.new()
+		_cap_mat.vertex_color_use_as_albedo = true
+		_cap_mat.roughness = 0.6
+	for pid in ORDER:
+		if pid == P.TORSO:
+			continue
+		var key := BodyIds.key(pid)
+		var sp := "res://assets/body/%s_cap_stump.res" % key
+		var vp := "res://assets/body/%s_cap_severed.res" % key
+		if not (ResourceLoader.exists(sp) and ResourceLoader.exists(vp)):
+			continue
+		var stump := MeshInstance3D.new()
+		stump.name = "StumpCap_" + key
+		stump.mesh = load(sp)
+		stump.material_override = _cap_mat
+		stump.visible = false
+		var parent_seg: BodySegment = _segments[BodyIds.PARENT[pid]]
+		parent_seg.add_child(stump)
+		parent_seg.stump_caps[pid] = stump
+		var bp := "res://assets/body/%s_ball.res" % key
+		if ResourceLoader.exists(bp):
+			var ball := MeshInstance3D.new()
+			ball.name = "JointBall"
+			ball.mesh = load(bp)
+			ball.material_override = _body_mat
+			(_segments[pid] as BodySegment).add_child(ball)
+			(_segments[pid] as BodySegment).joint_ball = ball
+		var sev := MeshInstance3D.new()
+		sev.name = "SeveredCap"
+		sev.mesh = load(vp)
+		sev.material_override = _cap_mat
+		sev.visible = false
+		var seg: BodySegment = _segments[pid]
+		seg.add_child(sev)
+		seg.severed_cap = sev
 
 
 func _mat(c: Color) -> StandardMaterial3D:
@@ -424,7 +497,14 @@ func sever_part(part_id: int, ev: DamageEvent) -> RigidBody3D:
 	var imp := ev.impactor_velocity * ev.impactor_mass * float(_cfg.get("hit_impulse_scale", 1.0))
 	imp = imp.limit_length(float(_cfg.get("max_hit_impulse", 80.0)))
 	root_seg.apply_impulse(imp, ev.hit_position - root_seg.global_position)
-	# TODO(roadmap: stump caps): place cap meshes at the cut on root_seg and on the parent's end.
+	# stump caps: the parent shows its stump at the joint, the severed piece its cut end (baked meshes only)
+	var par_seg: BodySegment = _segments.get(BodyIds.PARENT[part_id])
+	if is_instance_valid(par_seg) and par_seg.stump_caps.has(part_id):
+		(par_seg.stump_caps[part_id] as MeshInstance3D).visible = true
+	if root_seg.severed_cap != null:
+		root_seg.severed_cap.visible = true
+	if root_seg.joint_ball != null:
+		root_seg.joint_ball.visible = false
 	var timer := Timer.new()
 	timer.one_shot = true
 	timer.wait_time = _cleanup_s()

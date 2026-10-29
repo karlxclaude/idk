@@ -1,0 +1,407 @@
+{
+ "ball_tris": 1960,
+ "body_tris": 8720,
+ "cap_tris": 3920,
+ "joints": {
+  "foot_l": {
+   "ball": "res://assets/body/foot_l_ball.res",
+   "bone_r": 0.013,
+   "centre_child": [
+    0.0,
+    0.0499999523162842,
+    -0.0500000007450581
+   ],
+   "centre_parent": [
+    0.0,
+    -0.170000016689301,
+    0.0
+   ],
+   "out_stump": [
+    0.0,
+    -1.0,
+    0.0
+   ],
+   "parent": "lower_leg_l",
+   "rx": 0.035,
+   "rz": 0.037,
+   "severed": "res://assets/body/foot_l_cap_severed.res",
+   "stump": "res://assets/body/foot_l_cap_stump.res"
+  },
+  "foot_r": {
+   "ball": "res://assets/body/foot_r_ball.res",
+   "bone_r": 0.013,
+   "centre_child": [
+    0.0,
+    0.0499999523162842,
+    -0.0500000007450581
+   ],
+   "centre_parent": [
+    0.0,
+    -0.170000016689301,
+    0.0
+   ],
+   "out_stump": [
+    0.0,
+    -1.0,
+    0.0
+   ],
+   "parent": "lower_leg_r",
+   "rx": 0.035,
+   "rz": 0.037,
+   "severed": "res://assets/body/foot_r_cap_severed.res",
+   "stump": "res://assets/body/foot_r_cap_stump.res"
+  },
+  "hand_l": {
+   "ball": "res://assets/body/hand_l_ball.res",
+   "bone_r": 0.009,
+   "centre_child": [
+    0.0,
+    0.0849999785423279,
+    0.0
+   ],
+   "centre_parent": [
+    0.0,
+    -0.120000004768372,
+    0.0
+   ],
+   "out_stump": [
+    0.0,
+    -1.0,
+    0.0
+   ],
+   "parent": "lower_arm_l",
+   "rx": 0.022,
+   "rz": 0.03,
+   "severed": "res://assets/body/hand_l_cap_severed.res",
+   "stump": "res://assets/body/hand_l_cap_stump.res"
+  },
+  "hand_r": {
+   "ball": "res://assets/body/hand_r_ball.res",
+   "bone_r": 0.009,
+   "centre_child": [
+    0.0,
+    0.0849999785423279,
+    0.0
+   ],
+   "centre_parent": [
+    0.0,
+    -0.120000004768372,
+    0.0
+   ],
+   "out_stump": [
+    0.0,
+    -1.0,
+    0.0
+   ],
+   "parent": "lower_arm_r",
+   "rx": 0.022,
+   "rz": 0.03,
+   "severed": "res://assets/body/hand_r_cap_severed.res",
+   "stump": "res://assets/body/hand_r_cap_stump.res"
+  },
+  "head": {
+   "ball": "res://assets/body/head_ball.res",
+   "bone_r": 0.012,
+   "centre_child": [
+    0.0,
+    -0.114999979734421,
+    0.0
+   ],
+   "centre_parent": [
+    0.0,
+    0.050000011920929,
+    0.0
+   ],
+   "out_stump": [
+    0.0,
+    1.0,
+    0.0
+   ],
+   "parent": "neck",
+   "rx": 0.042,
+   "rz": 0.044,
+   "severed": "res://assets/body/head_cap_severed.res",
+   "stump": "res://assets/body/head_cap_stump.res"
+  },
+  "lower_arm_l": {
+   "ball": "res://assets/body/lower_arm_l_ball.res",
+   "bone_r": 0.013,
+   "centre_child": [
+    0.0,
+    0.120000004768372,
+    0.0
+   ],
+   "centre_parent": [
+    0.0,
+    -0.149999991059303,
+    0.0
+   ],
+   "out_stump": [
+    0.0,
+    -1.0,
+    0.0
+   ],
+   "parent": "upper_arm_l",
+   "rx": 0.038,
+   "rz": 0.041,
+   "severed": "res://assets/body/lower_arm_l_cap_severed.res",
+   "stump": "res://assets/body/lower_arm_l_cap_stump.res"
+  },
+  "lower_arm_r": {
+   "ball": "res://assets/body/lower_arm_r_ball.res",
+   "bone_r": 0.013,
+   "centre_child": [
+    0.0,
+    0.120000004768372,
+    0.0
+   ],
+   "centre_parent": [
+    0.0,
+    -0.149999991059303,
+    0.0
+   ],
+   "out_stump": [
+    0.0,
+    -1.0,
+    0.0
+   ],
+   "parent": "upper_arm_r",
+   "rx": 0.038,
+   "rz": 0.041,
+   "severed": "res://assets/body/lower_arm_r_cap_severed.res",
+   "stump": "res://assets/body/lower_arm_r_cap_stump.res"
+  },
+  "lower_leg_l": {
+   "ball": "res://assets/body/lower_leg_l_ball.res",
+   "bone_r": 0.018,
+   "centre_child": [
+    0.0,
+    0.180000007152557,
+    0.0
+   ],
+   "centre_parent": [
+    0.0,
+    -0.220000028610229,
+    0.0
+   ],
+   "out_stump": [
+    0.0,
+    -1.0,
+    0.0
+   ],
+   "parent": "upper_leg_l",
+   "rx": 0.052,
+   "rz": 0.056,
+   "severed": "res://assets/body/lower_leg_l_cap_severed.res",
+   "stump": "res://assets/body/lower_leg_l_cap_stump.res"
+  },
+  "lower_leg_r": {
+   "ball": "res://assets/body/lower_leg_r_ball.res",
+   "bone_r": 0.018,
+   "centre_child": [
+    0.0,
+    0.180000007152557,
+    0.0
+   ],
+   "centre_parent": [
+    0.0,
+    -0.220000028610229,
+    0.0
+   ],
+   "out_stump": [
+    0.0,
+    -1.0,
+    0.0
+   ],
+   "parent": "upper_leg_r",
+   "rx": 0.052,
+   "rz": 0.056,
+   "severed": "res://assets/body/lower_leg_r_cap_severed.res",
+   "stump": "res://assets/body/lower_leg_r_cap_stump.res"
+  },
+  "neck": {
+   "ball": "res://assets/body/neck_ball.res",
+   "bone_r": 0.014,
+   "centre_child": [
+    0.0,
+    -0.0499999821186066,
+    -0.00300000002607703
+   ],
+   "centre_parent": [
+    0.0,
+    0.300000011920929,
+    -0.00300000002607703
+   ],
+   "out_stump": [
+    0.0,
+    1.0,
+    0.0
+   ],
+   "parent": "torso",
+   "rx": 0.047,
+   "rz": 0.05,
+   "severed": "res://assets/body/neck_cap_severed.res",
+   "stump": "res://assets/body/neck_cap_stump.res"
+  },
+  "upper_arm_l": {
+   "ball": "res://assets/body/upper_arm_l_ball.res",
+   "bone_r": 0.017,
+   "centre_child": [
+    0.0,
+    0.150000005960464,
+    0.0
+   ],
+   "centre_parent": [
+    0.254999995231628,
+    0.270000010728836,
+    0.0
+   ],
+   "out_stump": [
+    0.0,
+    -1.0,
+    0.0
+   ],
+   "parent": "torso",
+   "rx": 0.048,
+   "rz": 0.05,
+   "severed": "res://assets/body/upper_arm_l_cap_severed.res",
+   "stump": "res://assets/body/upper_arm_l_cap_stump.res"
+  },
+  "upper_arm_r": {
+   "ball": "res://assets/body/upper_arm_r_ball.res",
+   "bone_r": 0.017,
+   "centre_child": [
+    0.0,
+    0.150000005960464,
+    0.0
+   ],
+   "centre_parent": [
+    -0.254999995231628,
+    0.270000010728836,
+    0.0
+   ],
+   "out_stump": [
+    0.0,
+    -1.0,
+    0.0
+   ],
+   "parent": "torso",
+   "rx": 0.048,
+   "rz": 0.05,
+   "severed": "res://assets/body/upper_arm_r_cap_severed.res",
+   "stump": "res://assets/body/upper_arm_r_cap_stump.res"
+  },
+  "upper_leg_l": {
+   "ball": "res://assets/body/upper_leg_l_ball.res",
+   "bone_r": 0.022,
+   "centre_child": [
+    0.0,
+    0.219999969005585,
+    -0.00400000018998981
+   ],
+   "centre_parent": [
+    0.100000001490116,
+    -0.300000011920929,
+    -0.00400000018998981
+   ],
+   "out_stump": [
+    0.0,
+    -1.0,
+    0.0
+   ],
+   "parent": "torso",
+   "rx": 0.074,
+   "rz": 0.08,
+   "severed": "res://assets/body/upper_leg_l_cap_severed.res",
+   "stump": "res://assets/body/upper_leg_l_cap_stump.res"
+  },
+  "upper_leg_r": {
+   "ball": "res://assets/body/upper_leg_r_ball.res",
+   "bone_r": 0.022,
+   "centre_child": [
+    0.0,
+    0.219999969005585,
+    -0.00400000018998981
+   ],
+   "centre_parent": [
+    -0.100000001490116,
+    -0.300000011920929,
+    -0.00400000018998981
+   ],
+   "out_stump": [
+    0.0,
+    -1.0,
+    0.0
+   ],
+   "parent": "torso",
+   "rx": 0.074,
+   "rz": 0.08,
+   "severed": "res://assets/body/upper_leg_r_cap_severed.res",
+   "stump": "res://assets/body/upper_leg_r_cap_stump.res"
+  }
+ },
+ "parts": {
+  "foot_l": {
+   "mesh": "res://assets/body/foot_l.mesh.res",
+   "tris": 580
+  },
+  "foot_r": {
+   "mesh": "res://assets/body/foot_r.mesh.res",
+   "tris": 580
+  },
+  "hand_l": {
+   "mesh": "res://assets/body/hand_l.mesh.res",
+   "tris": 780
+  },
+  "hand_r": {
+   "mesh": "res://assets/body/hand_r.mesh.res",
+   "tris": 780
+  },
+  "head": {
+   "mesh": "res://assets/body/head.mesh.res",
+   "tris": 980
+  },
+  "lower_arm_l": {
+   "mesh": "res://assets/body/lower_arm_l.mesh.res",
+   "tris": 360
+  },
+  "lower_arm_r": {
+   "mesh": "res://assets/body/lower_arm_r.mesh.res",
+   "tris": 360
+  },
+  "lower_leg_l": {
+   "mesh": "res://assets/body/lower_leg_l.mesh.res",
+   "tris": 360
+  },
+  "lower_leg_r": {
+   "mesh": "res://assets/body/lower_leg_r.mesh.res",
+   "tris": 360
+  },
+  "neck": {
+   "mesh": "res://assets/body/neck.mesh.res",
+   "tris": 240
+  },
+  "torso": {
+   "mesh": "res://assets/body/torso.mesh.res",
+   "tris": 1900
+  },
+  "upper_arm_l": {
+   "mesh": "res://assets/body/upper_arm_l.mesh.res",
+   "tris": 360
+  },
+  "upper_arm_r": {
+   "mesh": "res://assets/body/upper_arm_r.mesh.res",
+   "tris": 360
+  },
+  "upper_leg_l": {
+   "mesh": "res://assets/body/upper_leg_l.mesh.res",
+   "tris": 360
+  },
+  "upper_leg_r": {
+   "mesh": "res://assets/body/upper_leg_r.mesh.res",
+   "tris": 360
+  }
+ },
+ "ring_verts": 20,
+ "total_tris": 14600
+}

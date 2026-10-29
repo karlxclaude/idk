@@ -57,7 +57,24 @@
     0.15
    ]
   ],
-  "skin_variation": 0.18
+  "skin_variation": 0.18,
+  "shoe_list": [
+   [
+    0.1,
+    0.08,
+    0.07
+   ],
+   [
+    0.25,
+    0.16,
+    0.1
+   ],
+   [
+    0.7,
+    0.7,
+    0.72
+   ]
+  ]
  },
  "held_item": {
   "size": [
@@ -496,5 +513,6 @@
   }
  },
  "max_segment_speed": 25.0,
- "max_segment_ang_speed": 40.0
+ "max_segment_ang_speed": 40.0,
+ "visual": "baked"
 }

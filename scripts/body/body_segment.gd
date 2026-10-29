@@ -10,6 +10,10 @@ var attached := true
 var tracked_lin := Vector3.ZERO
 var tracked_ang := Vector3.ZERO
 var held_item: MeshInstance3D = null
+## Baked stump caps (hidden until the child part is severed), keyed by child part id; own severed-end cap.
+var stump_caps: Dictionary = {}
+var severed_cap: MeshInstance3D = null
+var joint_ball: MeshInstance3D = null  # fills the rotation gap at the joint to the parent; hidden once severed
 var _has_prev := false
 var max_speed := 25.0
 var max_ang_speed := 40.0
@@ -19,7 +23,8 @@ static func _v3(a) -> Vector3:
 	return Vector3(float(a[0]), float(a[1]), float(a[2]))
 
 
-func build(pid: int, owner_npc: Node, d: Dictionary, mat: Material, cfg: Dictionary) -> void:
+## vis_mesh: optional baked visual (segment-local); the collider is always the primitive shape below.
+func build(pid: int, owner_npc: Node, d: Dictionary, mat: Material, cfg: Dictionary, vis_mesh: Mesh = null) -> void:
 	part_id = pid
 	npc = owner_npc
 	name = BodyIds.key(pid)
@@ -56,7 +61,7 @@ func build(pid: int, owner_npc: Node, d: Dictionary, mat: Material, cfg: Diction
 	col.set_meta(BodyIds.META_PART_ID, pid)
 	add_child(col)
 	var mi := MeshInstance3D.new()
-	mi.mesh = mesh
+	mi.mesh = vis_mesh if vis_mesh != null else mesh
 	mi.material_override = mat
 	add_child(mi)
 	freeze_mode = RigidBody3D.FREEZE_MODE_KINEMATIC
