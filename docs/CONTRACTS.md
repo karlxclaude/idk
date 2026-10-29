@@ -105,7 +105,7 @@ hit-reaction additives and IK live in `scripts/body/pose/` behind an internal in
 - `HitContext.chunk` (set by DamageSystem for head hits), `chunk_damage`, `destroy_chunks` (set by the head rule).
   Commit applies chunk damage and calls `npc.notify_head_chunk_destroyed(chunk, ev)` once per newly destroyed chunk.
 - `NpcBody.destroy_head_chunk(chunk, ev) -> RigidBody3D`: hide the chunk's mesh, show its baked wound cap, spawn a gib
-  (debris layer, carries metas? no — gibs are not hittable body parts) with velocity from `ev`; cleanup like severed pieces.
+  (debris layer, no body-part metas: gibs are not hittable parts) with velocity from `ev`; cleanup like severed pieces.
 - Signals: `Npc.head_chunk_destroyed(chunk, gib, ev)`, `GameEvents.npc_head_chunk_destroyed(npc, chunk, gib, ev)`.
 - Lethality (head-neck-agent decides, defaults): CRANIUM or OCCIPUT destroyed → lethal; FACE destroyed → lethal at high
   damage, else stun; JAW destroyed → not lethal, heavy bleeding, no screaming (brain gurgles). Immortal: never lethal (gate).
