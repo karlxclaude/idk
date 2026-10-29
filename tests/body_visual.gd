@@ -119,6 +119,33 @@ func _ready() -> void:
 	var gp2 := cgib.global_position
 	_look(gp2 + Vector3(0.25, 0.3, 0.3), gp2)
 	await _shot("gib_cranium")
+	# blood rendering (static test values via NpcBody.set_part_blood)
+	var bn1 := Npc.spawn(self, Transform3D(Basis(), Vector3(20, 0.02, 0)), 7)
+	var bn2 := Npc.spawn(self, Transform3D(Basis(), Vector3(22, 0.02, 0)), 7)
+	var bn3 := Npc.spawn(self, Transform3D(Basis(), Vector3(24, 0.02, 0)), 7)
+	await _wait(0.6)
+	var down := Vector3(0, -1, 0)
+	bn1.body.set_part_blood(BodyIds.Part.TORSO, PackedVector4Array([Vector4(0.04, 0.12, 0.108, 0.007)]),
+		PackedVector4Array([Vector4(0.04, 0.12, 0.108, 0.05), Vector4(-0.08, 0.02, 0.1, 0.035)]), PackedFloat32Array([0.26, 0.12]), down, 1.0)
+	bn2.body.set_part_blood(BodyIds.Part.TORSO, PackedVector4Array([Vector4(0.04, 0.12, 0.108, 0.007)]),
+		PackedVector4Array([Vector4(0.04, 0.12, 0.108, 0.05), Vector4(-0.08, 0.02, 0.1, 0.035)]), PackedFloat32Array([0.26, 0.12]), down, 0.05)
+	bn3.body.set_part_blood(BodyIds.Part.LOWER_ARM_L, PackedVector4Array([Vector4(0.0, 0.03, 0.04, 0.008), Vector4(0.0, -0.05, -0.04, 0.012)]),
+		PackedVector4Array([Vector4(0.0, 0.03, 0.04, 0.035)]), PackedFloat32Array([0.12]), down, 1.0)
+	bn3.body.set_part_blood(BodyIds.Part.TORSO, PackedVector4Array([Vector4(-0.05, 0.05, 0.108, 0.012)]),
+		PackedVector4Array([Vector4(-0.05, 0.05, 0.108, 0.07)]), PackedFloat32Array([0.18]), down, 0.8)
+	await _wait(0.1)
+	var t1 := bn1.body.get_part_global_transform(BodyIds.Part.TORSO).origin
+	_look(t1 + Vector3(0.0, 0.08, 0.75), t1 + Vector3(0, 0.0, 0))
+	await _shot("blood_fresh_torso")
+	var t2 := bn2.body.get_part_global_transform(BodyIds.Part.TORSO).origin
+	_look(t2 + Vector3(0.0, 0.08, 0.75), t2 + Vector3(0, 0.0, 0))
+	await _shot("blood_dry_torso")
+	var a3 := bn3.body.get_part_global_transform(BodyIds.Part.LOWER_ARM_L).origin
+	_look(a3 + Vector3(0.15, 0.02, 0.5), a3)
+	await _shot("blood_forearm_skin")
+	var t3 := bn3.body.get_part_global_transform(BodyIds.Part.TORSO).origin
+	_look(t3 + Vector3(0.0, 0.08, 0.75), t3)
+	await _shot("blood_torso_soaked")
 	get_tree().quit(0)
 
 
