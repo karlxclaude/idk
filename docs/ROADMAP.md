@@ -27,8 +27,12 @@ Each item has a `TODO(roadmap: <name>)` comment at its plug-in point.
 - **Milestone 4**: done — Godot-native offline bake (`tools/bake_body_meshes.tscn`) of 15 lofted body meshes with exact seams,
   vertex-colour clothing (per-NPC tint shader), joint balls, and 28 flesh/bone stump + severed caps shown on sever (~10.7k tris visible).
   Proportions pass (shoulders, neck, torso taper, face hints). Blender/CC0-model generator deferred (no external downloads here).
-- **Next — milestone 5**: chunk-based head damage (jaw/face/cranium sub-segments; contract change) + high-damage weapons
-  (shotgun spread, rifle, machete for leg severing, hammer); calibers and velocity-scaled penetration from the tuning backlog.
+- **Milestone 5**: done — head damage chunks (jaw/face/cranium/occiput zones in the head segment: per-chunk hp and lethality,
+  rifle spill, baked chunk meshes + wound caps + gibs, jaw→gurgle, face→disoriented), rifle (multi-body penetration),
+  shotgun (pellets/spread/falloff), machete (arm/leg severing), hammer; energy/caliber-scaled bullet wounds; momentum/contact-area
+  blunt force. Tests: 14 scenes green (acceptance 161, injury_consistency 91, limb_integration 575).
+- **Next — milestone 6**: GoreFX pass — wound decals on skin/clothing (entry/exit), layered blood wetness/staining that runs
+  downward, arterial spray, drips, mist for fast bullets, growing pools; layered audio (real CC0 assets need downloads).
 
 ## Tuning backlog (from docs/INJURY_CONSISTENCY.md suggestions; not bugs)
 - Bullet/stab bleed ignores hit strength; bullet penetration constant (0.45 m) regardless of velocity → scale with velocity/caliber (pairs with milestone 5 calibers).
