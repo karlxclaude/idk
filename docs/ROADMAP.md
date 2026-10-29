@@ -31,8 +31,11 @@ Each item has a `TODO(roadmap: <name>)` comment at its plug-in point.
   rifle spill, baked chunk meshes + wound caps + gibs, jaw→gurgle, face→disoriented), rifle (multi-body penetration),
   shotgun (pellets/spread/falloff), machete (arm/leg severing), hammer; energy/caliber-scaled bullet wounds; momentum/contact-area
   blunt force. Tests: 14 scenes green (acceptance 161, injury_consistency 91, limb_integration 575).
-- **Next — milestone 6**: GoreFX pass — wound decals on skin/clothing (entry/exit), layered blood wetness/staining that runs
-  downward, arterial spray, drips, mist for fast bullets, growing pools; layered audio (real CC0 assets need downloads).
+- **Milestone 6**: done — body-surface blood (`NpcBody.set_part_blood` + shader: wound cores, cloth/skin stains, downward runs,
+  wet→dry), blood simulation with progressive soaking and spill to lower parts, pulsing arterial spray, drips, high-energy mist,
+  entry/exit splatter decals with fade, piece pools, procedural layered audio (14 cues). Tests: 15 scenes green.
+  Note: floor/wall Decals only render under Forward+ (not in the xvfb Compatibility captures); audio unheard (synthesised, tested non-silent).
+- **Next — milestone 7**: perf benchmark (20 NPCs), spawner menu + props, startup mature-content screen, grab/drag/throw bodies and parts, polish.
 
 ## Tuning backlog (from docs/INJURY_CONSISTENCY.md suggestions; not bugs)
 - Bullet/stab bleed ignores hit strength; bullet penetration constant (0.45 m) regardless of velocity → scale with velocity/caliber (pairs with milestone 5 calibers).

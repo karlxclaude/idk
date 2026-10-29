@@ -61,3 +61,8 @@
   its neighbours so the assembled body reads as one continuous figure; closed stump caps (flesh + bone) are baked per joint for both
   sides, hidden until severed. Meshes are saved as resources under `assets/body/` and loaded at runtime; primitives remain as fallback.
   A Blender/CC0-model path can later replace the generator behind the same baked-resource interface.
+
+## Milestone 7
+- Perf benchmark `tools/perf_bench.tscn` (headless, `--fixed-fps 60`, CPU only — GPU not measurable here). 20 NPCs with the
+  debug overlay OFF: avg 6.7 / 9.4 / 1.8 ms (idle / wounded fleeing / ragdolls bleeding), p95 ≤ 13.9 ms → within the 16.7 ms
+  60 fps budget. The debug overlay ON caused 20–30 ms spikes → overlay off by default and throttled.
