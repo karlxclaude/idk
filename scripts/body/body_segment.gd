@@ -13,6 +13,8 @@ var flinch := Vector3.ZERO
 var flinch_t := 0.0
 var held_item: MeshInstance3D = null
 var _has_prev := false
+var max_speed := 25.0
+var max_ang_speed := 40.0
 
 
 static func _v3(a) -> Vector3:
@@ -30,6 +32,8 @@ func build(pid: int, owner_npc: Node, d: Dictionary, mat: Material, cfg: Diction
 	set_meta(BodyIds.META_NPC, owner_npc)
 	set_meta(BodyIds.META_PART_ID, pid)
 	top_level = true
+	max_speed = float(cfg.get("max_segment_speed", 25.0))
+	max_ang_speed = float(cfg.get("max_segment_ang_speed", 40.0))
 	linear_damp = float(cfg.get("linear_damp", 0.3))
 	angular_damp = float(cfg.get("angular_damp", 4.0))
 	var pm := PhysicsMaterial.new()
@@ -88,3 +92,11 @@ func make_kinematic() -> void:
 	tracked_lin = Vector3.ZERO
 	tracked_ang = Vector3.ZERO
 	_has_prev = false
+
+
+## Safety net: no dynamic/severed segment may exceed the data-driven speed caps.
+func _integrate_forces(state: PhysicsDirectBodyState3D) -> void:
+	if state.linear_velocity.length_squared() > max_speed * max_speed:
+		state.linear_velocity = state.linear_velocity.limit_length(max_speed)
+	if state.angular_velocity.length_squared() > max_ang_speed * max_ang_speed:
+		state.angular_velocity = state.angular_velocity.limit_length(max_ang_speed)

@@ -375,5 +375,7 @@
    },
    "color": "pants"
   }
- }
+ },
+ "max_segment_speed": 25.0,
+ "max_segment_ang_speed": 40.0
 }

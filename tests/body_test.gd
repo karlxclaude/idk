@@ -132,4 +132,26 @@ func _ready() -> void:
 	_check("5 drop_held_item true then false", d1 and not d2)
 	print(body.get_debug_info())
 
+	# 6. regression: runner passing through a corpse (and a fresh NPC spawning elsewhere) must not launch it
+	for old in [npc, npc2]:
+		old.queue_free()
+	await _frames(3)
+	# corpse lies at the world origin: bodies that first appear at the origin used to launch it
+	var corpse := Npc.spawn(self, Transform3D(Basis(), Vector3(0, 0.02, 0)), 11)
+	await _frames(5)
+	corpse.body.set_ragdoll(true)
+	await _frames(120)
+	var c0 := corpse.body.get_center()
+	var runner := Npc.spawn(self, Transform3D(Basis(), Vector3(-4, 0.02, 0)), 12)
+	await _frames(5)
+	var peak := 0.0
+	for i in 150:
+		runner.body.set_locomotion(Vector3(3, 0, 0.1), &"run")
+		await get_tree().physics_frame
+		for p in BodyIds.PART_COUNT:
+			peak = maxf(peak, (corpse.body.get_part_node(p) as RigidBody3D).linear_velocity.length())
+	var drift := corpse.body.get_center().distance_to(c0)
+	_check("6 runner past corpse does not launch it", drift < 2.0 and peak <= 25.01 and is_finite(drift),
+		"drift=%.2f peak_v=%.2f runner_x=%.1f" % [drift, peak, runner.body.get_center().x])
+
 	get_tree().quit(1 if _fails > 0 else 0)

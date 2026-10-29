@@ -87,8 +87,8 @@ func _build() -> void:
 	_mover_shape.shape = cap
 	_mover_shape.position.y = cap.height * 0.5
 	_mover.add_child(_mover_shape)
+	_mover.transform = root  # set before add_child: bodies must never exist at the origin
 	add_child(_mover)
-	_mover.global_transform = root
 
 	_torso_hy = float(_pc(P.TORSO)["half"][1])
 	for pid in ORDER:
@@ -103,7 +103,6 @@ func _build() -> void:
 				"y": deg_to_rad(float(lim["y"])), "z": deg_to_rad(float(lim["z"]))}
 		var seg := BodySegment.new()
 		seg.build(pid, npc, d, mats[d.get("color", "skin")], _cfg)
-		add_child(seg)
 		_segments[pid] = seg
 	for pid in ORDER:
 		if pid == P.TORSO:
@@ -112,10 +111,14 @@ func _build() -> void:
 		_jp[pid] = _joint_rest[pid] - _rest[par]
 		_cfj[pid] = _rest[pid] - _joint_rest[pid]
 
-	# rest pose placement, then joints (their frames are taken from this pose)
+	# Rest pose is assigned BEFORE entering the tree (top_level: transform == global). A body that
+	# first appears at the origin would overlap whatever lies there and be depenetrated violently
+	# (this launched other NPCs' corpses). Joints are made afterwards from this pose.
 	var rest_xf := _fk(root, _hip_h, Basis.IDENTITY, {})
-	for pid in rest_xf:
-		(_segments[pid] as BodySegment).global_transform = rest_xf[pid]
+	for pid in ORDER:
+		var sg: BodySegment = _segments[pid]
+		sg.transform = rest_xf[pid]
+		add_child(sg)
 	for pid in ORDER:
 		if pid != P.TORSO:
 			_make_joint(pid, root.basis)
