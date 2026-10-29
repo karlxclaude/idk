@@ -7,6 +7,7 @@ var player: Player
 var gore: GoreFX
 var audio: AudioCues
 var overlay: DebugOverlay
+var director: GameDirector
 var ui: GameUI
 var npc_root: Node3D
 var _spawn_count := 0
@@ -24,7 +25,9 @@ func _ready() -> void:
 	gore = GoreFX.new(); gore.name = "GoreFX"; add_child(gore)
 	audio = AudioCues.new(); audio.name = "AudioCues"; add_child(audio)
 	overlay = DebugOverlay.new(); overlay.name = "DebugOverlay"; overlay.audio = audio; add_child(overlay)
+	director = GameDirector.new(); director.name = "Director"; director.gore = gore; add_child(director)
 	ui = GameUI.new(); ui.name = "UI"; add_child(ui)
+	ui.bind_player(player)
 	ui.spawn_requested.connect(spawn_npc)
 	ui.clear_requested.connect(clear_all)
 	player.weapon_changed.connect(func(w: Weapon): ui.set_weapon_name(w.get_weapon_name()))

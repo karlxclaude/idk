@@ -147,6 +147,54 @@ func _ready() -> void:
 	await get_tree().process_frame
 	await get_tree().process_frame
 	_check("5c overlay describes npc", main.overlay.describe_npc(npc).begins_with("Npc"))
+	# 6. milestone 3: player health, slow-mo, cleanup, gore intensity
+	var pl: Player = main.player
+	var hp0 := pl.health
+	GameEvents.player_hit.emit(null, 30.0, Vector3.ZERO)
+	_check("6a player in group, takes player_hit", pl.is_in_group(&"player") and is_equal_approx(pl.health, hp0 - 30.0),
+		"hp %.0f -> %.0f" % [hp0, pl.health])
+	GameSettings.set_setting(&"slow_mo_on_kill", true)
+	GameSettings.set_setting(&"slow_mo_scale", 0.3)
+	GameSettings.set_setting(&"slow_mo_duration", 1.2)
+	GameEvents.npc_died.emit(npc, &"test")
+	await get_tree().process_frame
+	await get_tree().process_frame
+	var slow_ok := absf(Engine.time_scale - 0.3) < 0.01
+	var t0 := Time.get_ticks_msec()
+	while Engine.time_scale < 0.99 and Time.get_ticks_msec() - t0 < 3000:
+		await get_tree().process_frame
+	var el := (Time.get_ticks_msec() - t0) / 1000.0
+	_check("6b slow-mo on kill restores within ~1.6 s real", slow_ok and Engine.time_scale >= 0.99 and el < 1.6,
+		"scaled=%s restored after %.2f s" % [slow_ok, el])
+	GameSettings.set_setting(&"slow_mo_on_kill", false)
+	GameSettings.set_setting(&"slow_mo_duration", 1.5)
+	var n2: Npc = main.spawn_npc()
+	await get_tree().physics_frame
+	GameSettings.set_setting(&"auto_cleanup_time", 1.0)
+	GameEvents.npc_died.emit(n2, &"test")
+	await get_tree().create_timer(1.5, true, false, true).timeout
+	_check("6c corpse cleanup frees dead npc", not is_instance_valid(n2))
+	GameSettings.set_setting(&"auto_cleanup_time", 0.0)
+	var g2 := GoreFX.new()
+	add_child(g2)
+	await get_tree().physics_frame
+	var loads := {}
+	for lvl in [GameSettings.Gore.HIGH, GameSettings.Gore.LOW]:
+		GameSettings.set_setting(&"gore_intensity", lvl)
+		g2.clear_all()
+		g2.particles_spawned = 0.0
+		var gw := Wound.new()
+		gw.part_id = BodyIds.Part.TORSO; gw.bleed_rate = 10.0; gw.current_flow = 20.0; gw.severity = 0.7
+		var gev := DamageEvent.new(); gev.hit_position = Vector3(0, 1, 0); gev.direction = Vector3.FORWARD
+		GameEvents.npc_wounded.emit(null, gw, gev)
+		for i in 10:
+			await get_tree().physics_frame
+		loads[lvl] = g2.particles_spawned
+	GameSettings.set_setting(&"gore_intensity", GameSettings.Gore.HIGH)
+	_check("6d gore LOW has fewer particles than HIGH", loads[GameSettings.Gore.LOW] < loads[GameSettings.Gore.HIGH]
+		and loads[GameSettings.Gore.HIGH] > 0.0, str(loads))
+	g2.queue_free()
+	_check("6e main.tscn still intact", is_instance_valid(main.ui) and main.ui.hp_bar != null and Engine.time_scale >= 0.99)
 	main.queue_free()
 	await get_tree().physics_frame
 

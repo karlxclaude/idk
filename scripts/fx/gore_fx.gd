@@ -6,7 +6,9 @@ class_name GoreFX
 extends Node3D
 
 var cfg: Dictionary = {}
-var max_decals := 120
+var max_decals := 120          # base cap; effective cap = max_decals * intensity decal_cap_mult
+## Running total of particles asked for (bursts + emitter rate), for tests/debug.
+var particles_spawned := 0.0
 var _decals: Array[Decal] = []
 var _decal_tex: Texture2D
 var _bursts: Array[GPUParticles3D] = []
@@ -30,9 +32,47 @@ func _ready() -> void:
 	GameEvents.npc_wounded.connect(_on_wounded)
 	GameEvents.npc_part_severed.connect(_on_severed)
 	GameEvents.world_impact.connect(_on_world_impact)
+	GameSettings.changed.connect(func(_s, _v): _trim_decals())
 
 
 # ---------------- public (tests / debug) ----------------
+
+## Gore intensity table row (data/gore.json "intensity") for the current GameSettings.gore_intensity.
+func intensity() -> Dictionary:
+	var name: String = GameSettings.Gore.keys()[GameSettings.gore_intensity]
+	return cfg.get("intensity", {}).get(name, {})
+
+
+func _im(key: String, default := 1.0) -> float:
+	return float(intensity().get(key, default))
+
+
+func decal_cap() -> int:
+	return maxi(int(round(max_decals * _im("decal_cap_mult"))), 0)
+
+
+func _trim_decals() -> void:
+	while _decals.size() > decal_cap():
+		var old = _decals.pop_front()
+		if is_instance_valid(old):
+			old.queue_free()
+
+
+## Drop FX tied to an NPC that is about to be freed (pool, emitters on its parts).
+func forget_npc(npc: Node) -> void:
+	var id := npc.get_instance_id()
+	if _pools.has(id):
+		if is_instance_valid(_pools[id].node):
+			_pools[id].node.queue_free()
+		_pools.erase(id)
+	_last_center.erase(id)
+	for i in range(_emitters.size() - 1, -1, -1):
+		var n = _emitters[i].node
+		if not is_instance_valid(n) or npc.is_ancestor_of(n):
+			if is_instance_valid(n):
+				n.queue_free()
+			_emitters.remove_at(i)
+
 
 func decal_count() -> int:
 	return _decals.size()
@@ -74,10 +114,7 @@ func add_decal(pos: Vector3, normal: Vector3, size: float, color: Color) -> void
 	q = q * Basis(Vector3.UP, _rng.randf() * TAU)
 	d.global_transform = Transform3D(q, pos)
 	_decals.append(d)
-	while _decals.size() > max_decals:
-		var old = _decals.pop_front()  # untyped: may already be freed
-		if is_instance_valid(old):
-			old.queue_free()
+	_trim_decals()
 
 
 # ---------------- event handlers ----------------
@@ -130,13 +167,18 @@ func _on_severed(npc: Node, part_id: int, root: RigidBody3D, ev: DamageEvent) ->
 func burst(pos: Vector3, dir: Vector3, amount: float, speed: float) -> void:
 	if _bursts.is_empty():
 		return
+	var mult := _im("burst_mult")
+	if mult <= 0.0:
+		return
 	var p := _bursts[_burst_i]
 	_burst_i = (_burst_i + 1) % _bursts.size()
 	var mat := p.process_material as ParticleProcessMaterial
 	mat.direction = dir.normalized() if dir.length() > 0.01 else Vector3.UP
 	mat.initial_velocity_min = speed * 0.4
 	mat.initial_velocity_max = speed
-	p.amount_ratio = clampf(amount / float(cfg.get("burst", {}).get("max_amount", 48)) , 0.05, 1.0)
+	var ratio := clampf(amount / float(cfg.get("burst", {}).get("max_amount", 48)), 0.05, 1.0) * mult
+	p.amount_ratio = maxf(ratio, 0.01)
+	particles_spawned += p.amount * p.amount_ratio
 	p.global_position = pos
 	p.restart()
 	p.emitting = true
@@ -246,16 +288,20 @@ func _update_emitters(delta: float) -> void:
 			flow = e.stump_flow * clampf(1.0 - e.age / e.stump_dur, 0.0, 1.0)
 		elif e.wound != null:
 			flow = e.wound.current_flow
-		var on: bool = flow > min_flow
+		var emit_mult := _im("emitter_mult")
+		var wet: bool = flow > min_flow
+		var on: bool = wet and emit_mult > 0.0
 		if on != e.on:
 			e.on = on
 			node.emitting = on
 		if on:
 			var r := clampf(flow / flow_ref, 0.05, 1.0)
-			node.amount_ratio = r
+			node.amount_ratio = maxf(r * emit_mult, 0.01)
+			particles_spawned += node.amount * node.amount_ratio * delta / maxf(node.lifetime, 0.01)
 			var mat: ParticleProcessMaterial = e.mat
 			mat.initial_velocity_min = float(we.get("speed_min", 0.6)) * r
 			mat.initial_velocity_max = lerpf(float(we.get("speed_min", 0.6)), float(we.get("speed_max", 3.5)), r)
+		if wet:
 			e.drop_t -= delta
 			if e.drop_t <= 0.0:
 				e.drop_t = float(we.get("drop_interval", 0.3))
@@ -310,7 +356,7 @@ func _update_pools(interval: float) -> void:
 		if lost <= 1.0:
 			continue
 		var target := clampf(float(pc.get("radius_per_sqrt_lost", 0.03)) * sqrt(lost),
-			float(pc.get("min_radius", 0.15)), float(pc.get("max_radius", 1.4)))
+			float(pc.get("min_radius", 0.15)), float(pc.get("max_radius", 1.2))) * _im("pool_radius_mult")
 		var torso := center
 		if is_instance_valid(npc.body):
 			torso = npc.body.get_part_global_transform(BodyIds.Part.TORSO).origin

@@ -4,6 +4,11 @@ class_name Player
 extends CharacterBody3D
 
 signal weapon_changed(weapon: Weapon)
+signal health_changed(hp: float, max_hp: float)
+signal damaged(amount: float)
+## Health hit 0: UI fades to black over `duration`, health is restored when the fade is done.
+signal fainted(duration: float)
+signal revived
 
 const SPEED := 5.0
 const JUMP := 4.5
@@ -15,9 +20,22 @@ var weapons: Array[Weapon] = []
 var current: Weapon = null
 var _pitch := 0.0
 var _free_swing := false
+var cfg: Dictionary = {}
+var max_health := 100.0
+var health := 100.0
+var _since_hit := 0.0
+var _kick := 0.0
+var _faint_left := 0.0
+var _start_pos := Vector3.ZERO
 
 
 func _ready() -> void:
+	add_to_group(&"player")
+	cfg = DataDB.table("weapons").get("player", {})
+	max_health = float(cfg.get("max_health", 100.0))
+	health = max_health
+	_start_pos = position
+	GameEvents.player_hit.connect(_on_player_hit)
 	collision_layer = BodyIds.LAYER_PLAYER
 	collision_mask = BodyIds.LAYER_WORLD
 	var col := CollisionShape3D.new()
@@ -45,6 +63,24 @@ func _ready() -> void:
 		weapons.append(w)
 	if weapons.size() > 0:
 		select_weapon(0)
+
+
+## Apply damage (also reached through GameEvents.player_hit). Sandbox: at 0 -> fade, reset to full health.
+func take_damage(amount: float) -> void:
+	if _faint_left > 0.0 or amount <= 0.0:
+		return
+	health = maxf(health - amount, 0.0)
+	_since_hit = 0.0
+	_kick = deg_to_rad(float(cfg.get("kick_deg", 3.0))) * clampf(amount / 20.0, 0.4, 2.0)
+	damaged.emit(amount)
+	health_changed.emit(health, max_health)
+	if health <= 0.0:
+		_faint_left = float(cfg.get("faint_time", 1.2))
+		fainted.emit(_faint_left)
+
+
+func _on_player_hit(_npc: Node, amount: float, _pos: Vector3) -> void:
+	take_damage(amount)
 
 
 func select_weapon(index: int) -> void:
@@ -88,6 +124,7 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func _physics_process(delta: float) -> void:
+	_update_health(delta)
 	var shift := Input.is_physical_key_pressed(KEY_SHIFT) and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED
 	if shift != _free_swing:
 		_free_swing = shift
@@ -106,3 +143,21 @@ func _physics_process(delta: float) -> void:
 	else:
 		velocity.y -= 9.8 * delta
 	move_and_slide()
+
+
+func _update_health(delta: float) -> void:
+	if _faint_left > 0.0:
+		_faint_left -= delta
+		if _faint_left <= 0.0:
+			health = max_health
+			position = _start_pos
+			velocity = Vector3.ZERO
+			health_changed.emit(health, max_health)
+			revived.emit()
+	elif health < max_health:
+		_since_hit += delta
+		if _since_hit >= float(cfg.get("regen_delay", 5.0)):
+			health = minf(health + float(cfg.get("regen_rate", 10.0)) * delta, max_health)
+			health_changed.emit(health, max_health)
+	_kick = move_toward(_kick, 0.0, float(cfg.get("kick_recover", 8.0)) * delta * 0.1 + _kick * 6.0 * delta)
+	camera.rotation.x = _pitch + _kick

@@ -52,5 +52,6 @@
       ]
     }
   ],
+  "player": {"max_health": 100.0, "regen_delay": 5.0, "regen_rate": 10.0, "kick_deg": 3.0, "kick_recover": 8.0, "faint_time": 1.2, "flash_alpha": 0.45},
   "free_swing": {"mouse_gain": 0.012, "max_yaw_deg": 80.0, "max_pitch_deg": 60.0, "spring": 6.0}
 }
