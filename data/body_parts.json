@@ -514,5 +514,15 @@
  },
  "max_segment_speed": 25.0,
  "max_segment_ang_speed": 40.0,
- "visual": "baked"
+ "visual": "baked",
+ "head_gib": {
+  "mass": 0.5,
+  "speed_base": 2.5,
+  "speed_per_ms": 0.04,
+  "speed_max": 8.0,
+  "up": 0.8,
+  "spin": 8.0,
+  "linear_damp": 0.1,
+  "angular_damp": 1.0
+ }
 }

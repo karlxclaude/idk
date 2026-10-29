@@ -89,6 +89,36 @@ func _ready() -> void:
 	var c := npc2.body.get_part_global_transform(BodyIds.Part.TORSO).origin
 	_look(c + Vector3(1.2, -0.3, 1.5), c + Vector3(0, -0.45, 0))
 	await _shot("sever_hip")
+	# head chunks: one NPC without a jaw, one without the cranium, and a gib on the floor
+	var evh := DamageEvent.new()
+	evh.type = DamageEvent.Type.BULLET
+	evh.part_id = BodyIds.Part.HEAD
+	evh.direction = Vector3(0.2, 0.0, -1.0).normalized()
+	evh.impactor_velocity = evh.direction * 200.0
+	evh.impactor_mass = 0.008
+	var npc3 := Npc.spawn(self, Transform3D(Basis(), Vector3(12, 0.02, 0)), 5)
+	var npc4 := Npc.spawn(self, Transform3D(Basis(), Vector3(15, 0.02, 0)), 9)
+	await _wait(0.6)
+	var jgib := npc3.body.destroy_head_chunk(BodyIds.HeadChunk.JAW, evh)
+	var cgib := npc4.body.destroy_head_chunk(BodyIds.HeadChunk.CRANIUM, evh)
+	await _wait(0.05)
+	var h3 := npc3.body.get_part_global_transform(BodyIds.Part.HEAD).origin
+	_look(h3 + Vector3(0, 0.0, 0.65), h3)
+	await _shot("nojaw_front")
+	_look(h3 + Vector3(0.45, 0.12, 0.45), h3)
+	await _shot("nojaw_34")
+	var h4 := npc4.body.get_part_global_transform(BodyIds.Part.HEAD).origin
+	_look(h4 + Vector3(0, 0.0, 0.65), h4)
+	await _shot("nocranium_front")
+	_look(h4 + Vector3(-0.4, 0.45, 0.4), h4)
+	await _shot("nocranium_34")
+	await _wait(2.0)
+	var gp := jgib.global_position
+	_look(gp + Vector3(0.25, 0.22, 0.3), gp)
+	await _shot("gib_jaw")
+	var gp2 := cgib.global_position
+	_look(gp2 + Vector3(0.25, 0.3, 0.3), gp2)
+	await _shot("gib_cranium")
 	get_tree().quit(0)
 
 

@@ -70,14 +70,23 @@ func _ready() -> void:
 			_joint[pid] = _v3(d["joint"])
 		_half[pid] = _v3(d["half"])
 	var body_tris := 0
+	var head_mesh: ArrayMesh = null
+	var head_tris := 0
 	for pid in BodyIds.PART_COUNT:
 		var m := _bake_part(pid)
 		var path := OUT + BodyIds.key(pid) + ".mesh.res"
 		var err := ResourceSaver.save(m, path)
 		var tris := _tri_count(m)
 		body_tris += tris
+		if pid == P.HEAD:
+			head_mesh = m
+			head_tris = tris
 		_manifest["parts"][BodyIds.key(pid)] = {"mesh": path, "tris": tris}
 		print("part %-12s tris=%4d verts=%4d save=%d" % [BodyIds.key(pid), tris, m.surface_get_array_len(0), err])
+	# the HEAD segment renders as 4 damage-zone chunks (BodyIds.head_chunk_from_local); they replace head.mesh.res at runtime
+	var chunk_tris := _bake_head_chunks(head_mesh)
+	body_tris += chunk_tris - head_tris
+	_manifest["head_chunk_tris"] = chunk_tris
 	var cap_tris := 0
 	for pid in BodyIds.PART_COUNT:
 		if pid == P.TORSO:
@@ -394,3 +403,244 @@ func _cap_mesh(centre: Vector3, rx: float, rz: float, out: Vector3, bone_r: floa
 	for i in _n:
 		b.tri(last[i], last[(i + 1) % _n], apex, out)
 	return b.mesh()
+
+
+# ------------------------------------------------------------------ head chunks (milestone 5)
+
+func _lt(a: Vector3, b: Vector3) -> bool:
+	if a.x != b.x:
+		return a.x < b.x
+	if a.y != b.y:
+		return a.y < b.y
+	return a.z < b.z
+
+
+## Splits a polygon (Array of {p, n, c}) by the plane coord[axis] == val; returns [below, above].
+func _split(poly: Array, axis: int, val: float) -> Array:
+	var lo: Array = []
+	var hi: Array = []
+	var cnt := poly.size()
+	for i in cnt:
+		var a: Dictionary = poly[i]
+		var b: Dictionary = poly[(i + 1) % cnt]
+		var da: float = a.p[axis] - val
+		var db: float = b.p[axis] - val
+		if da <= 0.0:
+			lo.append(a)
+		if da >= 0.0:
+			hi.append(a)
+		if (da < 0.0 and db > 0.0) or (da > 0.0 and db < 0.0):
+			var f := a
+			var g := b
+			if _lt(b.p, a.p):  # canonical order: neighbouring triangles compute bit-identical cut points
+				f = b
+				g = a
+			var t: float = (f.p[axis] - val) / (f.p[axis] - g.p[axis])
+			var v := {"p": (f.p as Vector3).lerp(g.p, t), "n": (f.n as Vector3).lerp(g.n, t).normalized(),
+				"c": (f.c as Color).lerp(g.c, t)}
+			lo.append(v)
+			hi.append(v)
+	return [lo if lo.size() >= 3 else [], hi if hi.size() >= 3 else []]
+
+
+func _pk(p: Vector3) -> Vector3i:
+	return Vector3i((p * 10000.0).round())
+
+
+func _bake_head_chunks(head: ArrayMesh) -> int:
+	var half: Vector3 = _half[P.HEAD]
+	var arrays := head.surface_get_arrays(0)
+	var vp: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
+	var vn: PackedVector3Array = arrays[Mesh.ARRAY_NORMAL]
+	var vc: PackedColorArray = arrays[Mesh.ARRAY_COLOR]
+	var ix: PackedInt32Array = arrays[Mesh.ARRAY_INDEX]
+	# planes bounding the zones of BodyIds.head_chunk_from_local (thresholds mirrored here, verified below)
+	var planes := [[1, -0.35 * half.y], [1, 0.45 * half.y], [2, 0.0], [2, 0.35 * half.z], [2, -0.35 * half.z]]
+	var polys: Array = []
+	for t in ix.size() / 3:
+		var poly: Array = []
+		for k in 3:
+			var i := ix[t * 3 + k]
+			poly.append({"p": vp[i], "n": vn[i], "c": vc[i]})
+		polys.append(poly)
+	for pl in planes:
+		var next: Array = []
+		for poly in polys:
+			var r := _split(poly, pl[0], pl[1])
+			if not (r[0] as Array).is_empty():
+				next.append(r[0])
+			if not (r[1] as Array).is_empty():
+				next.append(r[1])
+		polys = next
+	# triangulate + classify with the contract function
+	var tris: Array = []  # {v: [3 dicts], chunk}
+	var bad := 0
+	for poly in polys:
+		for k in range(1, poly.size() - 1):
+			var a: Dictionary = poly[0]
+			var b: Dictionary = poly[k]
+			var c: Dictionary = poly[k + 1]
+			var area := ((b.p - a.p) as Vector3).cross(c.p - a.p).length()
+			if area < 1e-10:
+				continue
+			var cen: Vector3 = (a.p + b.p + c.p) / 3.0
+			var chunk := BodyIds.head_chunk_from_local(cen / half)
+			for q in [a, b, c]:  # all corners must agree (planes match the contract thresholds)
+				var nq := ((q.p as Vector3) * 0.97 + cen * 0.03) / half
+				if BodyIds.head_chunk_from_local(nq) != chunk:
+					bad += 1
+					if bad < 6:
+						print("mismatch corner ", q.p, " cen ", cen, " chunk ", chunk, " corner chunk ", BodyIds.head_chunk_from_local(nq))
+			tris.append({"v": [a, b, c], "chunk": chunk})
+	if bad > 0:
+		push_warning("head chunk planes disagree with BodyIds.head_chunk_from_local (%d corners)" % bad)
+	print("head chunk split: %d tris -> %d (corner mismatches %d)" % [ix.size() / 3, tris.size(), bad])
+	# edge adjacency over the whole clipped head (for hole boundaries)
+	var edge_map := {}
+	for ti in tris.size():
+		var v: Array = tris[ti].v
+		for k in 3:
+			var ka := _pk(v[k].p)
+			var kb := _pk(v[(k + 1) % 3].p)
+			var key := [ka, kb] if (ka.x < kb.x or (ka.x == kb.x and (ka.y < kb.y or (ka.y == kb.y and ka.z < kb.z)))) else [kb, ka]
+			var ek := str(key)
+			if not edge_map.has(ek):
+				edge_map[ek] = []
+			edge_map[ek].append([ti, k])
+	var total := 0
+	_manifest["head_chunks"] = {}
+	for chunk in BodyIds.HeadChunk.values():
+		var name: String = BodyIds.head_chunk_key(chunk)
+		# chunk shell (indexed, de-duplicated)
+		var verts := PackedVector3Array()
+		var norms := PackedVector3Array()
+		var cols := PackedColorArray()
+		var inds := PackedInt32Array()
+		var vmap := {}
+		var csum := Vector3.ZERO
+		var cn := 0
+		for t in tris:
+			if t.chunk != chunk:
+				continue
+			for q in t.v:
+				var key := str([_pk(q.p), Vector3i((q.n * 1000.0).round())])
+				if not vmap.has(key):
+					vmap[key] = verts.size()
+					verts.append(q.p)
+					norms.append(q.n)
+					cols.append(q.c)
+					csum += q.p
+					cn += 1
+				inds.append(vmap[key])
+		var centroid := csum / float(maxi(cn, 1))
+		var shell := _mesh_from(verts, norms, cols, inds, Vector3.ZERO)
+		shell.resource_name = "head_" + name
+		var tcount := inds.size() / 3
+		total += tcount
+		# wound: hole boundary strip + shrunk inner shell (flesh -> bone -> dark cavity)
+		var wb := MB.new()
+		var shrink := 0.78
+		var hole: Array = []  # {a, b, third}
+		for ek in edge_map:
+			var lst: Array = edge_map[ek]
+			var own: Array
+			if lst.size() == 1:
+				# open edge of the head shell itself: only the neck-side start ring needs sealing against the neck
+				own = lst[0]
+				var ov: Array = tris[own[0]].v
+				if tris[own[0]].chunk != chunk or ov[own[1]].p.y > -half.y + 0.0005 or ov[(own[1] + 1) % 3].p.y > -half.y + 0.0005:
+					continue
+			elif lst.size() == 2:
+				var ca: int = tris[lst[0][0]].chunk
+				var cb: int = tris[lst[1][0]].chunk
+				if (ca == chunk) == (cb == chunk):
+					continue
+				own = lst[0] if ca == chunk else lst[1]
+			else:
+				continue
+			var tv: Array = tris[own[0]].v
+			hole.append({"a": tv[own[1]].p, "b": tv[(own[1] + 1) % 3].p, "t": tv[(own[1] + 2) % 3].p})
+		var hole_pts: Array = []
+		for h in hole:
+			hole_pts.append((h.a as Vector3) * shrink)
+		var cc: Dictionary = _mc["cap"]
+		var flesh := _col3(cc["flesh"])
+		var bone := _col3(cc["bone"])
+		var dark := Color(0.09, 0.008, 0.008, 1.0)
+		for h in hole:
+			var a: Vector3 = h.a
+			var b: Vector3 = h.b
+			var a2 := a * shrink
+			var b2 := b * shrink
+			var out: Vector3 = ((h.t as Vector3) - (a + b) * 0.5)
+			var ia := wb.add(a, flesh, -1)
+			var ib := wb.add(b, flesh, -1)
+			var ia2 := wb.add(a2, bone, -1)
+			var ib2 := wb.add(b2, bone, -1)
+			wb.tri(ia, ib, ib2, out)
+			wb.tri(ia, ib2, ia2, out)
+		var bowl_ids := {}
+		for t in tris:
+			if t.chunk != chunk:
+				continue
+			var tri_idx: Array = []
+			var nsum := Vector3.ZERO
+			for q in t.v:
+				var key := _pk(q.p)
+				var p2: Vector3 = (q.p as Vector3) * shrink
+				if not bowl_ids.has(key):
+					var d := 1e9
+					for hp in hole_pts:
+						d = minf(d, p2.distance_to(hp))
+					var col: Color
+					if d < 0.006:
+						col = bone
+					elif d < 0.016:
+						col = bone.lerp(flesh, (d - 0.006) / 0.010)
+					elif d < 0.032:
+						col = flesh.lerp(dark, (d - 0.016) / 0.016)
+					else:
+						col = dark
+					bowl_ids[key] = wb.add(p2, col, 0)
+				tri_idx.append(bowl_ids[key])
+				nsum += q.n
+			wb.tri(tri_idx[0], tri_idx[1], tri_idx[2], nsum)
+		var wound := wb.mesh()
+		wound.resource_name = "head_wound_" + name
+		var shell_path := OUT + "head_chunk_%s.mesh.res" % name
+		var wound_path := OUT + "head_wound_%s.res" % name
+		ResourceSaver.save(shell, shell_path)
+		ResourceSaver.save(wound, wound_path)
+		# gib: the same two meshes re-centred on the chunk centroid (RigidBody origin = chunk centre)
+		var gib := _mesh_from(verts, norms, cols, inds, centroid)
+		var gib_wound := _recentre(wound, centroid)
+		var gib_path := OUT + "head_gib_%s.mesh.res" % name
+		var gib_wound_path := OUT + "head_gib_%s_wound.res" % name
+		ResourceSaver.save(gib, gib_path)
+		ResourceSaver.save(gib_wound, gib_wound_path)
+		_manifest["head_chunks"][name] = {"chunk": chunk, "mesh": shell_path, "wound": wound_path, "gib": gib_path,
+			"gib_wound": gib_wound_path, "tris": tcount, "wound_tris": _tri_count(wound),
+			"centroid": [centroid.x, centroid.y, centroid.z], "hole_edges": hole.size()}
+		print("head chunk %-8s tris=%4d wound_tris=%4d hole_edges=%3d centroid=%s" % [name, tcount, _tri_count(wound), hole.size(), centroid])
+	return total
+
+
+func _mesh_from(verts: PackedVector3Array, norms: PackedVector3Array, cols: PackedColorArray, inds: PackedInt32Array,
+		offset: Vector3) -> ArrayMesh:
+	var v := PackedVector3Array()
+	for p in verts:
+		v.append(p - offset)
+	var arr := []
+	arr.resize(Mesh.ARRAY_MAX)
+	arr[Mesh.ARRAY_VERTEX] = v
+	arr[Mesh.ARRAY_NORMAL] = norms
+	arr[Mesh.ARRAY_COLOR] = cols
+	arr[Mesh.ARRAY_INDEX] = inds
+	var m := ArrayMesh.new()
+	m.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arr)
+	return m
+
+
+func _recentre(src: ArrayMesh, offset: Vector3) -> ArrayMesh:
+	var a := src.surface_get_arrays(0)
+	return _mesh_from(a[Mesh.ARRAY_VERTEX], a[Mesh.ARRAY_NORMAL], a[Mesh.ARRAY_COLOR], a[Mesh.ARRAY_INDEX], offset)

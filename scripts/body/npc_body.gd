@@ -34,6 +34,9 @@ var _clutch_target := -1
 var _pose_driver := PoseDriver.new()  # procedural posing (scripts/body/pose/)
 var _body_mat: Material = null    # shared per-NPC shader material (baked visuals)
 var _baked := false              # baked meshes (assets/body, tools/bake_body_meshes.tscn) in use
+var _head_chunks: Dictionary = {}   # chunk id -> MeshInstance3D (baked head damage zones)
+var _head_wounds: Dictionary = {}   # chunk id -> MeshInstance3D wound cap (hidden until the chunk is destroyed)
+var _chunk_gone: Dictionary = {}    # chunk id -> true once destroyed
 var _held: MeshInstance3D = null
 var _held_part := -1
 
@@ -140,6 +143,7 @@ func _build() -> void:
 	_add_exceptions()
 	if _baked:
 		_make_caps()
+		_make_head_chunks()
 	_make_held_item()
 
 
@@ -197,6 +201,134 @@ func _make_caps() -> void:
 		var seg: BodySegment = _segments[pid]
 		seg.add_child(sev)
 		seg.severed_cap = sev
+
+
+# ------------------------------------------------------------------ head chunks (milestone 5)
+
+static var _gib_cache: Dictionary = {}   # chunk id -> {mesh, wound, shape, centroid}
+static var _gib_wound_mat: StandardMaterial3D = null
+
+
+## Replace the head's single visual by the 4 damage-zone chunk meshes + hidden wound caps (assets/body, baked).
+func _make_head_chunks() -> void:
+	var head: BodySegment = _segments[P.HEAD]
+	var man = JSON.parse_string(FileAccess.get_file_as_string("res://assets/body/manifest.json")) if FileAccess.file_exists("res://assets/body/manifest.json") else null
+	if typeof(man) != TYPE_DICTIONARY or not man.has("head_chunks"):
+		return
+	var info: Dictionary = man["head_chunks"]
+	for chunk in BodyIds.HEAD_CHUNK_KEYS:
+		var k: String = BodyIds.HEAD_CHUNK_KEYS[chunk]
+		if not info.has(k) or not ResourceLoader.exists(info[k]["mesh"]) or not ResourceLoader.exists(info[k]["wound"]):
+			return
+	if is_instance_valid(head.visual):
+		head.visual.queue_free()
+		head.visual = null
+	for chunk in BodyIds.HEAD_CHUNK_KEYS:
+		var k: String = BodyIds.HEAD_CHUNK_KEYS[chunk]
+		var mi := MeshInstance3D.new()
+		mi.name = "HeadChunk_" + k
+		mi.mesh = load(info[k]["mesh"])
+		mi.material_override = _body_mat
+		head.add_child(mi)
+		_head_chunks[chunk] = mi
+		var wi := MeshInstance3D.new()
+		wi.name = "HeadWound_" + k
+		wi.mesh = load(info[k]["wound"])
+		wi.material_override = _cap_mat
+		wi.visible = false
+		head.add_child(wi)
+		_head_wounds[chunk] = wi
+
+
+func _gib_data(chunk: int) -> Dictionary:
+	if _gib_cache.has(chunk):
+		return _gib_cache[chunk]
+	var out := {}
+	var k: String = BodyIds.HEAD_CHUNK_KEYS[chunk]
+	var path := "res://assets/body/manifest.json"
+	if FileAccess.file_exists(path):
+		var man = JSON.parse_string(FileAccess.get_file_as_string(path))
+		if typeof(man) == TYPE_DICTIONARY and man.has("head_chunks") and man["head_chunks"].has(k):
+			var i: Dictionary = man["head_chunks"][k]
+			if ResourceLoader.exists(i["gib"]) and ResourceLoader.exists(i["gib_wound"]):
+				var m: ArrayMesh = load(i["gib"])
+				out = {"mesh": m, "wound": load(i["gib_wound"]), "shape": m.create_convex_shape(true, true),
+					"centroid": Vector3(i["centroid"][0], i["centroid"][1], i["centroid"][2])}
+	_gib_cache[chunk] = out
+	return out
+
+
+## Head damage zone destroyed: hide its mesh, show the wound cap, throw the piece off as a gib (debris layer, no part
+## metas: not hittable as a body part). Works animated, ragdolled or severed. Returns null if already destroyed.
+func destroy_head_chunk(chunk: int, ev: DamageEvent) -> RigidBody3D:
+	if not BodyIds.HEAD_CHUNK_KEYS.has(chunk) or _chunk_gone.has(chunk):
+		return null
+	var head := _seg(P.HEAD)
+	if head == null:
+		return null
+	_chunk_gone[chunk] = true
+	if _head_chunks.has(chunk):
+		(_head_chunks[chunk] as MeshInstance3D).visible = false
+		(_head_wounds[chunk] as MeshInstance3D).visible = true
+	var gc: Dictionary = _cfg.get("head_gib", {})
+	var gd := _gib_data(chunk) if _baked else {}
+	var rb := RigidBody3D.new()
+	rb.name = "HeadGib_" + BodyIds.head_chunk_key(chunk)
+	rb.mass = float(gc.get("mass", 0.5))
+	rb.collision_layer = BodyIds.LAYER_DEBRIS
+	rb.collision_mask = BodyIds.LAYER_WORLD | BodyIds.LAYER_DEBRIS
+	var pm := PhysicsMaterial.new()
+	pm.friction = 0.8
+	pm.bounce = 0.05
+	rb.physics_material_override = pm
+	rb.linear_damp = float(gc.get("linear_damp", 0.1))
+	rb.angular_damp = float(gc.get("angular_damp", 1.0))
+	var cs := CollisionShape3D.new()
+	var offset := Vector3.ZERO
+	if gd.is_empty():
+		var bs := BoxShape3D.new(); bs.size = Vector3(0.08, 0.06, 0.08)
+		cs.shape = bs
+		var bm := BoxMesh.new(); bm.size = bs.size
+		var mi := MeshInstance3D.new()
+		mi.mesh = bm
+		mi.material_override = _mat(Color(0.7, 0.15, 0.12))
+		rb.add_child(mi)
+	else:
+		offset = gd["centroid"]
+		cs.shape = gd["shape"]
+		var mi := MeshInstance3D.new()
+		mi.mesh = gd["mesh"]
+		mi.material_override = _body_mat
+		rb.add_child(mi)
+		if _gib_wound_mat == null:
+			_gib_wound_mat = _cap_mat.duplicate()
+			_gib_wound_mat.cull_mode = BaseMaterial3D.CULL_DISABLED
+		var wi := MeshInstance3D.new()
+		wi.mesh = gd["wound"]
+		wi.material_override = _gib_wound_mat
+		rb.add_child(wi)
+	rb.add_child(cs)
+	var host: Node = npc.get_parent() if npc and npc.get_parent() else self
+	host.add_child(rb)
+	rb.global_transform = head.global_transform * Transform3D(Basis.IDENTITY, offset)
+	var dir := ev.direction
+	if dir.length() < 0.01:
+		dir = ev.impactor_velocity
+	dir = dir.normalized() if dir.length() > 0.01 else Vector3.UP
+	var speed := minf(float(gc.get("speed_base", 2.5)) + float(gc.get("speed_per_ms", 0.04)) * ev.impactor_velocity.length(),
+		float(gc.get("speed_max", 8.0)))
+	var rng: RandomNumberGenerator = npc.rng if npc else null
+	var spin := Vector3(rng.randf_range(-1, 1), rng.randf_range(-1, 1), rng.randf_range(-1, 1)) if rng else Vector3.ONE
+	rb.linear_velocity = (head.tracked_lin if head.freeze else head.linear_velocity) \
+		+ dir * speed + Vector3.UP * float(gc.get("up", 0.8))
+	rb.angular_velocity = spin * float(gc.get("spin", 8.0))
+	var timer := Timer.new()
+	timer.one_shot = true
+	timer.wait_time = _cleanup_s()
+	timer.timeout.connect(rb.queue_free)
+	rb.add_child(timer)
+	timer.start()
+	return rb
 
 
 func _mat(c: Color) -> StandardMaterial3D:
@@ -350,8 +482,11 @@ func get_debug_info() -> Dictionary:
 	var held := ""
 	if is_instance_valid(_held):
 		held = "phone"
+	var gone: Array = []
+	for c in _chunk_gone:
+		gone.append(BodyIds.head_chunk_key(c))
 	return {"mode": "ragdoll" if _ragdoll else "animated", "pose": String(_pose),
-		"attached": att, "held_item": held}
+		"attached": att, "held_item": held, "head_chunks_destroyed": gone}
 
 
 # ------------------------------------------------------------------ control

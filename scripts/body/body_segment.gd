@@ -13,6 +13,7 @@ var held_item: MeshInstance3D = null
 ## Baked stump caps (hidden until the child part is severed), keyed by child part id; own severed-end cap.
 var stump_caps: Dictionary = {}
 var severed_cap: MeshInstance3D = null
+var visual: MeshInstance3D = null      # main body visual (the head swaps it for 4 chunk meshes)
 var joint_ball: MeshInstance3D = null  # fills the rotation gap at the joint to the parent; hidden once severed
 var _has_prev := false
 var max_speed := 25.0
@@ -64,6 +65,7 @@ func build(pid: int, owner_npc: Node, d: Dictionary, mat: Material, cfg: Diction
 	mi.mesh = vis_mesh if vis_mesh != null else mesh
 	mi.material_override = mat
 	add_child(mi)
+	visual = mi
 	freeze_mode = RigidBody3D.FREEZE_MODE_KINEMATIC
 	freeze = true
 

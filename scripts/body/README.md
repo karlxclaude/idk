@@ -17,4 +17,7 @@ Segmented NPC body. Owner: body-ragdoll-dismember-agent. Tunables: data/body_par
   profiles in data/body_mesh.json, shader `body_vc.gdshader` colours the vertex-colour regions per NPC). Hidden stump/severed caps and a
   joint ball per joint; sever_part shows the caps and hides the ball. Falls back to primitives if assets are missing. Colliders stay primitive.
   Visual check: `xvfb-run -a godot --path . --rendering-driver opengl3 res://tests/body_visual.tscn` -> tools/captures/body_*.png.
+- Head chunks (milestone 5): the baked head is clipped along the zone planes of `BodyIds.head_chunk_from_local` into jaw/face/cranium/occiput
+  meshes (`head_chunk_*.mesh.res`) with hidden wound caps (`head_wound_*.res`: rim + shrunk inner shell, flesh/bone/dark). `destroy_head_chunk(chunk, ev)`
+  hides the chunk, shows the wound and returns a debris-layer gib (`head_gib_*`, convex collider, tunables `head_gib` in body_parts.json); a second call returns null.
 - Test: `godot --headless --path . res://tests/body_test.tscn`

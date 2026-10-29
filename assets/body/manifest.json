@@ -1,7 +1,70 @@
 {
  "ball_tris": 1960,
- "body_tris": 9440,
+ "body_tris": 10230,
  "cap_tris": 3920,
+ "head_chunk_tris": 2130,
+ "head_chunks": {
+  "cranium": {
+   "centroid": [
+    0.000573177065234631,
+    0.026386808604002,
+    -0.0123684881255031
+   ],
+   "chunk": 2,
+   "gib": "res://assets/body/head_gib_cranium.mesh.res",
+   "gib_wound": "res://assets/body/head_gib_cranium_wound.res",
+   "hole_edges": 191,
+   "mesh": "res://assets/body/head_chunk_cranium.mesh.res",
+   "tris": 719,
+   "wound": "res://assets/body/head_wound_cranium.res",
+   "wound_tris": 1099
+  },
+  "face": {
+   "centroid": [
+    0.000362248596502468,
+    0.0165736880153418,
+    0.0794502124190331
+   ],
+   "chunk": 1,
+   "gib": "res://assets/body/head_gib_face.mesh.res",
+   "gib_wound": "res://assets/body/head_gib_face_wound.res",
+   "hole_edges": 94,
+   "mesh": "res://assets/body/head_chunk_face.mesh.res",
+   "tris": 758,
+   "wound": "res://assets/body/head_wound_face.res",
+   "wound_tris": 946
+  },
+  "jaw": {
+   "centroid": [
+    -0.000179945025593042,
+    -0.0762379392981529,
+    0.0457086116075516
+   ],
+   "chunk": 0,
+   "gib": "res://assets/body/head_gib_jaw.mesh.res",
+   "gib_wound": "res://assets/body/head_gib_jaw_wound.res",
+   "hole_edges": 84,
+   "mesh": "res://assets/body/head_chunk_jaw.mesh.res",
+   "tris": 332,
+   "wound": "res://assets/body/head_wound_jaw.res",
+   "wound_tris": 500
+  },
+  "occiput": {
+   "centroid": [
+    0.000610234623309225,
+    -0.0355517342686653,
+    -0.0547527521848679
+   ],
+   "chunk": 3,
+   "gib": "res://assets/body/head_gib_occiput.mesh.res",
+   "gib_wound": "res://assets/body/head_gib_occiput_wound.res",
+   "hole_edges": 93,
+   "mesh": "res://assets/body/head_chunk_occiput.mesh.res",
+   "tris": 321,
+   "wound": "res://assets/body/head_wound_occiput.res",
+   "wound_tris": 507
+  }
+ },
  "joints": {
   "foot_l": {
    "ball": "res://assets/body/foot_l_ball.res",
@@ -403,5 +466,5 @@
   }
  },
  "ring_verts": 20,
- "total_tris": 15320
+ "total_tris": 16110
 }

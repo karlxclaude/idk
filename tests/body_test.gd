@@ -62,6 +62,20 @@ func _ready() -> void:
 			elif kid is MeshInstance3D and kid.mesh is ArrayMesh and kid.mesh.resource_path.ends_with(".mesh.res"):
 				mi = kid
 		var m: ArrayMesh = load("res://assets/body/%s.mesh.res" % BodyIds.key(p))
+		if p == BodyIds.Part.HEAD:
+			# the head segment renders as 4 damage-zone chunk meshes (milestone 5); head.mesh.res is the unsplit reference
+			var nchunks := 0
+			for kid in seg.get_children():
+				if kid is MeshInstance3D and kid.name.begins_with("HeadChunk_") and kid.mesh is ArrayMesh:
+					nchunks += 1
+					tri_sum += (kid.mesh.surface_get_arrays(0)[Mesh.ARRAY_INDEX] as PackedInt32Array).size() / 3
+			if m == null or nchunks != 4:
+				all_load = false
+				continue
+			meshes[p] = m
+			_check("1c0 head has 4 chunk meshes (jaw, face, cranium, occiput)", nchunks == 4 and seg.get_node_or_null("HeadWound_jaw") != null,
+				"chunks=%d" % nchunks)
+			continue
 		if m == null or mi == null or mi.mesh != m:
 			all_load = false
 			continue
@@ -325,6 +339,57 @@ func _ready() -> void:
 		hidden_before and stump_mi.visible and cut_mi.visible and other_hidden and d_stump < 0.02 and d_cut < 0.02,
 		"d_stump=%.4f d_cut=%.4f" % [d_stump, d_cut])
 	npc10.queue_free()
+
+	# 4h. head chunks: destroy_head_chunk hides the zone, shows its wound cap, returns a gib that lands on the floor
+	var npc11 := Npc.spawn(self, Transform3D(Basis(), Vector3(-90, 0.02, 40)), 11)
+	await _frames(5)
+	var hseg := npc11.body.get_part_node(BodyIds.Part.HEAD)
+	var jaw_mi := hseg.get_node_or_null("HeadChunk_jaw") as MeshInstance3D
+	var jaw_wound := hseg.get_node_or_null("HeadWound_jaw") as MeshInstance3D
+	var hid_before: bool = jaw_mi != null and jaw_mi.visible and jaw_wound != null and not jaw_wound.visible
+	var evj := DamageEvent.new()
+	evj.type = DamageEvent.Type.BULLET
+	evj.part_id = BodyIds.Part.HEAD
+	evj.direction = Vector3(0.3, 0.1, 1.0).normalized()
+	evj.impactor_velocity = evj.direction * 350.0
+	evj.impactor_mass = 0.008
+	var gib := npc11.body.destroy_head_chunk(BodyIds.HeadChunk.JAW, evj)
+	var gib_ok := gib != null and gib.collision_layer == BodyIds.LAYER_DEBRIS and not gib.has_meta(BodyIds.META_PART_ID) \
+		and not gib.has_meta(BodyIds.META_NPC)
+	var vis_ok := hid_before and not jaw_mi.visible and jaw_wound.visible
+	var landed := false
+	var t_land := 0.0
+	var tt := 0.0
+	while tt < 3.0 and gib != null:
+		await get_tree().physics_frame
+		tt += get_physics_process_delta_time()
+		if gib.global_position.y < 0.12 and gib.linear_velocity.length() < 0.5:
+			landed = true
+			t_land = tt
+			break
+	_check("4h destroy_head_chunk(JAW): zone hidden, wound cap shown, gib lands within 3 s", gib_ok and vis_ok and landed,
+		"gib_ok=%s vis_ok=%s landed=%s t=%.2f y=%.3f" % [gib_ok, vis_ok, landed, t_land, gib.global_position.y if gib else -1.0])
+	var again := npc11.body.destroy_head_chunk(BodyIds.HeadChunk.JAW, evj)
+	_check("4h2 destroying the same chunk twice is safe", again == null and not jaw_mi.visible and jaw_wound.visible)
+	# ragdolled and severed heads can lose chunks too
+	npc11.body.set_ragdoll(true)
+	await _frames(10)
+	var gib_rd := npc11.body.destroy_head_chunk(BodyIds.HeadChunk.CRANIUM, evj)
+	var evs := DamageEvent.new()
+	evs.type = DamageEvent.Type.BLADE_SLASH
+	evs.part_id = BodyIds.Part.NECK
+	evs.impactor_velocity = Vector3(2, 0, 0)
+	evs.impactor_mass = 1.0
+	evs.can_dismember = true
+	evs.hit_position = npc11.body.get_part_global_transform(BodyIds.Part.NECK).origin
+	var head_piece := npc11.body.sever_part(BodyIds.Part.HEAD, evs)
+	await _frames(5)
+	var gib_sv := npc11.body.destroy_head_chunk(BodyIds.HeadChunk.FACE, evj)
+	_check("4h3 chunks can be destroyed while ragdolled and on a severed head", gib_rd != null and head_piece != null and gib_sv != null
+		and not (head_piece.get_node("HeadChunk_face") as MeshInstance3D).visible and (head_piece.get_node("HeadWound_face") as MeshInstance3D).visible)
+	var dbg11: Dictionary = npc11.body.get_debug_info()
+	_check("4h4 debug info lists destroyed chunks", dbg11.get("head_chunks_destroyed", []).size() == 3, str(dbg11.get("head_chunks_destroyed")))
+	npc11.queue_free()
 
 	# 4c. sever a hand, and a lower leg takes its foot
 	var evh := DamageEvent.new()
