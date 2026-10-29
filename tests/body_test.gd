@@ -391,6 +391,46 @@ func _ready() -> void:
 	_check("4h4 debug info lists destroyed chunks", dbg11.get("head_chunks_destroyed", []).size() == 3, str(dbg11.get("head_chunks_destroyed")))
 	npc11.queue_free()
 
+	# 4i. blood rendering state (set_part_blood): no errors, extra entries ignored, empty arrays clear, works on severed pieces
+	var npc12 := Npc.spawn(self, Transform3D(Basis(), Vector3(-90, 0.02, 60)), 12)
+	await _frames(5)
+	var tseg := npc12.body.get_part_node(BodyIds.Part.TORSO) as BodySegment
+	var tmat := tseg.visual.material_override as ShaderMaterial
+	npc12.body.set_part_blood(BodyIds.Part.TORSO, PackedVector4Array([Vector4(0.0, 0.1, 0.11, 0.008)]),
+		PackedVector4Array([Vector4(0.0, 0.1, 0.11, 0.06)]), PackedFloat32Array([0.12]), Vector3(0, -1, 0), 1.0)
+	var one_ok: bool = tmat != null and int(tmat.get_shader_parameter("n_wounds")) == 1 and int(tmat.get_shader_parameter("n_stains")) == 1
+	var many_w := PackedVector4Array()
+	var many_s := PackedVector4Array()
+	var many_r := PackedFloat32Array()
+	for i in 12:
+		many_w.append(Vector4(0.01 * i, 0.0, 0.1, 0.01))
+		many_s.append(Vector4(0.01 * i, 0.0, 0.1, 0.03))
+		many_r.append(0.05)
+	npc12.body.set_part_blood(BodyIds.Part.TORSO, many_w, many_s, many_r, Vector3(0, -1, 0), 0.5)
+	var cap_ok := int(tmat.get_shader_parameter("n_wounds")) == 8 and int(tmat.get_shader_parameter("n_stains")) == 8 \
+		and (tmat.get_shader_parameter("wounds") as PackedVector4Array).size() == 8
+	npc12.body.set_part_blood(BodyIds.Part.TORSO, PackedVector4Array(), PackedVector4Array(), PackedFloat32Array(), Vector3.ZERO, 0.0)
+	var clear_ok := int(tmat.get_shader_parameter("n_wounds")) == 0 and int(tmat.get_shader_parameter("n_stains")) == 0
+	var evb := DamageEvent.new()
+	evb.type = DamageEvent.Type.BLADE_SLASH
+	evb.part_id = BodyIds.Part.LOWER_ARM_R
+	evb.impactor_velocity = Vector3.ZERO
+	evb.impactor_mass = 1.0
+	evb.can_dismember = true
+	evb.hit_position = npc12.body.get_part_global_transform(evb.part_id).origin
+	var bpiece := npc12.body.sever_part(BodyIds.Part.LOWER_ARM_R, evb)
+	npc12.body.set_part_blood(BodyIds.Part.LOWER_ARM_R, PackedVector4Array([Vector4(0.0, 0.05, 0.03, 0.01)]),
+		PackedVector4Array([Vector4(0.0, 0.05, 0.03, 0.05)]), PackedFloat32Array([0.1]), Vector3(0, -1, 0), 0.8)
+	var sev_mat := (bpiece as BodySegment).visual.material_override as ShaderMaterial
+	var sev_ok := bpiece != null and int(sev_mat.get_shader_parameter("n_stains")) == 1 and sev_mat != tmat
+	# blood on one part must not leak to another (own material per segment)
+	var other := (npc12.body.get_part_node(BodyIds.Part.UPPER_LEG_L) as BodySegment).visual.material_override as ShaderMaterial
+	var other_n = other.get_shader_parameter("n_stains")  # null = never set
+	var iso_ok: bool = other_n == null or int(other_n) == 0
+	_check("4i set_part_blood: 1 wound/stain/run ok, >8 clamped to 8, empty clears, severed piece works, parts isolated",
+		one_ok and cap_ok and clear_ok and sev_ok and iso_ok, "one=%s cap=%s clear=%s sev=%s iso=%s" % [one_ok, cap_ok, clear_ok, sev_ok, iso_ok])
+	npc12.queue_free()
+
 	# 4c. sever a hand, and a lower leg takes its foot
 	var evh := DamageEvent.new()
 	evh.type = DamageEvent.Type.BLADE_SLASH

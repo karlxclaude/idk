@@ -20,4 +20,7 @@ Segmented NPC body. Owner: body-ragdoll-dismember-agent. Tunables: data/body_par
 - Head chunks (milestone 5): the baked head is clipped along the zone planes of `BodyIds.head_chunk_from_local` into jaw/face/cranium/occiput
   meshes (`head_chunk_*.mesh.res`) with hidden wound caps (`head_wound_*.res`: rim + shrunk inner shell, flesh/bone/dark). `destroy_head_chunk(chunk, ev)`
   hides the chunk, shows the wound and returns a debris-layer gib (`head_gib_*`, convex collider, tunables `head_gib` in body_parts.json); a second call returns null.
+- Blood (milestone 6): `set_part_blood(part, wounds, stains, runs, down_local, wetness)` writes uniforms of the segment's own ShaderMaterial
+  (body_vc.gdshader draws wound cores, soaked cloth/skin stains, runs with drip lobes, wet vs dry; distances are surface-tangential in part-local space).
+  Head chunks and the joint ball share the segment material; head gibs snapshot it. No-op without baked visuals.
 - Test: `godot --headless --path . res://tests/body_test.tscn`

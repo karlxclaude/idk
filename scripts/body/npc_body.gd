@@ -32,7 +32,8 @@ var _pose: StringName = &"idle"
 var _desired_vel := Vector3.ZERO
 var _clutch_target := -1
 var _pose_driver := PoseDriver.new()  # procedural posing (scripts/body/pose/)
-var _body_mat: Material = null    # shared per-NPC shader material (baked visuals)
+var _body_mat: ShaderMaterial = null   # per-NPC template shader material (baked visuals)
+var _seg_mats: Dictionary = {}          # part id -> per-segment ShaderMaterial (blood state lives in its uniforms)
 var _baked := false              # baked meshes (assets/body, tools/bake_body_meshes.tscn) in use
 var _head_chunks: Dictionary = {}   # chunk id -> MeshInstance3D (baked head damage zones)
 var _head_wounds: Dictionary = {}   # chunk id -> MeshInstance3D wound cap (hidden until the chunk is destroyed)
@@ -142,6 +143,12 @@ func _build() -> void:
 			_make_joint(pid, root.basis)
 	_add_exceptions()
 	if _baked:
+		for pid in ORDER:
+			var m := _body_mat.duplicate() as ShaderMaterial  # shares the shader; own uniforms per segment
+			_seg_mats[pid] = m
+			var sg: BodySegment = _segments[pid]
+			if is_instance_valid(sg.visual):
+				sg.visual.material_override = m
 		_make_caps()
 		_make_head_chunks()
 	_make_held_item()
@@ -190,7 +197,7 @@ func _make_caps() -> void:
 			var ball := MeshInstance3D.new()
 			ball.name = "JointBall"
 			ball.mesh = load(bp)
-			ball.material_override = _body_mat
+			ball.material_override = _seg_mats[pid]
 			(_segments[pid] as BodySegment).add_child(ball)
 			(_segments[pid] as BodySegment).joint_ball = ball
 		var sev := MeshInstance3D.new()
@@ -228,7 +235,7 @@ func _make_head_chunks() -> void:
 		var mi := MeshInstance3D.new()
 		mi.name = "HeadChunk_" + k
 		mi.mesh = load(info[k]["mesh"])
-		mi.material_override = _body_mat
+		mi.material_override = _seg_mats[P.HEAD]
 		head.add_child(mi)
 		_head_chunks[chunk] = mi
 		var wi := MeshInstance3D.new()
@@ -298,7 +305,10 @@ func destroy_head_chunk(chunk: int, ev: DamageEvent) -> RigidBody3D:
 		cs.shape = gd["shape"]
 		var mi := MeshInstance3D.new()
 		mi.mesh = gd["mesh"]
-		mi.material_override = _body_mat
+		# snapshot of the head's current blood state; local_offset maps the re-centred mesh back to head-local space
+		var gm := (_seg_mats[P.HEAD] as ShaderMaterial).duplicate() as ShaderMaterial
+		gm.set_shader_parameter("local_offset", offset)
+		mi.material_override = gm
 		rb.add_child(mi)
 		if _gib_wound_mat == null:
 			_gib_wound_mat = _cap_mat.duplicate()
@@ -512,6 +522,35 @@ func play_action(action: StringName) -> float:
 func _cleanup_s() -> float:
 	var t := float(GameSettings.auto_cleanup_time)
 	return t if t > 0.0 else float(_cfg.get("severed_cleanup_s", 120.0))
+
+
+
+## Body-surface blood for one segment (attached or severed), rendered by body_vc.gdshader. wounds[i] = (x, y, z, hole
+## radius m) in part-local space, stains[i] = (x, y, z, radius m), runs[i] = metres stain i has run along down_local,
+## wetness 0..1 (fresh glossy -> dry matte). Max 8 wounds / 8 stains (extras ignored). Empty arrays clear the part.
+## Head chunk meshes and the joint ball share the segment's material; gibs snapshot it when spawned.
+func set_part_blood(part_id: int, wounds: PackedVector4Array, stains: PackedVector4Array, runs: PackedFloat32Array,
+		down_local: Vector3, wetness: float) -> void:
+	var m := _seg_mats.get(part_id) as ShaderMaterial
+	if m == null:
+		return
+	var nw := mini(wounds.size(), 8)
+	var ns := mini(stains.size(), 8)
+	var wa := PackedVector4Array()
+	var sa := PackedVector4Array()
+	var ra := PackedFloat32Array()
+	for i in 8:
+		wa.append(wounds[i] if i < nw else Vector4())
+		sa.append(stains[i] if i < ns else Vector4())
+		ra.append(runs[i] if i < runs.size() and i < ns else 0.0)
+	m.set_shader_parameter("wounds", wa)
+	m.set_shader_parameter("stains", sa)
+	m.set_shader_parameter("runs_a", Vector4(ra[0], ra[1], ra[2], ra[3]))
+	m.set_shader_parameter("runs_b", Vector4(ra[4], ra[5], ra[6], ra[7]))
+	m.set_shader_parameter("n_wounds", nw)
+	m.set_shader_parameter("n_stains", ns)
+	m.set_shader_parameter("down_local", down_local.normalized() if down_local.length() > 0.001 else Vector3.DOWN)
+	m.set_shader_parameter("wetness", clampf(wetness, 0.0, 1.0))
 
 
 func set_limp_side(side: String) -> void:
