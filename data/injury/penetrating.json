@@ -1,0 +1,80 @@
+{
+  "table_key": {
+    "head": "head",
+    "neck": "neck",
+    "chest": "chest",
+    "abdomen": "abdomen",
+    "arm": "limb",
+    "leg": "limb"
+  },
+  "bleed": {
+    "bullet": {
+      "limb": {
+        "ext": 4.0,
+        "int": 0.5,
+        "exit_ext": 10.0,
+        "exit_int": 0.5
+      },
+      "chest": {
+        "ext": 1.5,
+        "int": 30.0,
+        "exit_ext": 5.0,
+        "exit_int": 15.0
+      },
+      "abdomen": {
+        "ext": 1.5,
+        "int": 18.0,
+        "exit_ext": 5.0,
+        "exit_int": 9.0
+      },
+      "neck": {
+        "ext": 260.0,
+        "int": 0.0,
+        "exit_ext": 60.0,
+        "exit_int": 0.0
+      },
+      "head": {
+        "ext": 6.0,
+        "int": 0.0,
+        "exit_ext": 14.0,
+        "exit_int": 0.0
+      }
+    },
+    "stab": {
+      "limb": {
+        "ext": 1.5
+      },
+      "chest": {
+        "ext": 1.0,
+        "int": 1.0
+      },
+      "abdomen": {
+        "ext": 1.0,
+        "int": 1.0
+      },
+      "neck": {
+        "ext": 220.0
+      },
+      "head": {
+        "ext": 3.0
+      }
+    },
+    "slash": {
+      "limb": {
+        "ext": 6.0
+      },
+      "chest": {
+        "ext": 5.0
+      },
+      "abdomen": {
+        "ext": 6.0
+      },
+      "neck": {
+        "ext": 240.0
+      },
+      "head": {
+        "ext": 5.0
+      }
+    }
+  }
+}

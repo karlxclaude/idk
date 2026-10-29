@@ -47,3 +47,5 @@
 - Body split: physics body (dismember-agent) vs pose/IK module `scripts/body/pose/` (ik-agent).
 - Clutch-neck behaviour and gurgle audio stay with ai-agent (brain owns behaviour and vocal cues); head-neck-agent owns the injury side only.
 - "Better assets" deferred to milestone 4 with the Blender segmentation pipeline: swapping meshes before segmentation exists would be redone.
+- Pipeline details: shared fracture/sever-threshold logic in `regions/limb_base.gd` (arm/leg/neck); rules are `preload`ed, not `class_name`d. Slash stores unscaled bleed in `ctx.tags.base_ext` so the neck rule keeps arterial flow unscaled; blunt bruise passes via `ctx.tags.bruise`. `high_damage_sever_mult` repeated per region file (each rule reads only its own data). EXPLOSIVE still routes through slash.
+- PoseDriver (RefCounted owned by NpcBody) returns per-part target transforms; parts without a pose rotation stay at rest relative to parent.

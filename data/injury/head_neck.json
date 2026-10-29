@@ -1,0 +1,49 @@
+{
+  "parts": {
+    "head": {
+      "tissue": "bone",
+      "max_hp": 60,
+      "dmg_mult": 1.5,
+      "thickness": 0.2,
+      "lethal_damage": 48,
+      "fracture_accum": 0,
+      "fracture_force": 0,
+      "dismember": 0
+    },
+    "neck": {
+      "tissue": "flesh",
+      "max_hp": 40,
+      "dmg_mult": 1.2,
+      "thickness": 0.11,
+      "fracture_accum": 0,
+      "fracture_force": 0,
+      "dismember": 45
+    }
+  },
+  "high_damage_sever_mult": 2.0,
+  "head": {
+    "stun_min": 1.5,
+    "stun_max": 3.5,
+    "stun_amount_ref": 60.0,
+    "lethal_causes": {
+      "bullet": "headshot",
+      "stab": "stabbed_head",
+      "slash": "slashed_head",
+      "blunt": "blunt_head"
+    },
+    "destroyed_cause": "head_destroyed",
+    "concussion": {
+      "per_amount": 0.05,
+      "min": 1.0,
+      "max": 8.0
+    }
+  },
+  "neck": {
+    "arterial_types": [
+      "bullet",
+      "stab",
+      "slash"
+    ],
+    "decapitated_cause": "decapitated"
+  }
+}

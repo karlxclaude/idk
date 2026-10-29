@@ -779,7 +779,7 @@ func _sec_sweep() -> void:
 		head_t <= neck_t and head_t <= torso_t and String(head_row.end).begins_with("dead"),
 		"head: hp_loss=%.1f destroyed=%s end=%s | neck end=%s | torso end=%s | handgun amount=%.0f x head dmg_mult(1.5)=%.0f vs head lethal_damage=%s" % [
 			head_row.dmg_hp, head_row.destroyed, head_row.end, rows[1].end, rows[2].end, head_row.amount,
-			head_row.amount * 1.5, str(DataDB.table("injury").parts.head.lethal_damage)])
+			head_row.amount * 1.5, str(DataDB.table("injury/head_neck").parts.head.lethal_damage)])
 	check("S.4", "sweep: limb shots moderate (no instant kill, bleed rate below torso/neck, still alive at 30 s)",
 		limb_alive and limb_max_rate < rows[2].rate and limb_max_rate < rows[1].rate,
 		"limb bleed range %.1f..%.1f /s; torso %.1f /s; neck %.1f /s" % [limb_min_rate, limb_max_rate, rows[2].rate, rows[1].rate])

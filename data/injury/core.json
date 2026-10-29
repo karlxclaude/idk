@@ -1,0 +1,20 @@
+{
+  "type_mult": {
+    "bullet": 1.0,
+    "stab": 0.9,
+    "slash": 0.8,
+    "blunt": 0.5
+  },
+  "arterial_stump_parts": [
+    "upper_arm_l",
+    "upper_arm_r",
+    "upper_leg_l",
+    "upper_leg_r",
+    "neck"
+  ],
+  "stump": {
+    "ext": 40.0,
+    "arterial_ext": 180.0
+  },
+  "fracture_severity": 0.6
+}
