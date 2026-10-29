@@ -72,7 +72,8 @@ func _build() -> void:
 		"shirt": _mat(_col(shirts[npc.rng.randi() % shirts.size()])),
 		"pants": _mat(_col(pants[npc.rng.randi() % pants.size()])),
 	}
-	var root := Transform3D(Basis(Vector3.UP, npc.global_rotation.y), npc.global_position)
+	var npc_fwd := npc.global_basis.z
+	var root := Transform3D(Basis(Vector3.UP, atan2(npc_fwd.x, npc_fwd.z)), npc.global_position)
 
 	# mover
 	var mc: Dictionary = _cfg.get("mover", {})
@@ -87,6 +88,7 @@ func _build() -> void:
 	_mover_shape.shape = cap
 	_mover_shape.position.y = cap.height * 0.5
 	_mover.add_child(_mover_shape)
+	_mover.top_level = true  # global == local, independent of the (possibly rotated) Npc
 	_mover.transform = root  # set before add_child: bodies must never exist at the origin
 	add_child(_mover)
 

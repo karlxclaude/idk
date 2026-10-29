@@ -132,6 +132,29 @@ func _ready() -> void:
 	_check("5 drop_held_item true then false", d1 and not d2)
 	print(body.get_debug_info())
 
+	# 7. spawn with rotated transform: position and facing follow the Npc transform
+	var yaw_ok := true
+	var yinfo := ""
+	var zi := 0
+	for yaw in [0.0, PI * 0.5, PI, -PI * 0.5]:
+		zi += 1
+		var xf := Transform3D(Basis(Vector3.UP, yaw), Vector3(3 + 40 * zi, 0.02, 5))
+		var rn := Npc.spawn(self, xf, 20 + zi)
+		await _frames(5)
+		var cen := rn.body.get_center()
+		var want: Vector3 = xf.basis * Vector3.BACK
+		var f0 := rn.body.get_forward()
+		var good := Vector2(cen.x - xf.origin.x, cen.z - 5.0).length() < 0.1 and f0.dot(want) > 0.99
+		for i in 60:
+			rn.body.set_locomotion(Vector3(2, 0, 0), &"walk")
+			await get_tree().physics_frame
+		var f1 := rn.body.get_forward()
+		good = good and f1.x > 0.9
+		yinfo += " yaw%.2f:%s" % [yaw, "ok" if good else "BAD c=%s f0=%s f1=%s" % [cen, f0, f1]]
+		yaw_ok = yaw_ok and good
+		rn.queue_free()
+	_check("7 rotated spawn position/facing", yaw_ok, yinfo)
+
 	# 6. regression: runner passing through a corpse (and a fresh NPC spawning elsewhere) must not launch it
 	for old in [npc, npc2]:
 		old.queue_free()
