@@ -24,7 +24,11 @@ Each item has a `TODO(roadmap: <name>)` comment at its plug-in point.
   (fight-back hurts the player; player HP/regen/faint), immortal dummy, gore intensity, no-dismemberment, slow-mo on kill,
   time-scale slider, corpse/severed auto-cleanup, settings panel. Injury-consistency overseer: 6 findings fixed.
   Tests: 11 scenes green (acceptance 128, limb_integration 575, injury_consistency 50).
-- **Next — milestone 4**: mesh segmentation pipeline + stump caps (Blender script, CC0 humanoid, bone-weight split, flesh/bone caps).
+- **Milestone 4**: done — Godot-native offline bake (`tools/bake_body_meshes.tscn`) of 15 lofted body meshes with exact seams,
+  vertex-colour clothing (per-NPC tint shader), joint balls, and 28 flesh/bone stump + severed caps shown on sever (~10.7k tris visible).
+  Proportions pass (shoulders, neck, torso taper, face hints). Blender/CC0-model generator deferred (no external downloads here).
+- **Next — milestone 5**: chunk-based head damage (jaw/face/cranium sub-segments; contract change) + high-damage weapons
+  (shotgun spread, rifle, machete for leg severing, hammer); calibers and velocity-scaled penetration from the tuning backlog.
 
 ## Tuning backlog (from docs/INJURY_CONSISTENCY.md suggestions; not bugs)
 - Bullet/stab bleed ignores hit strength; bullet penetration constant (0.45 m) regardless of velocity → scale with velocity/caliber (pairs with milestone 5 calibers).
