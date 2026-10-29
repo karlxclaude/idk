@@ -517,7 +517,7 @@ func _c_fracture(c: Dictionary) -> void:
 	# ----- pose
 	match kind:
 		"arm", "hand":
-			npc.brain.force_state(S.ALERT)    # walk straight ahead (flee dir = hit direction = +Z)
+			npc.brain.force_state(S.PANIC_FLEE)    # run straight ahead (flee dir = hit direction = +Z); ALERT is a cower since milestone 3
 			await _frames(30)
 			var m := await _sample(npc, 140)
 			var bs := side
@@ -526,8 +526,16 @@ func _c_fracture(c: Dictionary) -> void:
 			var ratio: float = float(m["hand_range_" + bs]) / maxf(float(m["hand_range_" + os]), 0.001)
 			_check("frac.pose", label, "broken hand does not swing with the stride", ratio <= ARM_SWING_RATIO_MAX,
 				"swing range broken=%s sound=%s ratio=%.2f (max %.2f)" % [_cm(m["hand_range_" + bs]), _cm(m["hand_range_" + os]), ratio, ARM_SWING_RATIO_MAX])
-			_check("frac.pose", label, "pose is a walking pose and torso upright", String(npc.body.get_debug_info().pose) == "walk" and float(m.up_dot) > 0.9,
+			_check("frac.pose", label, "pose is a locomotion pose (run) and torso upright", String(npc.body.get_debug_info().pose) == "run" and float(m.up_dot) > 0.9,
 				"pose=%s up_dot=%.2f" % [npc.body.get_debug_info().pose, m.up_dot])
+			# milestone 3: ALERT = cower; a broken arm hangs and only the sound arm guards the head
+			npc.brain.force_state(S.ALERT)
+			await _frames(40)
+			var cm := await _sample(npc, 30)
+			var cpose := String(npc.body.get_debug_info().pose)
+			var guard: float = float(cm["hand_y_" + os]) - float(cm["hand_y_" + bs])
+			_check("frac.pose", label, "COWER: only the sound arm guards (its hand >= 30 cm above the broken hand)", cpose == "cower" and guard >= 0.30,
+				"pose=%s sound hand %s above broken hand" % [cpose, _cm(guard)])
 		"foot":
 			npc.brain.force_state(S.ALERT)
 			await _frames(30)
@@ -1229,7 +1237,7 @@ func _run_visual(out_dir: String) -> void:
 	print("broken arm: broken=%s state=%s" % [broken.damage.get_part(P.LOWER_ARM_L).broken, BodyIds.state_name(broken.get_state())])
 	_cam_at(Vector3(0.0, 0.95, 3.4), Vector3(0.0, 0.85, 0.0))
 	await _shot("brokenarm_idle_front", out_dir)
-	broken.brain.force_state(S.ALERT)
+	broken.brain.force_state(S.PANIC_FLEE)
 	await _frames(45)
 	await _shot_follow(broken, Vector3(3.2, 0.9, 0.0), "brokenarm_walk_side_a", out_dir)
 	await _frames(20)
