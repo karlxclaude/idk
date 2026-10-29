@@ -24,3 +24,4 @@ Finite state machine for NPC behaviour. Tunables: `data/ai.json`. Test: `tests/a
 - ALERT stands in pose `cower` (limping NPCs limp-walk instead). `npc.immortal`: never DEAD / blood UNCONSCIOUS
   (lethal, CRITICAL, FATAL ignored); everything else still happens.
 - Positions use `npc.get_center()` (the Npc node itself never moves).
+- Head chunks (`npc.head_chunk_destroyed`): JAW gone -> every scream cue (wound, flee timer, death) becomes a gurgle and the NPC clutches the head; FACE gone -> disoriented (random heading every 1-2 s, frequent stumbles, no FIGHT); any chunk gone -> no death scream.
