@@ -64,7 +64,11 @@ func step(delta: float) -> void:
 
 	state.external_rate = ext_total
 	state.internal_rate = int_total
-	state.volume = maxf(float(_cfg.get("min_volume", 0.0)), state.volume - (ext_total + int_total) * delta)
+	var floor_v := float(_cfg.get("min_volume", 0.0))
+	if is_instance_valid(npc) and npc.immortal:
+		# immortal dummy: bleeding shows, but volume never drops below HEAVY threshold + margin
+		floor_v = maxf(floor_v, (float(_cfg.get("levels", {}).get("heavy", 0.7)) + float(_cfg.get("immortal_floor", 0.02))) * state.max_volume)
+	state.volume = maxf(minf(state.volume, floor_v), state.volume - (ext_total + int_total) * delta)
 	_update_level()
 
 

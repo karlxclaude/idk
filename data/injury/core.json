@@ -16,5 +16,10 @@
     "ext": 40.0,
     "arterial_ext": 180.0
   },
-  "fracture_severity": 0.6
+  "fracture_severity": 0.6,
+  "dropped_sever_wound": {
+    "severity": 0.8,
+    "ext": 25.0,
+    "arterial_ext": 180.0
+  }
 }

@@ -1,6 +1,11 @@
 {
   "max_volume": 5000.0,
-  "levels": {"light": 0.85, "heavy": 0.7, "critical": 0.55, "fatal": 0.4},
+  "levels": {
+    "light": 0.85,
+    "heavy": 0.7,
+    "critical": 0.55,
+    "fatal": 0.4
+  },
   "exertion_k": 1.0,
   "taper_power": 1.0,
   "base_heart_rate": 70.0,
@@ -10,5 +15,6 @@
   "clot_time": 45.0,
   "clot_floor": 0.15,
   "clot_max_severity": 0.35,
-  "min_volume": 0.0
+  "min_volume": 0.0,
+  "immortal_floor": 0.02
 }

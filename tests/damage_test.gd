@@ -42,6 +42,7 @@ func _ready() -> void:
 	await _t3()
 	await _t4()
 	await _t5()
+	await _t6()
 	print("DAMAGE TEST ", "FAILED" if _fails > 0 else "OK")
 	get_tree().quit(1 if _fails > 0 else 0)
 
@@ -127,4 +128,67 @@ func _t5() -> void:
 	n.lethal_injury.connect(func(c): lethal.append(c))
 	n.damage.apply(_ev(DamageEvent.Type.BULLET, BodyIds.Part.HEAD, 80.0, 0.5))
 	_check("5c head bullet lethal", lethal == [&"headshot"] and n.damage.get_part(BodyIds.Part.HEAD).destroyed, str(lethal))
+	n.queue_free()
+
+
+func _sever_slash(part: int) -> DamageEvent:
+	return _ev(DamageEvent.Type.BLADE_SLASH, part, 150.0, 0.0, Vector3.ZERO, true)
+
+
+func _t6() -> void:
+	# 6a no_dismemberment: sever-level slash does not sever, still wounds
+	GameSettings.no_dismemberment = true
+	var n := _fresh()
+	await get_tree().physics_frame
+	var ws := n.damage.apply(_sever_slash(BodyIds.Part.UPPER_LEG_L))
+	_check("6a no_dismemberment: no sever, deep non-stump wound",
+		not n.damage.get_part(BodyIds.Part.UPPER_LEG_L).severed and ws.size() > 0 and not ws[0].is_stump and ws[0].bleed_rate > 0.0)
+	GameSettings.no_dismemberment = false
+	n.queue_free()
+	# 6b gore LOW implies no severing
+	GameSettings.gore_intensity = GameSettings.Gore.LOW
+	n = _fresh()
+	await get_tree().physics_frame
+	n.damage.apply(_sever_slash(BodyIds.Part.LOWER_ARM_R))
+	_check("6b gore LOW: no sever", not n.damage.get_part(BodyIds.Part.LOWER_ARM_R).severed)
+	var lethal := []
+	n.lethal_injury.connect(func(c): lethal.append(c))
+	n.damage.apply(_sever_slash(BodyIds.Part.NECK))
+	_check("6c gore LOW: neck cut neither severs nor decapitates", not n.damage.get_part(BodyIds.Part.NECK).severed and lethal.is_empty())
+	GameSettings.gore_intensity = GameSettings.Gore.HIGH
+	n.queue_free()
+
+	# immortal
+	n = _fresh()
+	await get_tree().physics_frame
+	n.immortal = true
+	lethal = []
+	n.lethal_injury.connect(func(c): lethal.append(c))
+	n.damage.apply(_ev(DamageEvent.Type.BULLET, BodyIds.Part.HEAD, 200.0, 0.5))
+	var head := n.damage.get_part(BodyIds.Part.HEAD)
+	_check("6d immortal head bullet: no lethal, head not destroyed", lethal.is_empty() and not head.destroyed and head.hp >= 1.0)
+	n.damage.apply(_sever_slash(BodyIds.Part.NECK))
+	_check("6e immortal neck sever-level slash: no sever", not n.damage.get_part(BodyIds.Part.NECK).severed and not n.damage.get_part(BodyIds.Part.HEAD).severed and lethal.is_empty())
+	n.damage.apply(_sever_slash(BodyIds.Part.UPPER_LEG_R))
+	_check("6f immortal: limbs still sever", n.damage.get_part(BodyIds.Part.UPPER_LEG_R).severed)
+	n.queue_free()
+
+	n = _fresh()
+	await get_tree().physics_frame
+	n.immortal = true
+	n.blood.set_physics_process(false)
+	n.damage.apply(_ev(DamageEvent.Type.BULLET, BodyIds.Part.NECK, 25.0, 0.5))
+	var floor_v := (0.7 + 0.02) * n.blood.state.max_volume
+	var worst_level := 0
+	var min_vol := 1e9
+	var flow_ok := true
+	for i in 2500:  # 40 s
+		n.blood.step(0.016)
+		worst_level = maxi(worst_level, n.blood.state.level)
+		min_vol = minf(min_vol, n.blood.state.volume)
+	for w in n.wounds.get_attached_wounds():
+		flow_ok = flow_ok and w.current_flow > 0.0
+	_check("6g immortal neck arterial 40 s: volume >= floor, never CRITICAL, still bleeding",
+		min_vol >= floor_v - 0.01 and worst_level < BodyIds.BloodLevel.CRITICAL and flow_ok,
+		"min=%.0f floor=%.0f worst=%d" % [min_vol, floor_v, worst_level])
 	n.queue_free()

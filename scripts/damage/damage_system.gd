@@ -24,6 +24,7 @@ var _rows: Dictionary = {}       # part id -> part data row (from its region fil
 var _mech: Dictionary = {}       # DamageEvent.Type -> InjuryRule
 var _regions: Dictionary = {}    # region StringName -> InjuryRule
 var _lethal_reported := false
+var _dropped_severs := 0  # sever requests dropped by the gate (settings / immortal), for debug
 
 
 func setup(owner_npc: Npc) -> void:
@@ -108,6 +109,7 @@ func get_debug_info() -> Dictionary:
 		var p: BodyPart = _parts[id]
 		d[BodyIds.key(id)] = {"hp": snappedf(p.hp, 0.1), "broken": p.broken, "severed": p.severed,
 			"destroyed": p.destroyed, "bruise": snappedf(p.bruise, 0.01)}
+	d["sever_dropped"] = _dropped_severs
 	return d
 
 
@@ -159,12 +161,42 @@ func new_wound(ctx: HitContext, sev: float, ext: float, inn: float, art: bool) -
 
 # ---------------------------------------------------------------- commit (only mutator)
 
+## Settings / immortal gates, applied to the region rule's requests before they are committed.
+func _apply_gates(ctx: HitContext) -> void:
+	var id := ctx.part.part_id
+	var drop := false
+	if ctx.sever:
+		if not GameSettings.dismemberment_allowed():
+			drop = true
+		elif npc.immortal and (id == BodyIds.Part.NECK or id == BodyIds.Part.HEAD):
+			drop = true
+	if drop:
+		ctx.sever = false
+		ctx.tags["sever_dropped"] = true
+		_dropped_severs += 1
+		if id == BodyIds.Part.NECK:
+			ctx.lethal_cause = &""  # decapitation did not happen
+		ctx.cues.erase(&"sever")
+		if ctx.wounds.is_empty():
+			# the region rule replaced the surface wound by the cut-through: keep it as a deep cut
+			var d: Dictionary = _core.get("dropped_sever_wound", {})
+			var art: bool = BodyIds.key(id) in _core.get("arterial_stump_parts", [])
+			var w := new_wound(ctx, float(d.get("severity", 0.8)), float(d.get("arterial_ext", 180.0)) if art else float(d.get("ext", 25.0)), 0.0, art)
+			w.local_direction = local_dir(ctx)
+			ctx.wounds.append(w)
+	if npc.immortal:
+		ctx.lethal_cause = &""
+		ctx.destroy = false
+
 func _commit(ctx: HitContext) -> Array[Wound]:
 	var out: Array[Wound] = []
 	var ev := ctx.ev
 	var part := ctx.part
+	_apply_gates(ctx)
 	part.hit_count += 1
 	part.hp = maxf(0.0, part.hp - ctx.damage)
+	if npc.immortal and part.part_id == BodyIds.Part.HEAD:
+		part.hp = maxf(part.hp, 1.0)
 	if ctx.tags.has("bruise"):
 		part.bruise = float(ctx.tags.bruise)
 	for w in ctx.wounds:
