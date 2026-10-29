@@ -281,6 +281,23 @@ func _ready() -> void:
 	npc5.queue_free()
 	print(body.get_debug_info())
 
+	# 5c. dropped phone outlives its NPC: freeing the NPC first must not break the cleanup timer
+	var old_ac: float = GameSettings.auto_cleanup_time
+	GameSettings.auto_cleanup_time = 0.5
+	var npc9 := Npc.spawn(self, Transform3D(Basis(), Vector3(-150, 0.02, 0)), 9)
+	await _frames(5)
+	var dropped_ok: bool = npc9.body.drop_held_item("r")
+	var phone9: Node = null
+	for c in get_children():
+		if c is RigidBody3D and not c is BodySegment and c.global_position.x < -100:  # name gets uniquified
+			phone9 = c
+	var found9 := phone9 != null
+	npc9.free()
+	await get_tree().create_timer(1.0).timeout
+	GameSettings.auto_cleanup_time = old_ac
+	_check("5c dropped phone cleaned up after its NPC was freed (no errors)", dropped_ok and found9
+		and not is_instance_valid(phone9), "dropped=%s found=%s" % [dropped_ok, found9])
+
 	# 7. spawn with rotated transform: position and facing follow the Npc transform
 	var yaw_ok := true
 	var yinfo := ""

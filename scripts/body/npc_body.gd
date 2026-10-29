@@ -462,8 +462,13 @@ func drop_held_item(side: String) -> bool:
 	rb.global_transform = _held.global_transform
 	rb.linear_velocity = seg.tracked_lin if seg.freeze else seg.linear_velocity
 	rb.angular_velocity = seg.tracked_ang if seg.freeze else seg.angular_velocity
-	var timer := get_tree().create_timer(_cleanup_s())
-	timer.timeout.connect(func(): if is_instance_valid(rb): rb.queue_free())
+	# Timer lives on the dropped body itself: nothing captures this NpcBody (it may be freed first).
+	var timer := Timer.new()
+	timer.one_shot = true
+	timer.wait_time = _cleanup_s()
+	timer.timeout.connect(rb.queue_free)
+	rb.add_child(timer)
+	timer.start()
 	_held.queue_free()
 	seg.held_item = null
 	_held = null
