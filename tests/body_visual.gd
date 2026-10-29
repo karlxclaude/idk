@@ -146,6 +146,28 @@ func _ready() -> void:
 	var t3 := bn3.body.get_part_global_transform(BodyIds.Part.TORSO).origin
 	_look(t3 + Vector3(0.0, 0.08, 0.75), t3)
 	await _shot("blood_torso_soaked")
+	# arena lighting (scripts/ui/main.gd): sun + procedural sky; full-torso soak seen from behind and at a grazing angle
+	sun.rotation_degrees = Vector3(-55, 30, 0)
+	var sky := Sky.new()
+	sky.sky_material = ProceduralSkyMaterial.new()
+	e.background_mode = Environment.BG_SKY
+	e.sky = sky
+	e.ambient_light_source = Environment.AMBIENT_SOURCE_SKY
+	var bn4 := Npc.spawn(self, Transform3D(Basis(), Vector3(26, 0.02, 0)), 3)
+	await _wait(0.6)
+	bn4.body.set_part_blood(BodyIds.Part.TORSO, PackedVector4Array([Vector4(0.0, 0.2, -0.11, 0.01)]),
+		PackedVector4Array([Vector4(0.0, 0.1, -0.1, 0.22), Vector4(0.1, -0.1, -0.1, 0.15)]), PackedFloat32Array([0.3, 0.2]), down, 1.0)
+	bn4.body.set_part_blood(BodyIds.Part.UPPER_ARM_L, PackedVector4Array(), PackedVector4Array([Vector4(0.0, 0.0, 0.0, 0.2)]),
+		PackedFloat32Array([0.0]), down, 1.0)
+	var t4 := bn4.body.get_part_global_transform(BodyIds.Part.TORSO).origin
+	_look(t4 + Vector3(0.0, 0.3, -2.2), t4)
+	await _shot("blood_wet_back")
+	_look(t4 + Vector3(-0.9, 0.2, -1.0), t4)
+	await _shot("blood_wet_back_close")
+	_look(t4 + Vector3(2.0, 0.15, -0.35), t4)
+	await _shot("blood_wet_grazing")
+	_look(t4 + Vector3(0.0, 1.3, -1.0), t4)
+	await _shot("blood_wet_above")
 	get_tree().quit(0)
 
 

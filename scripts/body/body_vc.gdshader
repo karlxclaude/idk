@@ -75,8 +75,8 @@ void fragment() {
 			float n_mid = vnoise(p * mix(45.0, 75.0, cloth) + float(i) * 7.0);
 			// cloth wicks blood outwards: wider, with a fibrous irregular edge; skin keeps a rounder pool
 			float rr = r * mix(1.0, 1.5, cloth) * (0.8 + 0.4 * n_lo);
-			float d = length(q) / rr;
-			d += (n_mid - 0.5) * mix(0.3, 0.55, cloth) + (fabric - 0.5) * 0.16 * cloth;
+			// edge irregularity is a displacement in metres, so big stains stay solid inside and ragged only at the rim
+			float d = (length(q) + (n_mid - 0.5) * mix(0.014, 0.034, cloth) + (fabric - 0.5) * 0.01 * cloth) / rr;
 			float m = 1.0 - smoothstep(0.3, 0.95, d);
 			float L = i < 4 ? runs_a[i] : runs_b[i - 4];
 			if (L > 0.003) {
@@ -120,9 +120,12 @@ void fragment() {
 	vec3 col = mix(base, mix(skin_blood, cloth_blood, cloth), soak * 0.94);
 	col = mix(col, vec3(0.025, 0.0, 0.0), core);
 	col = mix(col, mix(vec3(0.16, 0.025, 0.015), vec3(0.55, 0.025, 0.018), wetness), rim * 0.9);
-	float wet_gloss = mix(0.9, mix(0.07, 0.4, cloth), wetness);
+	// Wet blood must stay dark and saturated: on cloth keep it fairly rough with a weak specular (a glossy cloth
+	// stain reflects the bright sky and washes out to a pale sheen); skin may be glossier but never whitens.
 	float blood = max(soak, max(core, rim));
+	float wet_rough = mix(0.9, mix(0.22, 0.6, cloth), wetness);
 	ALBEDO = col;
-	ROUGHNESS = mix(rough, wet_gloss, blood);
-	SPECULAR = mix(0.5, 0.85, blood * wetness);
+	METALLIC = 0.0;
+	ROUGHNESS = mix(rough, wet_rough, blood);
+	SPECULAR = mix(0.5, mix(0.5, 0.18, cloth), blood * wetness);
 }
