@@ -204,6 +204,7 @@ func _change(new_state: int) -> void:
 				_state_duration = float(_cfg.get("neck_clutch_duration", 60.0))
 			if is_instance_valid(npc.body):
 				npc.body.set_clutch_target(_clutch_part)
+				_push_clutch_wound()
 		S.PANIC_FLEE:
 			_scream_t = _rand_range("scream_interval")
 			_stumble_t = _rand_range("stumble_interval")
@@ -231,6 +232,7 @@ func _react(w: Wound, ev: DamageEvent) -> void:
 		_clutch_part = BodyIds.Part.NECK
 		if state != S.CLUTCH_WOUND:
 			_change(S.CLUTCH_WOUND)
+		_push_clutch_wound(w)
 		return
 	if state == S.CRAWL or state == S.CLUTCH_WOUND and _clutch_part == BodyIds.Part.NECK:
 		return
@@ -243,6 +245,7 @@ func _react(w: Wound, ev: DamageEvent) -> void:
 	if w.part_id == BodyIds.Part.TORSO and w.severity >= float(_cfg.get("clutch_severity_min", 0.6)):
 		_clutch_part = w.part_id
 		_change(S.CLUTCH_WOUND)
+		_push_clutch_wound(w)
 		return
 	if GameSettings.panic_enabled:
 		_panic_left = _rand_range("panic_duration")
@@ -355,8 +358,26 @@ func _note_lower_wound(w: Wound) -> void:
 
 
 func _set_limp(side: String) -> void:
-	if side != "":
-		_limp[side] = true
+	if side == "" or _limp[side]:
+		return
+	_limp[side] = true
+	if is_instance_valid(npc.body) and npc.body.has_method("set_limp_side"):
+		npc.body.set_limp_side(get_limp_side())
+
+
+## Tell the body where the hand goes: the most severe attached wound on the clutched part.
+func _push_clutch_wound(fallback: Wound = null) -> void:
+	if not is_instance_valid(npc.body) or not npc.body.has_method("set_clutch_wound") or _clutch_part < 0:
+		return
+	var best: Wound = null
+	if is_instance_valid(npc.wounds):
+		for cw in npc.wounds.get_wounds_on(_clutch_part):
+			if not cw.detached and (best == null or cw.severity > best.severity):
+				best = cw
+	if best == null and fallback != null and fallback.part_id == _clutch_part:
+		best = fallback
+	if best != null:
+		npc.body.set_clutch_wound(_clutch_part, best.local_position, best.local_normal)
 
 
 func _on_stunned(duration: float, _cause: StringName) -> void:
