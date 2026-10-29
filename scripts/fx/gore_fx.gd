@@ -75,7 +75,7 @@ func add_decal(pos: Vector3, normal: Vector3, size: float, color: Color) -> void
 	d.global_transform = Transform3D(q, pos)
 	_decals.append(d)
 	while _decals.size() > max_decals:
-		var old: Decal = _decals.pop_front()
+		var old = _decals.pop_front()  # untyped: may already be freed
 		if is_instance_valid(old):
 			old.queue_free()
 
@@ -235,7 +235,7 @@ func _update_emitters(delta: float) -> void:
 	var i := _emitters.size() - 1
 	while i >= 0:
 		var e: Dictionary = _emitters[i]
-		var node: GPUParticles3D = e.node
+		var node = e.node  # untyped: may already be freed
 		if not is_instance_valid(node):
 			_emitters.remove_at(i)
 			i -= 1
@@ -324,6 +324,9 @@ func _update_pools(interval: float) -> void:
 			pool = _create_pool(npc, id, int(pc.get("max_pools", 12)))
 		if target > pool.radius:
 			pool.radius = target
+		if not is_instance_valid(pool.node):
+			_pools.erase(id)
+			continue
 		var node: MeshInstance3D = pool.node
 		var p: Vector3 = Vector3(torso.x, res.position.y, torso.z)
 		if not pool.placed:

@@ -125,6 +125,11 @@ func _ready() -> void:
 	for i in 5:
 		await get_tree().physics_frame
 	_check("4b wound emitter created and runs", gore.emitter_count() == 1)
+	var ecount := gore.emitter_count()
+	gore._emitters[0].node.free()
+	for i in 10:
+		await get_tree().physics_frame
+	_check("4c freed emitter node is dropped without errors", ecount == 1 and gore.emitter_count() == 0)
 	gore.queue_free()
 
 	# 5. main scene
