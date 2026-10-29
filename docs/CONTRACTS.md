@@ -112,3 +112,15 @@ hit-reaction additives and IK live in `scripts/body/pose/` behind an internal in
 - **Weapons** stay data-driven: hitscan gains optional `pellets`/`spread_deg` (shotgun) and `max_penetrations` (rifle ray
   continues through bodies with reduced energy); new entries rifle, shotgun, machete, hammer in `data/weapons.json`.
   Weapons put `caliber`, `pellet` and `energy` (J) in `ev.extra`; mechanisms may scale by them.
+
+## Milestone 6 additions (gore visuals)
+- `NpcBody.set_part_blood(part_id: int, wounds: PackedVector4Array, stains: PackedVector4Array, runs: PackedFloat32Array,
+  down_local: Vector3, wetness: float) -> void` — body-surface blood for one segment (attached or severed), rendered by the
+  body shader. Max 8 wounds and 8 stains per part (extra entries ignored).
+  - `wounds[i]` = (part-local x, y, z, hole radius m): dark wound core (entry small/clean, exit larger/ragged — the caller sizes it).
+  - `stains[i]` = (part-local x, y, z, radius m): blood soaked into skin/cloth around a source.
+  - `runs[i]` = how far (m) stain i has run along `down_local` (part-local gravity direction, normalized).
+  - `wetness` 0..1: glossiness of fresh blood on this part (dries toward matte/darker over time).
+  GoreFX owns the simulation (what bleeds where, growth, run-down, drying) and calls this every few frames;
+  the body owns rendering it (shader uniforms). Calling it with empty arrays clears the part.
+- Audio stays procedural (no external downloads); cue names unchanged.
