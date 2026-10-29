@@ -40,3 +40,10 @@
 ## Review fixes (round 1)
 - NpcBrain is the sole source of vocal cues (grunt/gurgle/scream), once per DamageEvent; neck hits never scream; death scream skipped for headshot/decapitation.
 - Head `lethal_damage` 48 so one 9mm headshot kills; upper-arm sever threshold 45 so a full-speed knife slash can sever it.
+
+## Milestone 2
+- Phase 2 agent roster in `.claude/agents/` (v1 definitions archived in `docs/agents_v1/`). Added **weapons-ui-agent**: the Phase 2 list had no owner for weapons/player/UI.
+- Injury logic split into a pipeline (`HitContext` + `InjuryRule`): mechanism rules (penetrating, blunt) then region rules (head, neck, torso, arm, leg), commit in DamageSystem (bleed-agent). Lets region and mechanism agents own separate files.
+- Body split: physics body (dismember-agent) vs pose/IK module `scripts/body/pose/` (ik-agent).
+- Clutch-neck behaviour and gurgle audio stay with ai-agent (brain owns behaviour and vocal cues); head-neck-agent owns the injury side only.
+- "Better assets" deferred to milestone 4 with the Blender segmentation pipeline: swapping meshes before segmentation exists would be redone.
