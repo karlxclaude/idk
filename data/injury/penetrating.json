@@ -122,7 +122,7 @@
         "exit_bleed_mult": 1.0
       },
       "rifle": {
-        "ref_energy_j": 1700.0,
+        "ref_energy_j": 1620.0,
         "ref_velocity": 900.0,
         "sev_mult": 1.15,
         "bleed_mult": 1.2,

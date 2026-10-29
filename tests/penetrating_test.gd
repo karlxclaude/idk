@@ -5,7 +5,7 @@ extends Node3D
 
 const P := BodyIds.Part
 const E_9MM := 577.6      # J, handgun at 380 m/s (0.5 * 0.008 * 380^2)
-const E_RIFLE := 1700.0   # J, rifle reference
+const E_RIFLE := 1620.0   # J, rifle reference (0.5 * 0.004 * 900^2)
 const E_PELLET := 280.0   # J, 00 buck pellet reference
 
 var _fails := 0
