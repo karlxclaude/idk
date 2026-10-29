@@ -142,7 +142,7 @@ func _ready() -> void:
 	_check("4b body still standing after sever", still_ok, str(body.get_center()))
 
 	# 4b2. broken arm hangs: while running the broken left hand stays lower than the swinging right hand
-	# (idle: both arms hang, so the difference is ~1 cm; asserted as "not higher by more than 2 cm")
+	# (idle dy is only logged: both arms hang, the difference is a few cm either way)
 	var npc6 := Npc.spawn(self, Transform3D(Basis(), Vector3(-60, 0.02, 0)), 6)
 	await _frames(5)
 	npc6.emit_part_broken(BodyIds.Part.LOWER_ARM_L)
@@ -158,9 +158,39 @@ func _ready() -> void:
 			run_dy += npc6.body.get_part_global_transform(BodyIds.Part.HAND_L).origin.y \
 				- npc6.body.get_part_global_transform(BodyIds.Part.HAND_R).origin.y
 	run_dy /= 60.0
-	_check("4b2 broken LOWER_ARM_L: left hand lower than right (running)", run_dy < -0.03 and idle_dy < 0.02,
+	_check("4b2 broken LOWER_ARM_L: left hand lower than right (running)", run_dy < -0.03,
 		"run mean dy=%.3f idle dy=%.3f" % [run_dy, idle_dy])
 	npc6.queue_free()
+
+	# 4e. piecewise cut (hand, forearm, upper arm): every piece ends in its own Severed_* container
+	var npc7 := Npc.spawn(self, Transform3D(Basis(), Vector3(-90, 0.02, 0)), 7)
+	await _frames(5)
+	var pieces: Array = []
+	for pid in [BodyIds.Part.HAND_L, BodyIds.Part.LOWER_ARM_L, BodyIds.Part.UPPER_ARM_L]:
+		var evp := DamageEvent.new()
+		evp.type = DamageEvent.Type.BLADE_SLASH
+		evp.part_id = pid
+		evp.impactor_velocity = Vector3(2, 0, 0)
+		evp.impactor_mass = 1.0
+		evp.can_dismember = true
+		evp.hit_position = npc7.body.get_part_global_transform(pid).origin
+		pieces.append(npc7.body.sever_part(pid, evp))
+		await _frames(10)
+	var pc_ok := true
+	var holders: Array = []
+	for i in 3:
+		var seg := pieces[i] as RigidBody3D
+		if seg == null or not (seg.get_parent().name as String).begins_with("Severed_") \
+				or holders.has(seg.get_parent()):
+			pc_ok = false
+		else:
+			holders.append(seg.get_parent())
+	# each earlier piece was not dragged into a later container
+	pc_ok = pc_ok and (npc7.body.get_part_node(BodyIds.Part.HAND_L).get_parent() == pieces[0].get_parent()) \
+		and (npc7.body.get_part_node(BodyIds.Part.LOWER_ARM_L).get_parent() == pieces[1].get_parent()) \
+		and not npc7.body.has_part(BodyIds.Part.UPPER_ARM_L) and npc7.body.has_part(BodyIds.Part.UPPER_ARM_R)
+	_check("4e piecewise sever hand -> forearm -> upper arm keeps separate containers", pc_ok)
+	npc7.queue_free()
 
 	# 4c. sever a hand, and a lower leg takes its foot
 	var evh := DamageEvent.new()

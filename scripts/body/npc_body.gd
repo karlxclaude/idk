@@ -365,8 +365,11 @@ func apply_hit_impulse(ev: DamageEvent) -> void:
 func sever_part(part_id: int, ev: DamageEvent) -> RigidBody3D:
 	if part_id == P.TORSO or not has_part(part_id):
 		return null
+	# Only segments still attached move: descendants severed earlier already live in their own Severed_* container.
 	var ids: Array[int] = [part_id]
-	ids.append_array(BodyIds.descendants_of(part_id))
+	for d in BodyIds.descendants_of(part_id):
+		if has_part(d):
+			ids.append(d)
 	var host: Node = npc.get_parent() if npc and npc.get_parent() else self
 	var container := Node3D.new()
 	container.name = "Severed_%s_%d" % [BodyIds.key(part_id), npc.npc_id if npc else 0]
@@ -380,7 +383,7 @@ func sever_part(part_id: int, ev: DamageEvent) -> RigidBody3D:
 		cut.queue_free()
 		remove_child(cut)
 	for pid in ids:
-		if pid != part_id and _joints.has(pid):
+		if pid != part_id and _joints.has(pid) and (_joints[pid] as Node).get_parent() == self:
 			var j: Node = _joints[pid]
 			remove_child(j)
 			moving_joints.append(j)
