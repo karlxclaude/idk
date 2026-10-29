@@ -32,7 +32,7 @@ func _ready() -> void:
 	GameEvents.npc_wounded.connect(_on_wounded)
 	GameEvents.npc_part_severed.connect(_on_severed)
 	GameEvents.world_impact.connect(_on_world_impact)
-	GameSettings.changed.connect(func(_s, _v): _trim_decals())
+	GameSettings.changed.connect(_on_settings_changed)
 
 
 # ---------------- public (tests / debug) ----------------
@@ -49,6 +49,10 @@ func _im(key: String, default := 1.0) -> float:
 
 func decal_cap() -> int:
 	return maxi(int(round(max_decals * _im("decal_cap_mult"))), 0)
+
+
+func _on_settings_changed(_setting: StringName, _value) -> void:
+	_trim_decals()
 
 
 func _trim_decals() -> void:

@@ -196,6 +196,12 @@ func _ready() -> void:
 	g2.queue_free()
 	_check("6e main.tscn still intact", is_instance_valid(main.ui) and main.ui.hp_bar != null and Engine.time_scale >= 0.99)
 	main.queue_free()
+	await get_tree().process_frame
+	await get_tree().process_frame
+	var prev_gore: int = GameSettings.gore_intensity
+	GameSettings.set_setting(&"gore_intensity", GameSettings.Gore.MED)
+	GameSettings.set_setting(&"gore_intensity", prev_gore)
+	_check("7 settings change after main freed is error-free", true)
 	await get_tree().physics_frame
 
 	print("RESULT: %s (%d failures)" % ["PASS" if _fails == 0 else "FAIL", _fails])
