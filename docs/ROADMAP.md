@@ -20,8 +20,11 @@ Each item has a `TODO(roadmap: <name>)` comment at its plug-in point.
 - **Milestone 2**: done — Phase 2 agent roster, injury pipeline (mechanism + region rules), pose/IK module, hands and feet,
   limp gait, broken-limb posing, palm-to-wound clutch. Tests: 9 unit scenes + limb_integration (549) + acceptance (104), all green.
   Deferred: realistic CC0 humanoid assets (with milestone 4 segmentation), leg severing (milestone 5 heavy weapons).
-- **Next — milestone 3**: hit-reaction additives, fight-back mode, remaining toggles (slow-mo, immortal dummy, gore intensity,
-  no-dismember, cleanup timer); injury-consistency overseer pass.
+- **Milestone 3**: done — direction/part-aware hit reactions with stagger steps, cower + fight poses, punch action, FIGHT state
+  (fight-back hurts the player; player HP/regen/faint), immortal dummy, gore intensity, no-dismemberment, slow-mo on kill,
+  time-scale slider, corpse/severed auto-cleanup, settings panel. Injury-consistency overseer: 6 findings fixed.
+  Tests: 11 scenes green (acceptance 128, limb_integration 575, injury_consistency 50).
+- **Next — milestone 4**: mesh segmentation pipeline + stump caps (Blender script, CC0 humanoid, bone-weight split, flesh/bone caps).
 
 ## Tuning backlog (from docs/INJURY_CONSISTENCY.md suggestions; not bugs)
 - Bullet/stab bleed ignores hit strength; bullet penetration constant (0.45 m) regardless of velocity → scale with velocity/caliber (pairs with milestone 5 calibers).
