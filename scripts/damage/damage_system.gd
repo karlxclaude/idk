@@ -51,7 +51,7 @@ func apply(ev: DamageEvent) -> Array[Wound]:
 			_slash(ev, part, pc, dmg, detached, out)  # EXPLOSIVE reserved: treat as generic cut
 
 	# bone fracture from accumulated damage (blunt also checks raw force)
-	if not part.broken and not was_fractured and float(pc.get("fracture_accum", 0.0)) > 0.0:
+	if not part.broken and not was_fractured and not part.severed and float(pc.get("fracture_accum", 0.0)) > 0.0:
 		var accum := part.max_hp - part.hp
 		var force_hit: bool = ev.type == DamageEvent.Type.BLUNT and ev.amount >= float(pc.get("fracture_force", 1e9))
 		if accum >= float(pc.fracture_accum) or force_hit:
@@ -110,14 +110,14 @@ func _bullet(ev: DamageEvent, part: BodyPart, pc: Dictionary, dmg: float, detach
 		return
 	match ev.part_id:
 		BodyIds.Part.NECK:
-			npc.cue(&"gurgle", 1.0)
+			pass  # vocal cues owned by NpcBrain
 		BodyIds.Part.HEAD:
 			if dmg >= float(pc.get("lethal_damage", 55.0)):
 				_destroy_head(part, &"headshot")
 			else:
 				_head_stun(ev)
 		_:
-			npc.cue(&"grunt", clampf(dmg / 40.0, 0.3, 1.0))
+			pass  # vocal cues owned by NpcBrain
 
 
 func _stab(ev: DamageEvent, part: BodyPart, pc: Dictionary, dmg: float, detached: bool, out: Array[Wound]) -> void:
@@ -136,14 +136,14 @@ func _stab(ev: DamageEvent, part: BodyPart, pc: Dictionary, dmg: float, detached
 	if detached:
 		return
 	if ev.part_id == BodyIds.Part.NECK:
-		npc.cue(&"gurgle", 1.0)
+		pass  # vocal cues owned by NpcBrain
 	elif ev.part_id == BodyIds.Part.HEAD:
 		if dmg >= float(pc.get("lethal_damage", 55.0)):
 			_destroy_head(part, &"stabbed_head")
 		else:
 			_head_stun(ev)
 	else:
-		npc.cue(&"grunt", 0.6)
+		pass  # vocal cues owned by NpcBrain
 
 
 func _slash(ev: DamageEvent, part: BodyPart, pc: Dictionary, dmg: float, detached: bool, out: Array[Wound]) -> void:
@@ -165,14 +165,14 @@ func _slash(ev: DamageEvent, part: BodyPart, pc: Dictionary, dmg: float, detache
 	if detached:
 		return
 	if ev.part_id == BodyIds.Part.NECK:
-		npc.cue(&"gurgle", 1.0)
+		pass  # vocal cues owned by NpcBrain
 	elif ev.part_id == BodyIds.Part.HEAD:
 		if dmg >= float(pc.get("lethal_damage", 55.0)):
 			_destroy_head(part, &"slashed_head")
 		else:
 			_head_stun(ev)
 	else:
-		npc.cue(&"grunt", 0.6)
+		pass  # vocal cues owned by NpcBrain
 
 
 func _blunt(ev: DamageEvent, part: BodyPart, pc: Dictionary, dmg: float, detached: bool, out: Array[Wound]) -> void:
@@ -196,7 +196,7 @@ func _blunt(ev: DamageEvent, part: BodyPart, pc: Dictionary, dmg: float, detache
 				var dur2 := clampf(ev.amount * 0.05, float(bc.get("winded_min", 1.0)), float(bc.get("winded_max", 4.0)))
 				npc.emit_stunned(dur2, &"winded")
 		_:
-			npc.cue(&"grunt", 0.5)
+			pass  # vocal cues owned by NpcBrain
 
 
 func _fracture(ev: DamageEvent, part: BodyPart, detached: bool) -> Wound:
@@ -257,7 +257,7 @@ func _sever(ev: DamageEvent, part: BodyPart) -> Array[Wound]:
 func _destroy_head(part: BodyPart, cause: StringName) -> void:
 	part.hp = 0.0
 	part.destroyed = true
-	npc.cue(&"scream", 0.5)
+	pass  # vocal cues owned by NpcBrain
 	_report_lethal(cause)
 
 
