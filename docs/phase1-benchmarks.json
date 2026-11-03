@@ -1,0 +1,110 @@
+{
+  "1": {
+    "trainedCsaPct": 7.8,
+    "leanKg": 2.7,
+    "liftPct": {
+      "back_squat_high_bar": 35.2,
+      "bench_press": 36.8,
+      "conventional_deadlift": 30.7,
+      "overhead_press": 33.8
+    }
+  },
+  "2": {
+    "yearlyLeanKg": [
+      7.1,
+      3.5,
+      1.8,
+      1.2
+    ],
+    "normalizedFfmi": 23
+  },
+  "3": {
+    "csaPct": {
+      "min": -3.8,
+      "p05": 1,
+      "median": 7.5,
+      "mean": 8.6,
+      "p95": 20.5,
+      "max": 39.9
+    },
+    "csaCv": 0.7070000000000001,
+    "oneRmPct": {
+      "min": 2.5,
+      "p05": 16.1,
+      "median": 34.1,
+      "mean": 39.1,
+      "p95": 81,
+      "max": 156.9
+    }
+  },
+  "4": {
+    "sets4": {
+      "hyp": 2.9,
+      "str": 25
+    },
+    "sets10": {
+      "hyp": 5.3,
+      "str": 31.1
+    },
+    "sets20": {
+      "hyp": 6.7,
+      "str": 34.2
+    }
+  },
+  "5": {
+    "pct20": {
+      "hyp": 4.3,
+      "str": 18.3
+    },
+    "pct30": {
+      "hyp": 6.4,
+      "str": 23
+    },
+    "pct80": {
+      "hyp": 6.4,
+      "str": 33.7
+    }
+  },
+  "6": {
+    "tissueLeanKg": -0.27999999999999997,
+    "squatPct": 27
+  },
+  "7": {
+    "after3wkPct": -0.5,
+    "after8wkPct": -6.4,
+    "regainDays": 17,
+    "originalClimbDays": 37
+  },
+  "8": {
+    "untrained12wkPct": 13.4,
+    "trainedDetrain8wkPct": -18.1
+  },
+  "9": {
+    "hypertrophyReductionPct": 9.4,
+    "powerReductionPct": 19.4
+  },
+  "10": {
+    "lostKg1yr": 14.1,
+    "ruleKg": 23.6,
+    "weeks2to14Kg": 3.7,
+    "weeks40to52Kg": 2.5
+  },
+  "11": {
+    "leanShare55h": 0.764,
+    "leanShare85h": 0.57
+  },
+  "12": {
+    "cmjPct": 8.5,
+    "cmjCm": 39.9,
+    "cmjPlus3kgFatCm": 37.8
+  },
+  "13": {
+    "week1WaterKgResponders": 1.4,
+    "extraStrengthPctPoints": 7.2,
+    "nonResponderShare": 0.28300000000000003
+  },
+  "14": {
+    "deterministic": true,
+    "tenYearMs": 1037
+  }
+}
