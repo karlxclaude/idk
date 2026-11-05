@@ -2649,6 +2649,7 @@ const CHAIN_LIM = {
 };
 const PELVIS_SHARE = 0.25;   // trunk twist the pelvis takes on when the spine runs out of range (rad) — tuned, no source
 const TWIST_SPLIT = 0.5;     // share of forearm pronation carried by the forearm bone (the rest at the wrist) — tuned, no source
+const WRIST_RATE = 25;       // fastest the clamped wrist rotation may change (rad/s) — tuned, no source
 const XAXIS = V(1, 0, 0);
 function newPose() {
   const side = () => ({ L: V(), R: V() }), sc = v => ({ L: v, R: v });
@@ -2785,9 +2786,11 @@ class Rig {
     const sw = _q[3].copy(tw).invert().multiply(rel);                                   // what is left: the wrist's swing
     if (sw.w < 0) { sw.x = -sw.x; sw.y = -sw.y; sw.z = -sw.z; sw.w = -sw.w; }
     // pronation is a positive turn for the left forearm (axis pointing to the hand), negative for the right
-    // a request far outside both limits (near ±180°) keeps to the limit it was nearest last frame, so the hand cannot flip
-    let pr = a.s * tau; if (Math.abs(pr) > 2.6 && a.prPrev !== undefined && Math.sign(pr) !== Math.sign(a.prPrev)) pr = Math.sign(a.prPrev) * Math.PI;
-    const prc = clamp(pr, -ROM.supination, ROM.pronation); a.prPrev = prc;
+    // the requested turn is unwrapped against last frame's, so a request that passes ±180° keeps going past it and stays
+    // clamped at the same limit — the hand can never jump from full pronation to full supination between frames
+    const raw = a.s * tau, pr = a.prUn === undefined ? raw : clamp(a.prUn + wrapA(raw - wrapA(a.prUn)), -3 * Math.PI, 3 * Math.PI);
+    a.prUn = Math.abs(pr) > 2 * Math.PI ? raw : pr;
+    const prc = clamp(pr, -ROM.supination, ROM.pronation);
     if (Math.abs(pr - prc) > 0.02) this.viol['fore' + S] = Math.abs(pr - prc) / D2R;
     const tauC = a.s * prc;
     // swing: flexion about the hand's bind x, deviation about its bind z, inside an ellipse of [R16] bounds
@@ -2800,7 +2803,12 @@ class Rig {
       const vx = a.wf.x * fl + a.wd.x * dv, vy = a.wf.y * fl + a.wd.y * dv, vz = a.wf.z * fl + a.wd.z * dv, va = Math.hypot(vx, vy, vz);
       if (va > 1e-7) sw.setFromAxisAngle(_v[11].set(vx / va, vy / va, vz / va), va); else sw.identity();
     }
-    Q['hand' + S].copy(qf).multiply(_q[4].setFromAxisAngle(ax, tauC)).multiply(sw);
+    // the clamped wrist may turn no faster than WRIST_RATE: where a request is far outside the range, the swing / twist split
+    // is ill-conditioned and would otherwise snap the glove between frames
+    const rel2 = _q[1].copy(_q[4].setFromAxisAngle(ax, tauC)).multiply(sw);
+    if (a.relPrev && this.dt > 0) { const lim = WRIST_RATE * this.dt, ang = a.relPrev.angleTo(rel2); if (ang > lim) rel2.copy(_q[2].copy(a.relPrev).rotateTowards(rel2, lim)); }
+    (a.relCur || (a.relCur = new THREE.Quaternion())).copy(rel2);
+    Q['hand' + S].copy(qf).multiply(rel2);
     Q['fore' + S].copy(qf).multiply(_q[4].setFromAxisAngle(ax, tauC * TWIST_SPLIT));
   }
   // one arm: clavicle (shrug + protraction on long reaches), two-bone IK, glove frame, wrist limits; with a glove-tip
@@ -2825,14 +2833,15 @@ class Rig {
       qBasis(Q['hand' + S], gx, gy, gz).multiply(a.g0i);
       this.wrist(S);
       if (!goal) break;
-      const tip = t.tip.copy(a.tipL).applyQuaternion(Q['hand' + S]).add(t.C), err = _v[1].subVectors(goal, tip);
-      a.err = err.length(); a.short = short;
-      if (a.err < 0.002) break;
-      wT.addScaledVector(err, pose.tw[S] * 0.7);   // damped: near a wrist limit the glove swings with the forearm, so a full step overshoots
+      const tip = t.tip.copy(a.tipL).applyQuaternion(Q['hand' + S]).add(t.C);
+      if (it === 0) t.e2.copy(tip).lerp(goal, pose.tw[S]);   // aim part-way, in proportion to the goal's weight, so the correction grows smoothly
+      const err = _v[1].subVectors(t.e2, tip); a.err = tip.distanceTo(goal); a.short = short;
+      if (err.length() < 0.002) break;
+      wT.addScaledVector(err, 0.7);   // damped: near a wrist limit the glove swings with the forearm, so a full step overshoots
       // a reach past the straight arm: the shoulder slides forward round the ribcage
       if (short > 0.002 && prot < a.protMax) prot = Math.min(a.protMax, prot + short / a.cl);
     }
-    a.prot = prot;
+    a.prot = prot; if (a.relCur) (a.relPrev || (a.relPrev = new THREE.Quaternion())).copy(a.relCur);
     if (a.short > 0.01 && goal) this.viol['arm' + S] = a.short * 100;
   }
   // animated skeleton: pose → group-space joint positions P and rotations Q (also kept as PA/QA)
@@ -3790,7 +3799,7 @@ class Fighter {
         sm.tf[S] = out.tf[S]; sm.fc[S] = out.fc[S]; sm.tg[S].copy(out.tg[S]); sm.tw[S] = out.tw[S]; sm.fa[S] = out.fa[S];
       }
     }
-    R.solve(sm);
+    R.dt = dt; R.solve(sm);
     if (this.state === 'punch') { const ar = R.arm[this.act.realHand]; if (sm.tw[this.act.realHand] > 0.9) { this.act.reachable = ar.short < 0.01; this.act.tipErr = ar.err; } }
     const rg = this.rag; rg.targets(); rg.step(dt); rg.apply(); this.ragEvents();
     R.write(); this.storeTips(); this.trackStrike(dt); this.balance(dt);
@@ -3869,7 +3878,7 @@ class Fighter {
     else if (a.type === 'upper') { const c = _v[4].set(lerp(g0.x, wT.x, 0.5), Math.min(g0.y, wT.y) - 0.3, lerp(g0.z, wT.z, 0.35)); bez(out, g0, c, wT, t); }
     else { out.lerpVectors(g0, wT, t); out.y += 0.035 * Math.sin(Math.PI * clamp(t, 0, 1)); }
     // glove-tip goal: the knuckles follow the same path shifted onto the aim point; the rig walks the wrist until they land
-    p.tg[S].copy(out).add(_v[6].subVectors(aim, wT)); p.tw[S] = sstep(0.5, 0.95, e);
+    p.tg[S].copy(out).add(_v[6].subVectors(aim, wT)); p.tw[S] = sstep(0.3, 0.97, e);
     const k = clamp(e, 0, 1);
     p.gb[S].lerp(a.type === 'upper' ? _v[5].set(kd.x, 0.15, kd.z) : _v[5].set(0, 1, 0.1), k).normalize();
     p.ge[S].lerp(a.type === 'hook' ? _v[5].set(s, 0.4, -0.25) : a.type === 'upper' ? _v[5].set(s * 0.25, -1, -0.6) : _v[5].set(s * 0.3, -1, -0.35), k);
