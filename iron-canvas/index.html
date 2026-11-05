@@ -241,7 +241,8 @@ body.touch-fight #replay { top: calc(max(18px, env(safe-area-inset-top)) + 110px
         <dt>Hold <kbd>Space</kbd></dt><dd>Guard (add Shift for a low guard, which also checks kicks)</dd>
         <dt><kbd>L</kbd> + direction</dt><dd>Slip left/right, pull back, or duck (no direction)</dd>
         <dt><kbd>Q</kbd></dt><dd>Switch stance</dd>
-        <dt><kbd>C</kbd> · <kbd>Esc</kbd></dt><dd>Camera · Pause</dd></dl></div>
+        <dt><kbd>C</kbd> · <kbd>Esc</kbd></dt><dd>Camera · Pause</dd>
+        <dt><kbd>F3</kbd></dt><dd>Debug overlay: balance, IK targets, joint limits</dd></dl></div>
       <div><h3>Gamepad</h3><dl>
         <dt>Left stick</dt><dd>Footwork</dd>
         <dt><kbd>X</kbd> · <kbd>Y</kbd></dt><dd>Jab · Cross</dd>
@@ -1530,10 +1531,10 @@ const ROSTER = [
 ];
 
 const BONE_NAMES = ['pelvis', 'spine1', 'spine2', 'neck', 'head', 'clavL', 'armL', 'foreL', 'handL', 'clavR', 'armR', 'foreR', 'handR',
-  'thighL', 'shinL', 'footL', 'thighR', 'shinR', 'footR'];
+  'thighL', 'shinL', 'footL', 'thighR', 'shinR', 'footR', 'toesL', 'toesR'];   // toes: metatarsophalangeal joints (toe roll), appended so older indices hold
 const BONE_PARENT = { spine1: 'pelvis', spine2: 'spine1', neck: 'spine2', head: 'neck', clavL: 'spine2', armL: 'clavL', foreL: 'armL',
   handL: 'foreL', clavR: 'spine2', armR: 'clavR', foreR: 'armR', handR: 'foreR', thighL: 'pelvis', shinL: 'thighL', footL: 'shinL',
-  thighR: 'pelvis', shinR: 'thighR', footR: 'shinR' };
+  thighR: 'pelvis', shinR: 'thighR', footR: 'shinR', toesL: 'footL', toesR: 'footR' };
 
 function fighterJoints(b) {
   const H = b.h, J = {};
@@ -1548,6 +1549,7 @@ function fighterJoints(b) {
     J['shin' + S] = [s * 0.104 * b.hip, 0.515 * H, 0.014];
     J['foot' + S] = [s * 0.108 * b.hip, 0.085 * H, -0.035];
     J['toe' + S] = [s * 0.115 * b.hip, 0.022, 0.12 * H];
+    J['toes' + S] = [s * 0.113 * b.hip, 0.024, 0.12 * H - 0.048];   // MTP joint: the ball of the foot, where the toes bend
   }
   return J;
 }
@@ -1700,9 +1702,10 @@ function feetOps(J, b) {
     o.push(sph(add(F, [s * 0.027, -0.012, -0.014]), 0.0115, 'shin' + S, 0.012));                   // lateral malleolus
     o.push(rc(add(F, [0, -0.004, -0.046]), add(F, [0, 0.13, -0.042]), 0.0105, 0.013, 'shin' + S, 0.016));   // Achilles tendon
     // toes: big toe on the inside, the rest stepping down in length and size
-    o.push(rc(add(T, [-s * 0.024, -0.004, -0.04]), add(T, [-s * 0.027, -0.002, 0.004]), 0.0118, 0.0104, bone, 0.008));
+    const toes = 'toes' + S;                                                                       // toes bend at the MTP joint
+    o.push(rc(add(T, [-s * 0.024, -0.004, -0.04]), add(T, [-s * 0.027, -0.002, 0.004]), 0.0118, 0.0104, toes, 0.008));
     [[-0.006, 0.031, 0.0078], [0.009, 0.029, 0.0073], [0.022, 0.025, 0.0068], [0.034, 0.02, 0.0062]].forEach(([dx, len, r]) =>
-      o.push(rc(add(T, [s * dx, -0.008, -0.032]), add(T, [s * (dx + 0.003), -0.009, -0.032 + len]), r, r * 0.92, bone, 0.006)));
+      o.push(rc(add(T, [s * dx, -0.008, -0.032]), add(T, [s * (dx + 0.003), -0.009, -0.032 + len]), r, r * 0.92, toes, 0.006)));
   }
   return o;
 }
@@ -1736,6 +1739,7 @@ function shoesShape(J, b) {
     o.push(sph(add(F, [0, -0.042, -0.05]), 0.047, 'foot' + S, 0.04));
     o.push(ell(add(lerp(F, To, 0.5), [0, -0.064, 0.02]), 0.05, 0.02, 0.145, 'foot' + S, 0.025));
     o.push(clip(rc(lerp(F, K, 0.36), add(tops[S].sock, mul(sd, 0.02)), 0.047 * L, 0.046 * L, 'shin' + S, 0.01), sd, tops[S].sock));
+    o.push(sph(add(To, [0, -0.004, -0.014]), 0.01, 'toes' + S, 0.004));   // ≥ 2.5 cm inside the toe box: skin weight only, no shape change
   }
   return { shape: new SDF.Shape(o, { clips: [SDF.plane([0, -1, 0], [0, 0.002, 0])] }), tops };
 }
@@ -2567,27 +2571,100 @@ function makeTattooAtlas(def, J, marks, T = 512) {
 
 // ============================================================================
 // 6. RIG & ACTIVE RAGDOLL
-//    Rig: FK spine/neck and two-bone IK for arms and legs. Every bone's bind rotation
-//    is identity, so a bone's group-space rotation is (current basis) × (bind basis)⁻¹.
-//    Ragdoll: a position-based-dynamics body (25 particles — the joints plus points
-//    that pin down the head, chest, pelvis and foot orientations). Two kinds of muscle
-//    hold it to the animation: world-space pins and joint-space "shape" constraints.
-//    The physical body is blended into the animated skeleton bone by bone. A hit
-//    loosens the muscles around the impact so the impulse moves the body; a knockdown
-//    lets go entirely and the body falls under gravity with joint limits.
+//    Rig: a weighted CCD chain for pelvis → lumbar → thoracic spine and another for neck → head (per-joint
+//    limits, each joint taking its share of the turn), two-bone IK for arms and legs with measured hinge
+//    limits, knee poles that follow the feet, ankle and toe roll, clavicle protraction on long reaches, forearm
+//    twist split between elbow and wrist, swing-twist wrist limits and a glove-tip correction. Every bone's
+//    bind rotation is identity, so a bone's group-space rotation is (current basis) × (bind basis)⁻¹.
+//    Ragdoll: a position-based-dynamics body (25 particles — the joints plus points that pin down the head,
+//    chest, pelvis and foot orientations) whose particle masses come from measured segment masses. Two kinds of
+//    muscle hold it to the animation: world-space pins and joint-space "shape" constraints; angular limits
+//    (cone-twist at hips, shoulders and neck, hinge limits at elbows and knees) keep it inside human ranges.
+//    The physical body is blended into the animated skeleton bone by bone. A hit loosens the muscles around the
+//    impact so the impulse moves the body; a knockdown lets go entirely and the body falls under gravity.
 // ============================================================================
+//
+// BIOMECH_REFS — sources for the measured numbers in sections 6, 7 and 13. Every source was fetched and checked
+// for this revision; a constant's comment names its source, and "tuned, no source" marks values set by hand.
+//  [W05]  Walilko TJ, Viano DC, Bir CA (2005). Biomechanics of the head for Olympic boxer punches to the face.
+//         Br J Sports Med 39:710–719. https://pubmed.ncbi.nlm.nih.gov/16183766/ (free full text: PMC1725037)
+//  [DL20] Dinu D, Louis J (2020). Biomechanical analysis of the cross, hook, and uppercut in junior vs. elite boxers:
+//         implications for training and talent identification. Front Sports Act Living 2:598861.
+//         https://doi.org/10.3389/fspor.2020.598861 (CC BY 4.0; PMC7739747)
+//  [GS17] Gavagan CJ, Sayers MGL (2017). A biomechanical analysis of the roundhouse kicking technique of expert
+//         practitioners: a comparison between the martial arts disciplines of Muay Thai, Karate, and Taekwondo.
+//         PLoS ONE 12(8):e0182645. https://doi.org/10.1371/journal.pone.0182645 (CC BY 4.0; PMC5571909)
+//  [CDC]  Soucie JM et al. (2011). Range of motion measurements: reference values and a database for comparison
+//         studies. Haemophilia 17:500–507. Values from the CDC Normal Joint Range of Motion Study reference table
+//         (public domain), males 20–44 y: https://archive.cdc.gov/www_cdc_gov/ncbddd/jointrom/index.html
+//  [K22]  Kudzia P, Jackson E, Dumas G, et al. (2022). Estimating body segment parameters from three-dimensional
+//         human body scans. PLoS ONE 17(1):e0262296. https://doi.org/10.1371/journal.pone.0262296 (CC BY 4.0;
+//         PMC8730461) — male participants (n = 10, 73.4 kg, 1.8 m), "proposed" scan method.
+//  [R16]  Rajagopal A, Dembia CL, DeMers MS, et al. (2016). Full-body musculoskeletal model for muscle-driven
+//         simulation of human gait. IEEE Trans Biomed Eng 63(10):2068–2079. https://doi.org/10.1109/TBME.2016.2586891
+//         Coordinate ranges read from Rajagopal2016.osim (github.com/opensim-org/opensim-models; SimTK release under
+//         the MIT licence, © 2015 Stanford University). These are model bounds, not measured ranges.
+//  [RD13] Rowson S, Duma SM (2013). Brain injury prediction: assessing the combined probability of concussion using
+//         linear and rotational head acceleration. Ann Biomed Eng 41:873–882. https://doi.org/10.1007/s10439-012-0731-0
+//         (CC BY; PMC3624001)
+//  [BV18] Bruijn SM, van Dieën JH (2018). Control of human gait stability through foot placement. J R Soc Interface
+//         15:20170816. https://doi.org/10.1098/rsif.2017.0816 (CC BY; PMC6030625) — extrapolated centre of mass /
+//         capture point: x + v / ω₀ with ω₀ = √(g / l) for an inverted pendulum of length l.
+// ASSET_CREDITS — no motion capture, models or other assets were imported. Numeric data only: [K22] and [DL20],
+//         [GS17], [RD13], [BV18] under CC BY 4.0 / CC BY; [CDC] public domain; [R16] model data under MIT
+//         (© 2015 Stanford University; permission notice: https://simtk.org/projects/full_body).
+const D2R = Math.PI / 180;
+const BIO = {
+  // [K22] Table 3, males: segment masses (kg); used as fractions of their 74.7 kg segment sum
+  seg: { head: 5.6, upTrunk: 11.5, abdomen: 11.0, pelvis: 9.2, thigh: 10.4, shank: 3.5, foot: 1.1, upperArm: 2.1, forearm: 1.1, hand: 0.5 },
+  segSum: 74.7,
+  // [K22] Table 6, males: centre of mass as a fraction of segment length from the proximal end
+  com: { thigh: 0.440, shank: 0.406, foot: 0.451, upperArm: 0.419, forearm: 0.412, head: 0.496 },
+  gloveKg: 0.283,      // 10 oz glove: a rules value, not a research source
+};
+const ROM = {          // joint ranges, radians
+  kneeFlex: 137.7 * D2R, kneeExt: 1.0 * D2R,          // [CDC] knee flexion / extension past straight
+  elbowFlex: 144.6 * D2R, elbowExt: 0.8 * D2R,        // [CDC] elbow flexion / extension past straight
+  pronation: 76.9 * D2R, supination: 85.0 * D2R,      // [CDC] forearm pronation / supination
+  hipFlex: 130.4 * D2R, hipExt: 17.4 * D2R,           // [CDC] hip flexion / extension
+  shoulderFlex: 168.8 * D2R,                          // [CDC] shoulder flexion
+  ankleDorsi: 12.7 * D2R, anklePlantar: 54.6 * D2R,   // [CDC] ankle dorsiflexion / plantarflexion
+  hipAbd: 50 * D2R, hipAdd: 30 * D2R, hipRot: 40 * D2R,   // [R16] hip_adduction −50…30°, hip_rotation ±40°
+  shoulderAbd: 120 * D2R, shoulderRot: 90 * D2R,          // [R16] arm_add −120…90°, arm_rot ±90°
+  wristFlex: 70 * D2R, wristDev: 25 * D2R,               // [R16] wrist_flex ±70°, wrist_dev −25…+35° (the smaller bound, both ways)
+  mtpExt: 30 * D2R,                                       // [R16] mtp_angle ±30°
+  shoulderExt: 60 * D2R, shoulderAdd: 40 * D2R,           // tuned, no source
+  neckSwingF: 50 * D2R, neckSwingB: 60 * D2R, neckSwingL: 40 * D2R, neckTwist: 75 * D2R,   // tuned, no source
+  ankleTwist: 35 * D2R,      // how far the foot may turn about the shin off the knee's line (tibial torsion + subtalar) — tuned, no source
+  kneeStance: 7 * D2R,       // knee bend kept under a loaded leg so the knee never locks straight — tuned, no source
+  protract: 0.4,             // clavicle protraction available to a long reach (rad, ~23°) — tuned, no source
+};
+// trunk and neck chains: limits on each joint's local YXZ angles — x = flexion (+) / extension (−), y = axial turn,
+// z = side bend. Tuned, no source: no open per-level spine or neck range-of-motion data was found.
+const CHAIN_LIM = {
+  spine1: { x: [-0.35, 0.70], y: [-0.12, 0.12], z: [-0.35, 0.35] },   // lumbar: big flexion, little twist
+  spine2: { x: [-0.30, 0.50], y: [-0.60, 0.60], z: [-0.35, 0.35] },   // thoracic: most of the trunk's twist
+  neck: { x: [-0.65, 0.55], y: [-0.65, 0.65], z: [-0.55, 0.55] },     // lower cervical spine
+  head: { x: [-0.35, 0.35], y: [-0.75, 0.75], z: [-0.20, 0.20] },     // upper cervical (C0–C2): half the head's turn
+};
+const PELVIS_SHARE = 0.25;   // trunk twist the pelvis takes on when the spine runs out of range (rad) — tuned, no source
+const TWIST_SPLIT = 0.5;     // share of forearm pronation carried by the forearm bone (the rest at the wrist) — tuned, no source
+const XAXIS = V(1, 0, 0);
 function newPose() {
-  const side = () => ({ L: V(), R: V() });
+  const side = () => ({ L: V(), R: V() }), sc = v => ({ L: v, R: v });
   return { pelvis: V(), pY: 0, pP: 0, pR: 0, sY: 0, sP: 0, sR: 0, look: V(0, 1.6, 2), hY: 0, hP: 0, hR: 0, lookW: 1,
-    gl: side(), gb: side(), ge: side(), gk: side(), ft: side(), kp: side(), fy: { L: 0, R: 0 }, fp: { L: 0, R: 0 }, shrug: { L: 0, R: 0 } };
+    gl: side(), gb: side(), ge: side(), gk: side(), ft: side(), kp: side(), tg: side(), fy: sc(0), fp: sc(0), shrug: sc(0),
+    tf: sc(0), fc: sc(0), tw: sc(0), fa: sc(0) };   // tf: toe extension at the MTP joint, fc: foot carries weight, tg/tw: glove-tip goal and its weight,
+                                                     // fa: the foot hangs off the shin (fp is then an ankle angle) instead of lying on the canvas
 }
 const POSE_SCALARS = ['pY', 'pP', 'pR', 'sY', 'sP', 'sR', 'hY', 'hP', 'hR', 'lookW'];
-const POSE_VECS = ['gl', 'gb', 'ge', 'gk', 'ft', 'kp'];
+const POSE_VECS = ['gl', 'gb', 'ge', 'gk', 'ft', 'kp', 'tg'];
+const POSE_SIDE = ['fy', 'fp', 'shrug', 'tf', 'fc', 'tw', 'fa'];
 function lerpPose(a, b, t, out) {
   out.pelvis.lerpVectors(a.pelvis, b.pelvis, t); out.look.lerpVectors(a.look, b.look, t);
   for (const k of POSE_SCALARS) out[k] = lerp(a[k], b[k], t);
   for (const k of POSE_VECS) for (const S of ['L', 'R']) out[k][S].lerpVectors(a[k][S], b[k][S], t);
-  for (const k of ['fy', 'fp', 'shrug']) for (const S of ['L', 'R']) out[k][S] = lerp(a[k][S], b[k][S], t);
+  for (const k of POSE_SIDE) for (const S of ['L', 'R']) out[k][S] = lerp(a[k][S], b[k][S], t);
   return out;
 }
 function copyPose(src, dst = newPose()) { return lerpPose(src, src, 0, dst); }
@@ -2598,9 +2675,14 @@ function mirrorPose(p) {
   p.pelvis.x = -p.pelvis.x; p.look.x = -p.look.x;
   p.pY = -p.pY; p.pR = -p.pR; p.sY = -p.sY; p.sR = -p.sR; p.hY = -p.hY; p.hR = -p.hR;
   for (const k of POSE_VECS) { sw(p[k]); p[k].L.x = -p[k].L.x; p[k].R.x = -p[k].R.x; }
-  sw(p.fy); p.fy.L = -p.fy.L; p.fy.R = -p.fy.R; sw(p.fp); sw(p.shrug);
+  sw(p.fy); p.fy.L = -p.fy.L; p.fy.R = -p.fy.R; sw(p.fp); sw(p.shrug); sw(p.tf); sw(p.fc); sw(p.tw); sw(p.fa);
   return p;
 }
+// knee / elbow: hip–ankle (or shoulder–wrist) distance for a hinge flexion θ
+const hingeSpan = (l1, l2, th) => Math.sqrt(l1 * l1 + l2 * l2 + 2 * l1 * l2 * Math.cos(th));
+const _eul = new THREE.Euler();
+const eulOf = (q, out) => { _eul.setFromQuaternion(q, 'YXZ'); return out.set(_eul.x, _eul.y, _eul.z); };   // x pitch, y yaw, z roll
+const qOfEul = (out, e) => qYXZ(out, e.y, e.x, e.z);
 
 class Rig {
   constructor(obj) {
@@ -2613,35 +2695,71 @@ class Rig {
       const A = this.bind['arm' + S], E = this.bind['fore' + S], W = this.bind['hand' + S];
       const u0 = E.clone().sub(A).normalize(), f0 = W.clone().sub(E).normalize(), h0 = u0.clone().cross(f0).normalize();
       const gy = f0.clone(), gz = V(s, 0, 0).addScaledVector(gy, -s * gy.x).normalize(), gx = V().crossVectors(gy, gz);
-      this.arm[S] = { s, l1: A.distanceTo(E), l2: E.distanceTo(W),
+      this.arm[S] = { s, l1: A.distanceTo(E), l2: E.distanceTo(W), cl: A.distanceTo(this.bind['clav' + S]), protMax: ROM.protract,
         u0i: qBasis(new THREE.Quaternion(), h0, u0, V().crossVectors(h0, u0)).invert(),
         f0i: qBasis(new THREE.Quaternion(), h0, f0, V().crossVectors(h0, f0)).invert(),
-        g0i: qBasis(new THREE.Quaternion(), gx, gy, gz).invert() };
+        g0i: qBasis(new THREE.Quaternion(), gx, gy, gz).invert(),
+        f0: f0.clone(), wf: gx.clone(), wd: gz.clone(), tipL: gy.clone().multiplyScalar(0.15), short: 0, err: 0, prot: 0 };
       const T = this.bind['thigh' + S], K = this.bind['shin' + S], F = this.bind['foot' + S];
       const t0 = K.clone().sub(T).normalize(), s0 = F.clone().sub(K).normalize(), k0 = t0.clone().cross(s0).normalize();
-      this.leg[S] = { s, l1: T.distanceTo(K), l2: K.distanceTo(F),
+      this.leg[S] = { s, l1: T.distanceTo(K), l2: K.distanceTo(F), short: 0, k0: k0.clone(),
         t0i: qBasis(new THREE.Quaternion(), k0, t0, V().crossVectors(k0, t0)).invert(),
         s0i: qBasis(new THREE.Quaternion(), k0, s0, V().crossVectors(k0, s0)).invert() };
     }
-    this.tmp = { B: V(), C: V(), H: V(), y: V(), z: V(), x: V() };
+    this.eu = { spine1: V(), spine2: V(), neck: V(), head: V() };   // chain joints' local angles (x pitch, y yaw, z roll)
+    this.share = {};                                                  // the distal joint's share of each axis: its range over the pair's
+    for (const [d, p] of [['spine2', 'spine1'], ['head', 'neck']]) {
+      const span = (n, k) => CHAIN_LIM[n][k][1] - CHAIN_LIM[n][k][0];
+      this.share[d] = V(...['x', 'y', 'z'].map(k => span(d, k) / (span(d, k) + span(p, k))));
+    }
+    this.viol = {};   // joint-limit hits this frame (name → excess, degrees or cm), for the debug overlay
+    this.ccdIt = 3; this.armIt = 12;
+    this.tmp = { B: V(), C: V(), H: V(), y: V(), z: V(), x: V(), wT: V(), tip: V(), e: V(), e2: V() };
   }
   child(n, localQ) {
     const p = BONE_PARENT[n], P = this.P, Q = this.Q;
     P[n].copy(this.off[n]).applyQuaternion(Q[p]).add(P[p]);
     Q[n].copy(Q[p]); if (localQ) Q[n].multiply(localQ);
   }
-  // pelvis → spine2 only (used to place guard positions in the chest frame)
+  // weighted CCD on a two-joint chain j1 → j2 (parent j0 fixed) toward a goal orientation for j2. Each pass visits the
+  // distal joint (it takes its share of every axis) and then the proximal one (it takes whatever is left), each clamped
+  // to its limits, so a joint at its stop hands the rest of the turn to the other.
+  chain(j0, j1, j2, goal) {
+    const Q = this.Q, E1 = this.eu[j1].set(0, 0, 0), E2 = this.eu[j2].set(0, 0, 0), G = this.share[j2], e = this.tmp.e;
+    const lim = (E, L, n) => { for (const k of ['x', 'y', 'z']) { const v = E[k], c = clamp(v, L[k][0], L[k][1]); if (Math.abs(v - c) > 0.02) this.viol[n] = Math.max(this.viol[n] || 0, Math.abs(v - c) / D2R); E[k] = c; } };
+    for (let it = 0; it < this.ccdIt; it++) {
+      this.child(j1, qOfEul(_q[0], E1));
+      eulOf(_q[1].copy(Q[j1]).invert().multiply(goal), e);                       // distal local that would close the gap alone
+      E2.x += G.x * (e.x - E2.x); E2.y += G.y * (wrapA(e.y - E2.y)); E2.z += G.z * (e.z - E2.z);
+      lim(E2, CHAIN_LIM[j2], j2);
+      const L2 = qOfEul(_q[2], E2);
+      eulOf(_q[1].copy(Q[j0]).invert().multiply(goal).multiply(L2.invert()), e);  // proximal local that closes it with j2 held
+      E1.copy(e); lim(E1, CHAIN_LIM[j1], j1);
+    }
+    this.child(j1, qOfEul(_q[0], E1)); this.child(j2, qOfEul(_q[0], E2));
+  }
+  // pelvis → lumbar → thoracic (also used to place guard positions in the chest frame)
   spine(pose) {
-    this.P.pelvis.copy(pose.pelvis); qYXZ(this.Q.pelvis, pose.pY, pose.pP, pose.pR);
-    this.child('spine1', qYXZ(_q[0], pose.sY * 0.45, pose.sP * 0.5, pose.sR * 0.5));
-    this.child('spine2', qYXZ(_q[0], pose.sY * 0.55, pose.sP * 0.5, pose.sR * 0.5));
+    const P = this.P, Q = this.Q;
+    P.pelvis.copy(pose.pelvis); qYXZ(Q.pelvis, pose.pY, pose.pP, pose.pR);
+    const goal = this._goal || (this._goal = new THREE.Quaternion());
+    goal.copy(Q.pelvis).multiply(qYXZ(_q[3], pose.sY, pose.sP, pose.sR));       // the chest orientation the pose asks for
+    this.chain('pelvis', 'spine1', 'spine2', goal);
+    // a twist the spine cannot reach is shared by the pelvis (turning on the hips), up to PELVIS_SHARE
+    const left = eulOf(_q[4].copy(Q.spine2).invert().multiply(goal), this.tmp.e2).y;
+    if (Math.abs(left) > 0.01) {
+      qYXZ(Q.pelvis, pose.pY + clamp(left, -PELVIS_SHARE, PELVIS_SHARE), pose.pP, pose.pR);
+      this.chain('pelvis', 'spine1', 'spine2', goal);
+    }
   }
   chestToGroup(local, out) { return out.copy(local).applyQuaternion(this.Q.spine2).add(this.P.spine2); }
   chestDir(local, out) { return out.copy(local).applyQuaternion(this.Q.spine2).normalize(); }
-  ik(A, T, l1, l2, pole) {
+  // analytic two-bone IK. The hinge flexion is kept inside [thMin, thMax]; returns how far the target lies out of
+  // reach (> 0) or too close (< 0) after that clamp.
+  ik(A, T, l1, l2, pole, thMin = 0, thMax = Math.PI - 0.05) {
     const { B, C, H } = this.tmp, dir = _v[8].subVectors(T, A);
-    let d = dir.length(); dir.divideScalar(d || 1);
-    d = clamp(d, Math.abs(l1 - l2) + 1e-3, l1 + l2 - 1e-4);
+    const d0 = dir.length(); dir.divideScalar(d0 || 1);
+    const d = clamp(d0, hingeSpan(l1, l2, thMax) + 1e-4, hingeSpan(l1, l2, thMin) - 1e-4);
     const ca = clamp((l1 * l1 + d * d - l2 * l2) / (2 * l1 * d), -1, 1), sa = Math.sqrt(1 - ca * ca);
     const perp = _v[9].copy(pole).addScaledVector(dir, -pole.dot(dir));
     if (perp.lengthSq() < 1e-8) perp.set(0, -1, 0).addScaledVector(dir, dir.y);
@@ -2649,33 +2767,52 @@ class Rig {
     B.copy(A).addScaledVector(dir, l1 * ca).addScaledVector(perp, l1 * sa);
     C.copy(A).addScaledVector(dir, d);
     H.crossVectors(perp, dir).normalize();
+    return d0 - d;
   }
   boneFromTo(out, H, from, to, invBind) {
     const y = this.tmp.y.subVectors(to, from).normalize(), z = this.tmp.z.crossVectors(H, y);
     return qBasis(out, H, y, z).multiply(invBind);
   }
-  // animated skeleton: pose → group-space joint positions P and rotations Q (also kept as PA/QA)
-  solve(pose) {
-    const P = this.P, Q = this.Q, t = this.tmp;
-    this.spine(pose);
-    // neck + head: aim at the look target, 40/60 split, clamped relative to the chest
-    this.child('neck');
-    const eye = _v[10].copy(P.neck).add(_v[11].set(0, 0.17, 0.06).applyQuaternion(Q.spine2));
-    const ld = _v[11].subVectors(pose.look, eye);
-    const yaw = Math.atan2(ld.x, ld.z), pitch = -Math.atan2(ld.y, Math.hypot(ld.x, ld.z));
-    const want = qYXZ(_q[1], yaw * pose.lookW + pose.hY, pitch * pose.lookW + pose.hP, pose.hR);
-    const rel = _q[2].copy(Q.spine2).invert().multiply(want);
-    _e.setFromQuaternion(rel, 'YXZ');
-    qYXZ(rel, clamp(_e.y, -1.25, 1.25), clamp(_e.x, -0.75, 0.8), clamp(_e.z, -0.7, 0.7));
-    const nq = _q[3].identity().slerp(rel, 0.4);
-    Q.neck.copy(Q.spine2).multiply(nq);
-    this.child('head', _q[4].copy(nq).invert().multiply(rel));
-    // arms
-    for (const S of ['L', 'R']) {
-      const a = this.arm[S];
-      this.child('clav' + S, qYXZ(_q[0], 0, 0, a.s * pose.shrug[S]));
+  // wrist: split the hand's rotation relative to the forearm into twist (pronation/supination about the forearm) and
+  // swing (flexion / deviation), clamp both, and let the forearm bone carry part of the twist
+  wrist(S) {
+    const a = this.arm[S], Q = this.Q, qf = _q[0].copy(Q['fore' + S]), ax = a.f0;
+    const rel = _q[1].copy(qf).invert().multiply(Q['hand' + S]);
+    const d = rel.x * ax.x + rel.y * ax.y + rel.z * ax.z, tw = _q[2].set(ax.x * d, ax.y * d, ax.z * d, rel.w);
+    if (tw.lengthSq() < 1e-12) tw.identity(); else tw.normalize();
+    if (tw.w < 0) { tw.x = -tw.x; tw.y = -tw.y; tw.z = -tw.z; tw.w = -tw.w; }
+    const tau = 2 * Math.atan2(tw.x * ax.x + tw.y * ax.y + tw.z * ax.z, tw.w);           // signed turn about the forearm
+    const sw = _q[3].copy(tw).invert().multiply(rel);                                   // what is left: the wrist's swing
+    if (sw.w < 0) { sw.x = -sw.x; sw.y = -sw.y; sw.z = -sw.z; sw.w = -sw.w; }
+    // pronation is a positive turn for the left forearm (axis pointing to the hand), negative for the right
+    // a request far outside both limits (near ±180°) keeps to the limit it was nearest last frame, so the hand cannot flip
+    let pr = a.s * tau; if (Math.abs(pr) > 2.6 && a.prPrev !== undefined && Math.sign(pr) !== Math.sign(a.prPrev)) pr = Math.sign(a.prPrev) * Math.PI;
+    const prc = clamp(pr, -ROM.supination, ROM.pronation); a.prPrev = prc;
+    if (Math.abs(pr - prc) > 0.02) this.viol['fore' + S] = Math.abs(pr - prc) / D2R;
+    const tauC = a.s * prc;
+    // swing: flexion about the hand's bind x, deviation about its bind z, inside an ellipse of [R16] bounds
+    const sa = Math.hypot(sw.x, sw.y, sw.z), ang = 2 * Math.atan2(sa, sw.w);
+    if (sa > 1e-7) {
+      const ix = sw.x / sa, iy = sw.y / sa, iz = sw.z / sa;
+      let fl = ang * (ix * a.wf.x + iy * a.wf.y + iz * a.wf.z), dv = ang * (ix * a.wd.x + iy * a.wd.y + iz * a.wd.z);
+      const k = (fl / ROM.wristFlex) ** 2 + (dv / ROM.wristDev) ** 2;
+      if (k > 1) { const sc = 1 / Math.sqrt(k); if (k > 1.05) this.viol['hand' + S] = (Math.sqrt(k) - 1) * Math.hypot(fl, dv) / D2R; fl *= sc; dv *= sc; }
+      const vx = a.wf.x * fl + a.wd.x * dv, vy = a.wf.y * fl + a.wd.y * dv, vz = a.wf.z * fl + a.wd.z * dv, va = Math.hypot(vx, vy, vz);
+      if (va > 1e-7) sw.setFromAxisAngle(_v[11].set(vx / va, vy / va, vz / va), va); else sw.identity();
+    }
+    Q['hand' + S].copy(qf).multiply(_q[4].setFromAxisAngle(ax, tauC)).multiply(sw);
+    Q['fore' + S].copy(qf).multiply(_q[4].setFromAxisAngle(ax, tauC * TWIST_SPLIT));
+  }
+  // one arm: clavicle (shrug + protraction on long reaches), two-bone IK, glove frame, wrist limits; with a glove-tip
+  // goal (pose.tg / pose.tw) the wrist target is walked until the knuckles sit on it
+  armSolve(S, pose) {
+    const P = this.P, Q = this.Q, t = this.tmp, a = this.arm[S], s = a.s, goal = pose.tw[S] > 0.001 ? pose.tg[S] : null;
+    const wT = t.wT.copy(pose.gl[S]); let prot = goal ? a.prot * 0.92 : 0; a.short = 0; a.err = 0;   // warm start: last frame's protraction, relaxing
+    for (let it = 0; it < (goal ? this.armIt : 1); it++) {
+      this.child('clav' + S, qYXZ(_q[0], -s * prot, 0, s * pose.shrug[S]));
       this.child('arm' + S);
-      this.ik(P['arm' + S], pose.gl[S], a.l1, a.l2, pose.ge[S]); this.hinge[S].copy(t.H);
+      const short = this.ik(P['arm' + S], wT, a.l1, a.l2, pose.ge[S], 0, ROM.elbowFlex);   // elbow: [CDC] 0…144.6°
+      this.hinge[S].copy(t.H);
       this.boneFromTo(Q['arm' + S], t.H, P['arm' + S], t.B, a.u0i);
       P['fore' + S].copy(t.B); this.boneFromTo(Q['fore' + S], t.H, t.B, t.C, a.f0i);
       P['hand' + S].copy(t.C);
@@ -2686,15 +2823,56 @@ class Rig {
       if (gz.lengthSq() < 1e-6) gz.copy(t.H); gz.normalize();
       const gx = t.x.crossVectors(gy, gz);
       qBasis(Q['hand' + S], gx, gy, gz).multiply(a.g0i);
+      this.wrist(S);
+      if (!goal) break;
+      const tip = t.tip.copy(a.tipL).applyQuaternion(Q['hand' + S]).add(t.C), err = _v[1].subVectors(goal, tip);
+      a.err = err.length(); a.short = short;
+      if (a.err < 0.002) break;
+      wT.addScaledVector(err, pose.tw[S] * 0.7);   // damped: near a wrist limit the glove swings with the forearm, so a full step overshoots
+      // a reach past the straight arm: the shoulder slides forward round the ribcage
+      if (short > 0.002 && prot < a.protMax) prot = Math.min(a.protMax, prot + short / a.cl);
     }
-    // legs
+    a.prot = prot;
+    if (a.short > 0.01 && goal) this.viol['arm' + S] = a.short * 100;
+  }
+  // animated skeleton: pose → group-space joint positions P and rotations Q (also kept as PA/QA)
+  solve(pose, again = false) {
+    const P = this.P, Q = this.Q, t = this.tmp;
+    if (!again) for (const k in this.viol) delete this.viol[k];
+    this.spine(pose);
+    // neck + head: the look-at is shared down the cervical chain (each joint by its range), clamped joint by joint
+    this.child('neck', qOfEul(_q[0], this.eu.neck.set(0, 0, 0)));
+    const eye = _v[10].copy(P.neck).add(_v[11].set(0, 0.17, 0.06).applyQuaternion(Q.spine2));
+    const ld = _v[11].subVectors(pose.look, eye);
+    const yaw = Math.atan2(ld.x, ld.z), pitch = -Math.atan2(ld.y, Math.hypot(ld.x, ld.z));
+    const want = qYXZ(this._want || (this._want = new THREE.Quaternion()), yaw * pose.lookW + pose.hY, pitch * pose.lookW + pose.hP, pose.hR);
+    this.chain('spine2', 'neck', 'head', want);
+    for (const S of ['L', 'R']) this.armSolve(S, pose);
+    // legs: knee pole from the pose (it follows the foot), knee flexion inside [CDC] range, foot yaw + roll,
+    // toes flat on the canvas when the heel is up
     for (const S of ['L', 'R']) {
       const l = this.leg[S];
       this.child('thigh' + S);
-      this.ik(P['thigh' + S], pose.ft[S], l.l1, l.l2, pose.kp[S]); this.khinge[S].copy(t.H);
+      l.short = this.ik(P['thigh' + S], pose.ft[S], l.l1, l.l2, pose.kp[S], 0, ROM.kneeFlex);
+      if (l.short > 0.004 && pose.fc[S] > 0.5) this.viol['shin' + S] = l.short * 100;
+      this.khinge[S].copy(t.H);
       this.boneFromTo(Q['thigh' + S], t.H, P['thigh' + S], t.B, l.t0i);
       P['shin' + S].copy(t.B); this.boneFromTo(Q['shin' + S], t.H, t.B, t.C, l.s0i);
       P['foot' + S].copy(t.C); qYXZ(Q['foot' + S], pose.fy[S], pose.fp[S], 0);
+      if (pose.fa[S] > 0.001)   // in the air the foot hangs off the shin: fp becomes an ankle angle, inside the [CDC] range
+        Q['foot' + S].slerp(_q[1].copy(Q['shin' + S]).multiply(_q[2].setFromAxisAngle(l.k0, clamp(pose.fp[S], -ROM.ankleDorsi, ROM.anklePlantar))), pose.fa[S]);
+      this.child('toes' + S, _q[0].setFromAxisAngle(XAXIS, -clamp(pose.tf[S], 0, ROM.mtpExt)));
+    }
+    // a loaded foot must be reachable: if a planted leg came up short (the hips turned or rose more than the fighter's
+    // pre-pass expected), lower the hips by exactly what that leg needs and solve once more
+    if (!again) {
+      let drop = 0;
+      for (const S of ['L', 'R']) {
+        const l = this.leg[S]; if (pose.fc[S] < 0.5 || l.short < 0.002) continue;
+        const hip = P['thigh' + S], T = pose.ft[S], D = hingeSpan(l.l1, l.l2, ROM.kneeStance * 0.5), h2 = (hip.x - T.x) ** 2 + (hip.z - T.z) ** 2;
+        if (h2 < D * D) drop = Math.max(drop, hip.y - T.y - Math.sqrt(D * D - h2));
+      }
+      if (drop > 0.001) { pose.pelvis.y -= Math.min(drop, 0.15); this.solve(pose, true); return; }
     }
     for (const n of BONE_NAMES) { this.PA[n].copy(P[n]); this.QA[n].copy(Q[n]); }
   }
@@ -2730,18 +2908,48 @@ const RI = Object.fromEntries(RAG.map((n, i) => [n, i]));
 // where each particle sits on the animated skeleton: [bone, offset]
 const RAG_SRC = { pelvis: ['pelvis'], spine1: ['spine1'], spine2: ['spine2'], neck: ['neck'], head: ['head'], top: ['head', 'top'], face: ['head', 'face'],
   shL: ['armL'], elL: ['foreL'], wrL: ['handL'], shR: ['armR'], elR: ['foreR'], wrR: ['handR'],
-  hipL: ['thighL'], knL: ['shinL'], anL: ['footL'], toeL: ['footL', 'toeL'], heelL: ['footL', 'heelL'],
-  hipR: ['thighR'], knR: ['shinR'], anR: ['footR'], toeR: ['footR', 'toeR'], heelR: ['footR', 'heelR'],
+  hipL: ['thighL'], knL: ['shinL'], anL: ['footL'], toeL: ['toesL', 'toeL'], heelL: ['footL', 'heelL'],
+  hipR: ['thighR'], knR: ['shinR'], anR: ['footR'], toeR: ['toesR', 'toeR'], heelR: ['footR', 'heelR'],
   chestF: ['spine2', 'chestF'], pelvF: ['pelvis', 'pelvF'] };
-const RAG_MASS = { pelvis: 0.09, spine1: 0.11, spine2: 0.1, neck: 0.02, head: 0.045, top: 0.015, face: 0.015, shL: 0.025, elL: 0.02, wrL: 0.018,
-  shR: 0.025, elR: 0.02, wrR: 0.018, hipL: 0.055, knL: 0.045, anL: 0.022, toeL: 0.006, heelL: 0.006, hipR: 0.055, knR: 0.045, anR: 0.022,
-  toeR: 0.006, heelR: 0.006, chestF: 0.05, pelvF: 0.04 };
+// particle masses as fractions of body mass, built from the [K22] segment table: each limb segment's mass goes to its
+// two end particles by the lever rule, so the pair keeps the segment's measured centre of mass; trunk and head
+// segments are shared among their particles (the shares are tuned, no source; the head shares put its centre of
+// mass at [K22]'s 49.6 % of the neck-to-crown length)
+function ragMassFractions() {
+  const s = BIO.seg, c = BIO.com, m = {};
+  const add = (seg, parts) => { for (const n in parts) m[n] = (m[n] || 0) + s[seg] * parts[n] / BIO.segSum; };
+  add('head', { neck: 0.18, head: 0.32, top: 0.22, face: 0.28 });
+  add('upTrunk', { spine2: 0.4, chestF: 0.3, shL: 0.15, shR: 0.15 });
+  add('abdomen', { spine1: 0.65, chestF: 0.2, pelvF: 0.15 });
+  add('pelvis', { pelvis: 0.55, pelvF: 0.15, hipL: 0.15, hipR: 0.15 });
+  for (const S of ['L', 'R']) {
+    add('thigh', { ['hip' + S]: 1 - c.thigh, ['kn' + S]: c.thigh });
+    add('shank', { ['kn' + S]: 1 - c.shank, ['an' + S]: c.shank });
+    add('foot', { ['an' + S]: 0.5, ['heel' + S]: 0.2, ['toe' + S]: 0.3 });     // tuned: puts the foot's COM ~45 % heel → toe, as [K22]
+    add('upperArm', { ['sh' + S]: 1 - c.upperArm, ['el' + S]: c.upperArm });
+    add('forearm', { ['el' + S]: 1 - c.forearm, ['wr' + S]: c.forearm });
+    add('hand', { ['wr' + S]: 1 });
+  }
+  return m;
+}
+const RAG_MASS = ragMassFractions();
 const RAG_RAD = { pelvis: 0.11, spine1: 0.115, spine2: 0.115, neck: 0.055, head: 0.095, top: 0.075, face: 0.065, shL: 0.06, elL: 0.045, wrL: 0.05,
   shR: 0.06, elR: 0.045, wrR: 0.05, hipL: 0.08, knL: 0.055, anL: 0.045, toeL: 0.025, heelL: 0.03, hipR: 0.08, knR: 0.055, anR: 0.045,
   toeR: 0.025, heelR: 0.03, chestF: 0.075, pelvF: 0.085 };
 // which particle carries each bone's physics weight
 const BONE_RP = { pelvis: 'pelvis', spine1: 'spine1', spine2: 'spine2', neck: 'neck', head: 'head', clavL: 'shL', armL: 'elL', foreL: 'wrL', handL: 'wrL',
-  clavR: 'shR', armR: 'elR', foreR: 'wrR', handR: 'wrR', thighL: 'knL', shinL: 'anL', footL: 'anL', thighR: 'knR', shinR: 'anR', footR: 'anR' };
+  clavR: 'shR', armR: 'elR', foreR: 'wrR', handR: 'wrR', thighL: 'knL', shinL: 'anL', footL: 'anL', thighR: 'knR', shinR: 'anR', footR: 'anR',
+  toesL: 'anL', toesR: 'anR' };
+// angular limits inside the PBD solve. Cones: joint particle → child particle, measured in the parent's frame
+// (pelvis or chest, built from particles) around a rest axis, with an elliptical bound [front, back, out, in];
+// twist: how far the limb's bending plane may turn about the limb, taken from the distal particle
+const RAG_CONE = [
+  { j: 'hipL', c: 'kn', S: 'L', fr: 'pelvis', lim: [ROM.hipFlex, ROM.hipExt + 8 * D2R, ROM.hipAbd, ROM.hipAdd], tw: 'an', twLim: ROM.hipRot + 10 * D2R },   // +8° / +10°: slack for the particle frames (tuned)
+  { j: 'hipR', c: 'kn', S: 'R', fr: 'pelvis', lim: [ROM.hipFlex, ROM.hipExt + 8 * D2R, ROM.hipAbd, ROM.hipAdd], tw: 'an', twLim: ROM.hipRot + 10 * D2R },
+  { j: 'shL', c: 'el', S: 'L', fr: 'chest', lim: [ROM.shoulderFlex, ROM.shoulderExt, ROM.shoulderAbd, ROM.shoulderAdd], tw: 'wr', twLim: ROM.shoulderRot },
+  { j: 'shR', c: 'el', S: 'R', fr: 'chest', lim: [ROM.shoulderFlex, ROM.shoulderExt, ROM.shoulderAbd, ROM.shoulderAdd], tw: 'wr', twLim: ROM.shoulderRot },
+];
+const RAG_HINGE_MAX = { kn: ROM.kneeFlex, el: ROM.elbowFlex };   // [CDC]
 const RC_BONE = ['pelvis spine1', 'spine1 spine2', 'spine2 neck', 'neck head', 'head top', 'head face', 'top face', 'spine2 chestF', 'neck chestF',
   'spine2 shL', 'neck shL', 'chestF shL', 'spine2 shR', 'neck shR', 'chestF shR', 'shL shR', 'shL elL', 'elL wrL', 'shR elR', 'elR wrR',
   'pelvis hipL', 'pelvis hipR', 'hipL hipR', 'pelvis pelvF', 'hipL pelvF', 'hipR pelvF',
@@ -2781,14 +2989,23 @@ class Ragdoll {
   constructor(f) {
     this.f = f; const J = f.obj.J, b = f.def.build, hs = b.head * Math.sqrt(b.h), N = this.N = RAG.length;
     this.off = { top: V(0, 0.205 * hs, -0.012 * hs), face: V(0, 0.08 * hs, 0.104 * hs), chestF: V(0, 0.045, 0.122), pelvF: V(0, -0.005, 0.108) };
-    for (const S of ['L', 'R']) { this.off['toe' + S] = V(...J['toe' + S]).sub(V(...J['foot' + S])); this.off['heel' + S] = V(0, 0.032 - J['foot' + S][1], -0.052); }
+    for (const S of ['L', 'R']) { this.off['toe' + S] = V(...J['toe' + S]).sub(V(...J['toes' + S])); this.off['heel' + S] = V(0, 0.032 - J['foot' + S][1], -0.052); }
     const mk = () => Array.from({ length: N }, () => V());
     this.x = mk(); this.v = mk(); this.p = mk(); this.T = mk(); this.Tp = mk(); this.TG = mk(); this.X = mk(); this.dv = mk(); this.bind = mk();
     this.im = new Float32Array(N); this.rad = new Float32Array(N); this.w = new Float32Array(N); this.slack = new Float32Array(N);
     this.pinScale = new Float32Array(N).fill(1); this.contact = new Uint8Array(N); this.cprev = new Uint8Array(N); this.gs = new Float32Array(N);
     this.href = { armL: V(1, 0, 0), armR: V(1, 0, 0), legL: V(1, 0, 0), legR: V(1, 0, 0) };   // hinge axes (world) the elbows/knees must not flip past
-    const tot = RAG.reduce((s, n) => s + RAG_MASS[n], 0);
-    RAG.forEach((n, i) => { this.im[i] = 1 / (RAG_MASS[n] / tot * f.mass); this.rad[i] = RAG_RAD[n]; });
+    // particle masses: [K22] segment fractions × this fighter's mass, plus the glove on each wrist
+    this.m = new Float32Array(N);
+    RAG.forEach((n, i) => { this.m[i] = RAG_MASS[n] * f.mass + (n === 'wrL' || n === 'wrR' ? BIO.gloveKg : 0); this.im[i] = 1 / this.m[i]; this.rad[i] = RAG_RAD[n]; });
+    this.M = this.m.reduce((a, b) => a + b, 0);
+    this.viol = {}; this.angEvery = 1;
+    this.cones = RAG_CONE.map(c => { const leg = c.fr === 'pelvis', I = RI, S = c.S;
+      return { j: I[c.j], c: I[c.c + S], tw: I[c.tw + S], s: S === 'L' ? 1 : -1, fr: c.fr, lim: c.lim, twLim: c.twLim, name: leg ? 'thigh' + S : 'arm' + S,
+        fold: leg ? -1 : 1,                                                     // a knee folds the shin back, an elbow folds the forearm forward
+        limb: leg ? [I['kn' + S], I['an' + S], I['heel' + S], I['toe' + S]] : [I['el' + S], I['wr' + S]],
+        dist: leg ? [I['an' + S], I['heel' + S], I['toe' + S]] : [I['wr' + S]] }; });
+    this.footL = { L: [RI.heelL, RI.toeL], R: [RI.heelR, RI.toeR] }; this.headParts = [RI.head, RI.top, RI.face]; this.faceParts = [RI.face, RI.top];
     RAG.forEach((n, i) => { const [bn, ok] = RAG_SRC[n]; this.bind[i].set(...J[bn]); if (ok) this.bind[i].add(this.off[ok]); });
     const bind = this.bind, pair = s => s.split(' ').map(n => RI[n]), bd = (a, c) => bind[a].distanceTo(bind[c]);
     this.cBone = RC_BONE.map(s => { const [a, c] = pair(s); return { a, b: c, rest: bd(a, c), bind: bd(a, c), soft: RC_SOFT.has(s) }; });
@@ -2877,6 +3094,7 @@ class Ragdoll {
   }
   step(dt) {
     this.dtLast = dt; if (dt <= 0) return;
+    for (const k in this.viol) delete this.viol[k];
     this.relax(dt);
     if (!this.active) { for (let i = 0; i < this.N; i++) { this.x[i].copy(this.T[i]); this.v[i].subVectors(this.T[i], this.Tp[i]).divideScalar(dt); this.dv[i].set(0, 0, 0); } this.speed = 0; return; }
     const N = this.N, n = clamp(Math.ceil(dt * 240), 1, 8), h = dt / n, IT = 6, f = this.f, opp = f.opp;
@@ -2894,7 +3112,7 @@ class Ragdoll {
         const k = this.pinBase * this.pinScale[i] * (1 - this.slack[i]);
         if (k > 0.001) { const fk = 1 - Math.exp(-260 * k * h); _v[0].lerpVectors(this.Tp[i], this.T[i], a); p.lerp(_v[0], fk); }
       }
-      for (let it = 0; it < IT; it++) this.solve(oppIn, ox, oz, IT);
+      for (let it = 0; it < IT; it++) this.solve(oppIn, ox, oz, IT, it);
       for (let i = 0; i < N; i++) {
         const x = this.x[i], p = this.p[i], v = this.v[i];
         if (this.contact[i] && !this.cprev[i] && v.y < -1.1) this.events.push({ i, v: -v.y });
@@ -2913,7 +3131,7 @@ class Ragdoll {
     if (d < 1e-7) return; const wa = this.im[a], wb = this.im[b], C = (d - rest) / (d * (wa + wb)) * k;
     pa.x += dx * C * wa; pa.y += dy * C * wa; pa.z += dz * C * wa; pb.x -= dx * C * wb; pb.y -= dy * C * wb; pb.z -= dz * C * wb;
   }
-  solve(oppIn, ox, oz, IT) {
+  solve(oppIn, ox, oz, IT, it = 0) {
     const p = this.p, I = RI;
     for (const c of this.cBone) this.dist(c.a, c.b, c.rest, 1);
     if (this.tone > 0.002) for (const c of this.cShape) {
@@ -2924,11 +3142,7 @@ class Ragdoll {
       const d = p[c.a].distanceTo(p[c.b]);
       if (d < c.lo) this.dist(c.a, c.b, c.lo, 1); else if (d > c.hi) this.dist(c.a, c.b, c.hi, 1);
     }
-    // elbows and knees never bend backwards: their hinge may not flip past straight
-    for (const S of ['L', 'R']) {
-      this.hinge(I['hip' + S], I['kn' + S], I['an' + S], this.href['leg' + S]);
-      this.hinge(I['sh' + S], I['el' + S], I['wr' + S], this.href['arm' + S]);
-    }
+    if (it % this.angEvery === 0) this.angular(it === IT - 1);
     if (this.mode !== 'anim') for (const c of this.cColl) { const d = p[c.a].distanceTo(p[c.b]); if (d < c.eff) this.dist(c.a, c.b, c.eff, 0.8); }
     // floor, ropes and the other fighter
     const B = RING.bound + 0.45;
@@ -2946,17 +3160,103 @@ class Ragdoll {
       const w = p[I['wr' + S]], e = p[I['el' + S]], dir = _v[2].subVectors(w, e).normalize(), gy = w.y + dir.y * 0.085;
       if (gy < 0.062) { const d = 0.062 - gy; w.y += d; e.y += d * 0.3; this.contact[I['wr' + S]] = 1; }
     }
+    // elbows and knees never bend backwards: their hinge may not flip past straight (last, so the contacts cannot undo it;
+    // the final pass corrects in full)
+    const hk = it === IT - 1 ? 1 : 0.7;
+    for (const S of ['L', 'R']) {
+      this.hinge(I['hip' + S], I['kn' + S], I['an' + S], this.href['leg' + S], hk);
+      this.hinge(I['sh' + S], I['el' + S], I['wr' + S], this.href['arm' + S], hk);
+    }
+  }
+  // ---- angular limits (cone-twist at hips, shoulders and neck; hinge flexion limits at knees and elbows) ----
+  pframe(kind, F) {   // parent frames from particles: x = the body's left, y = up, z = front
+    const p = this.p, I = RI;
+    if (kind === 'pelvis') { F.y.subVectors(p[I.spine1], p[I.pelvis]).normalize(); F.x.subVectors(p[I.hipL], p[I.hipR]); F.x.addScaledVector(F.y, -F.x.dot(F.y)).normalize(); F.z.crossVectors(F.x, F.y); }
+    else { F.y.subVectors(p[I.neck], p[I.spine2]).normalize(); F.z.subVectors(p[I.chestF], p[I.spine2]); F.z.addScaledVector(F.y, -F.z.dot(F.y)).normalize(); F.x.crossVectors(F.y, F.z); }
+    return F;
+  }
+  rotParticles(pivot, q, list) { const o = this.p[pivot]; for (const i of list) this.p[i].sub(o).applyQuaternion(q).add(o); }
+  angular(record) {
+    const F = this._F || (this._F = { x: V(), y: V(), z: V() }), G = this._G || (this._G = { x: V(), y: V(), z: V() }), I = RI;
+    this.pframe('pelvis', F); this.pframe('chest', G);
+    for (const c of this.cones) this.cone(c, c.fr === 'pelvis' ? F : G, record);
+    this.neckLimit(G, record);
+    for (const S of ['L', 'R']) {
+      this.hingeMax(I['hip' + S], I['kn' + S], I['an' + S], RAG_HINGE_MAX.kn, 'shin' + S, record, this.footL[S]);
+      this.hingeMax(I['sh' + S], I['el' + S], I['wr' + S], RAG_HINGE_MAX.el, 'fore' + S, record, null);
+      this.ankle(S, record);
+    }
+  }
+  // ankle: the foot's angle to the shin stays inside dorsiflexion 12.7° … plantarflexion 54.6° [CDC], and the foot may not
+  // turn about the shin more than ROM.ankleTwist off the line the knee bends in (the knee's remembered hinge axis)
+  ankle(S, record) {
+    const p = this.p, I = RI, an = p[I['an' + S]], sh = _v[0].subVectors(an, p[I['kn' + S]]), sl = sh.length(); if (sl < 1e-6) return; sh.divideScalar(sl);
+    const ft = _v[1].subVectors(p[I['toe' + S]], p[I['heel' + S]]); if (ft.lengthSq() < 1e-8) return; ft.normalize();
+    const th = Math.acos(clamp(sh.dot(ft), -1, 1)), lo = Math.PI / 2 - ROM.ankleDorsi, hi = Math.PI / 2 + ROM.anklePlantar, list = this.footL[S];
+    if (th < lo || th > hi) {
+      const ax = _v[2].crossVectors(sh, ft); if (ax.lengthSq() > 1e-10) { ax.normalize(); this.rotParticles(I['an' + S], _q[5].setFromAxisAngle(ax, (th < lo ? lo : hi) - th), list);
+        if (record) this.viol['foot' + S] = Math.max(this.viol['foot' + S] || 0, Math.abs((th < lo ? lo : hi) - th) / D2R); }
+      ft.subVectors(p[I['toe' + S]], p[I['heel' + S]]).normalize();
+    }
+    const kf = _v[2].crossVectors(sh, this.href['leg' + S]); if (kf.lengthSq() < 1e-8) return; kf.normalize();   // where the knee points, across the shin
+    ft.addScaledVector(sh, -ft.dot(sh)); if (ft.lengthSq() < 1e-8) return; ft.normalize();
+    const tau = Math.atan2(_v[3].crossVectors(kf, ft).dot(sh), kf.dot(ft)), ex = Math.abs(tau) - ROM.ankleTwist;
+    if (ex > 0) { this.rotParticles(I['an' + S], _q[5].setFromAxisAngle(sh, -Math.sign(tau) * ex), list); if (record) this.viol['foot' + S + '·twist'] = Math.max(this.viol['foot' + S + '·twist'] || 0, ex / D2R); }
+  }
+  // swing: the limb's direction may not leave an elliptical cone about "straight down" in the parent frame;
+  // twist: the plane the limb folds in may not turn past the limit relative to the parent's front carried along
+  cone(c, F, record) {
+    const p = this.p, s = c.s, d = _v[0].subVectors(p[c.c], p[c.j]), L = d.length(); if (L < 1e-6) return; d.divideScalar(L);
+    const fw = d.dot(F.z), out = s * d.dot(F.x), ang = Math.acos(clamp(-d.dot(F.y), -1, 1)), r = Math.hypot(fw, out);
+    const cu = r > 1e-6 ? fw / r : 1, cw = r > 1e-6 ? out / r : 0, lu = cu >= 0 ? c.lim[0] : c.lim[1], lw = cw >= 0 ? c.lim[2] : c.lim[3];
+    const lmax = 1 / Math.sqrt(cu * cu / (lu * lu) + cw * cw / (lw * lw));
+    if (ang > lmax) {
+      const sn = Math.sin(lmax), cs = Math.cos(lmax), nd = _v[1].copy(F.y).multiplyScalar(-cs).addScaledVector(F.z, cu * sn).addScaledVector(F.x, s * cw * sn).normalize();
+      this.rotParticles(c.j, _q[5].setFromUnitVectors(d, nd), c.limb); d.copy(nd);
+      if (record) this.viol[c.name] = Math.max(this.viol[c.name] || 0, (ang - lmax) / D2R);
+    }
+    const sg = _v[2].subVectors(p[c.tw], p[c.c]), sl = sg.length(); if (sl < 1e-6) return;
+    sg.addScaledVector(d, -sg.dot(d)); const bend = sg.length() / sl; if (bend < 0.34) return;   // under ~20° of fold the twist cannot be seen
+    sg.multiplyScalar(c.fold / (bend * sl));
+    const ref = _v[1].copy(F.z).applyQuaternion(_q[5].setFromUnitVectors(_v[3].copy(F.y).negate(), d)); ref.addScaledVector(d, -ref.dot(d));
+    if (ref.lengthSq() < 1e-8) return; ref.normalize();
+    const tau = Math.atan2(_v[3].crossVectors(ref, sg).dot(d), ref.dot(sg)), ex = Math.abs(tau) - c.twLim;
+    if (ex > 0) { this.rotParticles(c.c, _q[5].setFromAxisAngle(d, -Math.sign(tau) * ex), c.dist); if (record) this.viol[c.name + '·twist'] = Math.max(this.viol[c.name + '·twist'] || 0, ex / D2R); }
+  }
+  neckLimit(G, record) {   // the head's lean off the chest's up axis, and its turn about the neck (tuned, no source)
+    const p = this.p, I = RI, d = _v[0].subVectors(p[I.head], p[I.neck]), L = d.length(); if (L < 1e-6) return; d.divideScalar(L);
+    const fw = d.dot(G.z), sd = d.dot(G.x), ang = Math.acos(clamp(d.dot(G.y), -1, 1)), r = Math.hypot(fw, sd);
+    const cu = r > 1e-6 ? fw / r : 1, cw = r > 1e-6 ? sd / r : 0, lu = cu >= 0 ? ROM.neckSwingF : ROM.neckSwingB;
+    const lmax = 1 / Math.sqrt(cu * cu / (lu * lu) + cw * cw / (ROM.neckSwingL * ROM.neckSwingL));
+    if (ang > lmax) {
+      const sn = Math.sin(lmax), nd = _v[1].copy(G.y).multiplyScalar(Math.cos(lmax)).addScaledVector(G.z, cu * sn).addScaledVector(G.x, cw * sn).normalize();
+      this.rotParticles(I.neck, _q[5].setFromUnitVectors(d, nd), this.headParts); d.copy(nd);
+      if (record) this.viol.neck = Math.max(this.viol.neck || 0, (ang - lmax) / D2R);
+    }
+    const fc = _v[2].subVectors(p[I.face], p[I.head]); fc.addScaledVector(d, -fc.dot(d)); if (fc.lengthSq() < 1e-8) return; fc.normalize();
+    const ref = _v[1].copy(G.z).applyQuaternion(_q[5].setFromUnitVectors(G.y, d)); ref.addScaledVector(d, -ref.dot(d)); if (ref.lengthSq() < 1e-8) return; ref.normalize();
+    const tau = Math.atan2(_v[3].crossVectors(ref, fc).dot(d), ref.dot(fc)), ex = Math.abs(tau) - ROM.neckTwist;
+    if (ex > 0) { this.rotParticles(I.head, _q[5].setFromAxisAngle(d, -Math.sign(tau) * ex), this.faceParts); if (record) this.viol['neck·twist'] = Math.max(this.viol['neck·twist'] || 0, ex / D2R); }
+  }
+  hingeMax(a, b, c, max, name, record, extra) {   // open a knee or elbow that folds past its measured flexion
+    const p = this.p, u = _v[3].subVectors(p[b], p[a]), f = _v[4].subVectors(p[c], p[b]), lu = u.length(), lf = f.length();
+    if (lu < 1e-6 || lf < 1e-6) return;
+    const th = Math.acos(clamp(u.dot(f) / (lu * lf), -1, 1)); if (th <= max) return;
+    const H = _v[5].crossVectors(u, f); if (H.lengthSq() < 1e-12) return; H.normalize();
+    const q = _q[5].setFromAxisAngle(H, -(th - max)), o = p[b];
+    p[c].sub(o).applyQuaternion(q).add(o); if (extra) for (const i of extra) p[i].sub(o).applyQuaternion(q).add(o);
+    if (record) this.viol[name] = Math.max(this.viol[name] || 0, (th - max) / D2R);
   }
   // a hinge (elbow/knee) whose bend axis turns against its reference has hyperextended: pull it back to straight.
   // While limp, the reference tracks the joint whenever it is clearly bent, so it can only fold the way it started.
-  hinge(a, b, c, ref) {
+  hinge(a, b, c, ref, k = 0.7) {
     const p = this.p, A = p[a], Bp = p[b], C = p[c];
     const u = _v[3].subVectors(Bp, A), f = _v[4].subVectors(C, Bp), H = _v[1].crossVectors(u, f), lh = H.length();
     if (lh < 1e-8) return;
     if (H.dot(ref) < 0) {
       const ac = _v[3].subVectors(C, A), L2 = ac.lengthSq(); if (L2 < 1e-6) return;
       const t = _v[4].subVectors(Bp, A).dot(ac) / L2, o = _v[4].subVectors(Bp, A).addScaledVector(ac, -t);
-      Bp.addScaledVector(o, -0.7); A.addScaledVector(o, 0.15); C.addScaledVector(o, 0.15);
+      Bp.addScaledVector(o, -k); A.addScaledVector(o, k * 0.21); C.addScaledVector(o, k * 0.21);
     } else if (this.mode === 'limp' && lh > 0.2 * u.length() * f.length()) ref.copy(H).divideScalar(lh);
   }
   // physical frame for a bone, computed the same way from any set of particle positions (A)
@@ -2986,7 +3286,7 @@ class Ragdoll {
     const qa = _q[0], qb = _q[1];
     for (const n of BONE_NAMES) {
       const w = this.w[RI[BONE_RP[n]]]; if (w < 0.002) continue;
-      const src = n === 'handL' ? 'foreL' : n === 'handR' ? 'foreR' : n;
+      const src = n === 'handL' ? 'foreL' : n === 'handR' ? 'foreR' : n === 'toesL' ? 'footL' : n === 'toesR' ? 'footR' : n;
       this.frame(src, this.X, qa); this.frame(src, this.TG, qb);
       qa.multiply(qb.invert());                         // ΔR: animated frame → physical frame
       _q[2].copy(qa).multiply(R.QA[n]);                 // physical rotation of this bone
@@ -2996,17 +3296,22 @@ class Ragdoll {
     R.fk();
     // feet stay planted while the body above them moves: re-solve the leg IK onto the animated feet
     if (this.mode === 'anim') for (const S of ['L', 'R']) {
-      const wl = this.w[RI['kn' + S]]; if (wl > 0.97) continue;
+      const planted = f.sm.fc[S] > 0.5, wl = this.w[RI['kn' + S]]; if (!planted && wl > 0.97) continue;
       const l = R.leg[S], hip = R.P['thigh' + S], foot = R.PA['foot' + S];
-      const pole = _v[10].subVectors(R.PA['shin' + S], _v[11].addVectors(R.PA['thigh' + S], foot).multiplyScalar(0.5));
-      R.ik(hip, foot, l.l1, l.l2, pole); const t = R.tmp;
+      // knee direction: where the physical knee went (a buckled knee stays buckled), between hip and planted ankle
+      const kn = planted ? _v[9].lerpVectors(R.PA['shin' + S], R.P['shin' + S], wl) : R.PA['shin' + S];
+      const pole = _v[10].subVectors(kn, _v[11].addVectors(planted ? hip : R.PA['thigh' + S], foot).multiplyScalar(0.5));
+      R.ik(hip, foot, l.l1, l.l2, pole, 0, ROM.kneeFlex); const t = R.tmp;
       R.boneFromTo(_q[3], t.H, hip, t.B, l.t0i); R.boneFromTo(_q[4], t.H, t.B, t.C, l.s0i);
-      R.Q['thigh' + S].copy(_q[3]).slerp(R.Q['thigh' + S], wl); R.Q['shin' + S].copy(_q[4]).slerp(R.Q['shin' + S], wl);
+      if (planted) { R.Q['thigh' + S].copy(_q[3]); R.Q['shin' + S].copy(_q[4]); R.Q['foot' + S].copy(R.QA['foot' + S]); R.Q['toes' + S].copy(R.QA['toes' + S]); }
+      else { R.Q['thigh' + S].copy(_q[3]).slerp(R.Q['thigh' + S], wl); R.Q['shin' + S].copy(_q[4]).slerp(R.Q['shin' + S], wl); }
     }
     R.fk();
   }
   // where the body is: pelvis and chest centres, facing
   pelvisWorld(out) { return out.copy(this.active ? this.x[RI.pelvis] : this.T[RI.pelvis]); }
+  // whole-body centre of mass (world): the [K22]-weighted particles — physical positions while active, else the animation
+  com(out) { const X = this.active ? this.x : this.T; out.set(0, 0, 0); for (let i = 0; i < this.N; i++) out.addScaledVector(X[i], this.m[i]); return out.divideScalar(this.M); }
 }
 function basisYX(out, y, xh) { y.normalize(); xh.addScaledVector(y, -xh.dot(y)); if (xh.lengthSq() < 1e-10) xh.set(1, 0, 0); xh.normalize(); return qBasis(out, xh, y, _v[9].crossVectors(xh, y)); }
 function basisYZ(out, y, zh) { y.normalize(); zh.addScaledVector(y, -zh.dot(y)); if (zh.lengthSq() < 1e-10) zh.set(0, 0, 1); zh.normalize(); return qBasis(out, _v[9].crossVectors(y, zh), y, zh); }
@@ -3031,13 +3336,50 @@ function limbFrame3(out, A, B, C, Hf, lower) {
 //    stance → action → springs → IK → active ragdoll. Poses are built for an
 //    orthodox stance (lead = left) and mirrored for a southpaw.
 // ============================================================================
-const PUNCH = {   // seconds; startup = commitment, active = hit window, recovery = counter window; mom = momentum (kg·m/s) at full power
-  jab: { tS: 0.14, tA: 0.05, tR: 0.17, dmg: 1.25, sta: 2.4, stun: 3, pw: 0.35, lunge: 0.26, yaw: 0.22, mom: 9 },
-  cross: { tS: 0.21, tA: 0.06, tR: 0.25, dmg: 2.5, sta: 5, stun: 6.5, pw: 0.75, lunge: 0.22, yaw: 0.95, mom: 15 },
-  hook: { tS: 0.24, tA: 0.06, tR: 0.29, dmg: 3.0, sta: 6.4, stun: 8.5, pw: 0.9, lunge: 0.13, yaw: 0.95, mom: 17 },
-  upper: { tS: 0.26, tA: 0.06, tR: 0.31, dmg: 3.3, sta: 7, stun: 10, pw: 1, lunge: 0.11, yaw: 0.6, mom: 17 },
-  kick: { tS: 0.3, tA: 0.07, tR: 0.4, dmg: 3.4, sta: 8.5, stun: 0, pw: 0.95, lunge: 0.05, yaw: 1.2, mom: 24 },
+// seconds: startup = commitment, active = hit window, recovery = counter window (tuned for play, as before).
+// v: peak speed (m/s) the strike is timed to reach at contact — glove knuckles, or the foot for the kick — for an
+// average fighter at full effort. meff: effective mass (kg); a landed strike's impulse is J = meff · v · cleanness with
+// the speed actually reached. rot: share of rotational head acceleration per unit impulse (straight punch = 1).
+const PUNCH = {
+  jab: { tS: 0.14, tA: 0.05, tR: 0.17, dmg: 1.25, sta: 2.4, stun: 3, pw: 0.35, lunge: 0.26, yaw: 0.22,
+    v: 7.6,      // [W05] straight punches 9.14 ± 2.06 m/s; the lead hand placed in the lower half — tuned
+    meff: 2.0,   // [W05] straight punches 2.9 ± 2.0 kg; less body behind the lead hand — tuned
+    rot: 1 },    // [W05] straight punch
+  cross: { tS: 0.21, tA: 0.06, tR: 0.25, dmg: 2.5, sta: 5, stun: 6.5, pw: 0.75, lunge: 0.22, yaw: 0.95,
+    v: 8.6,      // [DL20] elite cross 8.1 ± 2.1 m/s; [W05] straight punches 9.14 ± 2.06 m/s
+    meff: 2.9,   // [W05] 2.9 ± 2.0 kg
+    rot: 1 },    // [W05] straight punch
+  hook: { tS: 0.24, tA: 0.06, tR: 0.29, dmg: 3.0, sta: 6.4, stun: 8.5, pw: 0.9, lunge: 0.13, yaw: 0.95,
+    v: 11.2,     // [DL20] elite hook 11.2 ± 2.0 m/s
+    meff: 2.9,   // tuned, no source (no open hook effective-mass data; [W05]'s straight-punch value reused)
+    rot: 1.45 }, // tuned, no source: a hook turns the head more than it pushes it
+  upper: { tS: 0.26, tA: 0.06, tR: 0.31, dmg: 3.3, sta: 7, stun: 10, pw: 1, lunge: 0.11, yaw: 0.6,
+    v: 10.2,     // [DL20] elite uppercut 10.2 ± 1.8 m/s
+    meff: 2.6,   // tuned, no source
+    rot: 1.2 },  // tuned, no source
+  kick: { tS: 0.31, tA: 0.07, tR: 0.4, dmg: 3.4, sta: 8.5, stun: 0, pw: 0.95, lunge: 0.05, yaw: 1.2,
+    // tS: [GS17] Muay Thai execution 1.02 s, of which preparation 6 %, chamber 14 %, extension 11 % lead to contact
+    // (0.06 + 0.14 + 0.11 s); their recoil (0.65 s to heel-down) is kept shorter here for play — tuned
+    v: 13.2,     // [GS17] Muay Thai maximum linear foot velocity 13.24 ± 2.30 m/s
+    meff: 0,     // per fighter: shank + foot + half the thigh of the kicking leg ([K22] masses; the half is tuned)
+    rot: 0 },
 };
+const KICK_PHASE = { prep: 0.06 / 0.31, chamber: 0.20 / 0.31 };   // [GS17] phase boundaries as fractions of the 0.31 s to contact
+const ANT = { jab: 0, cross: 0.18, hook: 0.3, upper: 0.3, kick: 0.12 };   // wind-up share of the startup (as before)
+const ARC = { jab: 1, cross: 1, hook: 1.25, upper: 1.3 };   // path length over chord for the glove's curve — from the curves' geometry, approx.
+// glove speed that the body (lunge, trunk turn) and the glove's own rotation add at contact, outside the arm path's speed (m/s):
+// tuned, no source — calibrated in the headless harness so measured peak speeds sit on the targets above
+const VBODY = { jab: 2.6, cross: 0.9, hook: 2.3, upper: 3.0 };
+// head kinematics from a punch's impulse, scaled from [W05]: their straight punches averaged 2.9 kg × 9.14 m/s and gave
+// the head 58 g (translational) and 6343 rad/s² (rotational)
+const HEADK = { Jref: 2.9 * 9.14, aRef: 58, alphaRef: 6343,
+  snap: 5.7e-4,          // spring kick (rad/s) per rad/s² of rotational acceleration: maps [W05]'s mean to the old cross snap — tuned, no source
+  stun: 6.5 / 6343,      // stun per rad/s² (the old cross value at [W05]'s mean) — tuned, no source
+  kd: 0.25,              // knockdown chance per unit of [RD13] concussion probability — tuned, no source
+  push: 3.2 };           // root push per unit of J / body mass (the upper body moves more than the centre of mass) — tuned, no source
+// [RD13] combined probability of concussion from peak linear (g) and rotational (rad/s²) head acceleration
+const concussionP = (a, al) => 1 / (1 + Math.exp(-(-10.2 + 0.0433 * a + 0.000873 * al - 0.00000092 * a * al)));
+const PELVIS_DROP_MAX = 0.12;   // how far the hips may sink to keep a loaded foot reachable (m) — tuned, no source
 // guard layouts in the chest (spine2) frame, × fighter height: wrist pos, back-of-hand, elbow pole, knuckle dir
 const GUARD = {
   norm: { L: { p: [0.12, 0.2, 0.27], b: [0.25, 0.15, 1], e: [0.55, -1, -0.25], k: [0.05, 1, 0.5] }, R: { p: [-0.08, 0.19, 0.17], b: [-0.3, 0.1, 1], e: [-0.55, -1, -0.25], k: [-0.05, 1, 0.4] } },
@@ -3050,13 +3392,12 @@ const GKEYS = ['p', 'b', 'e', 'k'], PKEYS = ['gl', 'gb', 'ge', 'gk'];
 const STANCE = { L: [0.135, 0.205, -0.3], R: [-0.145, -0.2, -0.95] };   // x, z (× height), foot yaw
 const FIGHT_HEAD_R = 0.2, FIGHT_BODY_R = 0.27, FIGHT_LEG_R = 0.22;
 const HEAD_MOVE = { out: 0.6, pressure: 0.85, counter: 1 };          // idle upper-body movement by style
-const BALL = 0.13;                                                    // ankle → ball of the foot (pivot point)
 
 class Fighter {
   constructor(def, obj, idx, game) {
     this.def = def; this.obj = obj; this.idx = idx; this.game = game; this.rig = new Rig(obj);
     const b = def.build; this.H = b.h; this.st = def.stats; this.opp = null;
-    this.mass = 76 * b.bulk * Math.pow(b.h, 1.5);
+    this.mass = 76 * b.bulk * Math.pow(b.h, 1.5);   // body mass from build (kg) — tuned, no source
     const J = obj.J, d3 = (a, c) => Math.hypot(a[0] - c[0], a[1] - c[1], a[2] - c[2]);
     this.armLen = d3(J.armL, J.foreL) + d3(J.foreL, J.handL) + 0.13; this.reach = this.armLen + 0.47;
     this.legLen = d3(J.thighL, J.shinL) + d3(J.shinL, J.footL);
@@ -3066,8 +3407,19 @@ class Fighter {
     const S = (k, c) => new Spring(k, c);
     this.sp = { hP: S(170, 13), hY: S(170, 13), hR: S(150, 12), sP: S(95, 11), sY: S(95, 11), sR: S(95, 11), py: S(90, 10), gk: S(220, 18),
       px: S(70, 9), bkL: S(60, 7), bkR: S(60, 7), fold: S(48, 8) };
-    const foot = () => ({ w: V(), wy: 0, step: -1, from: V(), to: V(), dur: 0.15, lift: 0 });
+    // feet: w = where the ball of the foot sits on the canvas when the foot is flat, wy = yaw, r = roll (> 0 heel up,
+    // pivoting on the ball; < 0 toes up, pivoting on the heel), step ≥ 0 while it is in the air
+    const foot = () => ({ w: V(), wy: 0, step: -1, from: V(), to: V(), dur: 0.15, lift: 0, r: 0.16, rFrom: 0.16, rLand: 0.16, len: 0, rec: false, busy: false, land: 0 });
     this.feet = { L: foot(), R: foot() };
+    // foot geometry from the bind skeleton: ankle height, ball (MTP) ahead of the ankle, heel contact behind it
+    this.fg = { ankleY: J.footL[1], ball: J.toesL[2] - J.footL[2], heel: -0.042 };   // heel: the bare-foot heel sphere's contact, 4.2 cm behind the ankle
+    this.ballLocal = V(0, -J.footL[1], J.toesL[2] - J.footL[2]);                    // contact pivots in the foot bone's frame (tests / overlay)
+    this.heelLocal = V(0, -J.footL[1], -0.042);
+    // balance: centre of mass, extrapolated centre of mass (capture point) and the support polygon [BV18]
+    this.bal = { com: V(), comP: V(), v: V(), xi: V(), poly: [], margin: 1, init: false, w0: 3.2 };
+    this.pDrop = 0; this.reachLost = { L: false, R: false }; this.recTo = V(); this.recLen = 0;
+    this.meffKick = (BIO.seg.shank + BIO.seg.foot + 0.5 * BIO.seg.thigh) / BIO.segSum;   // kick effective mass per kg of body [K22]; the half thigh is tuned
+    this.lastStrike = null; this.lastHit = null;
     this.intent = { mx: 0, mz: 0, guard: false, body: false, punch: null, slip: null, mash: 0, sw: false };
     this.mode = 'fight'; this.t = rand(0, 10); this.bounceT = rand(0, 10); this.seed = rand(0, 100);
     this.homeSide = def.stance === 'southpaw' ? -1 : 1; this.side = this.homeSide;
@@ -3094,11 +3446,26 @@ class Fighter {
     this.state = 'idle'; this.act = null; this.buffer = null; this.guard = this.low = false; this.slipCd = 0; this.lastHand = 'R'; this.lastPunchT = -9; this.check = 0;
     for (const k in this.sp) this.sp[k].reset();
     this.gW = this.lW = this.stunW = 0;
-    for (const S of ['L', 'R']) { const f = this.feet[S], st = STANCE[S]; this.toWorldV(_v[0].set(st[0] * this.H, 0, st[1] * this.H), f.w); f.wy = yaw + this.side * st[2]; f.step = -1; f.lift = 0; }
-    this.rag.reset(); this.smSnap = true;
+    for (const S of ['L', 'R']) this.plantStance(S);
+    this.rag.reset(); this.smSnap = true; this.bal.init = false; this.pDrop = 0;
     this.animate(0);
   }
   realS(S) { return this.side > 0 ? S : FLIP[S]; }
+  // ---- foot geometry: a planted foot turns and rolls about the ball of the foot (roll ≥ 0) or about the heel (roll < 0)
+  ballVec(wy, d, out) { return out.set(Math.sin(wy) * d, 0, Math.cos(wy) * d); }
+  plantStance(S) {   // put a foot flat at its stance spot (the stance table gives ankle offsets)
+    const f = this.feet[S], st = STANCE[S]; f.wy = this.yaw + this.side * st[2];
+    this.toWorldV(_v[0].set(st[0] * this.H, 0, st[1] * this.H), f.w).add(this.ballVec(f.wy, this.fg.ball, _v[1])); f.w.y = 0;
+    f.step = -1; f.lift = 0; f.r = 0.16; f.rec = false; f.land = 0; f.busy = false;
+  }
+  ankleFromBall(f, out) {   // world ankle position from the foot's ball point, yaw, roll and lift
+    const g = this.fg, r = f.r, cr = Math.cos(r), sr = Math.sin(r);
+    let y, z;
+    if (r >= 0) { y = g.ankleY * cr + g.ball * sr; z = g.ankleY * sr - g.ball * cr; }                   // pivot: the ball
+    else { const hh = -g.heel; y = g.ankleY * cr - hh * sr; z = g.ankleY * sr + hh * cr - (g.ball + hh); }   // pivot: the heel
+    return out.set(f.w.x + Math.sin(f.wy) * z, y + f.lift, f.w.z + Math.cos(f.wy) * z);
+  }
+  ballFromAnkle(ankleW, wy, out) { return out.copy(ankleW).add(this.ballVec(wy, this.fg.ball, _v[11])).setY(0); }   // flat-foot inverse
   toLocal(w, out) { const dx = w.x - this.pos.x, dz = w.z - this.pos.z, c = Math.cos(this.yaw), s = Math.sin(this.yaw); return out.set(dx * c - dz * s, w.y, dx * s + dz * c); }
   toWorld(l, out) { const c = Math.cos(this.yaw), s = Math.sin(this.yaw); return out.set(this.pos.x + l.x * c + l.z * s, l.y, this.pos.z - l.x * s + l.z * c); }
   // "virtual" local space = local space mirrored for a southpaw (poses are always authored orthodox)
@@ -3129,6 +3496,11 @@ class Fighter {
     if (type === 'hook') return recent && this.lastHand === 'L' ? 'R' : 'L';
     return recent && this.lastHand === 'R' ? 'L' : 'R';
   }
+  // how fast this fighter's strikes are relative to PUNCH.v: the speed stat, fatigue and a scrambled head — tuned, no source
+  speedK() { return (0.9 + 0.2 * this.st.speed) * (this.sta < 30 ? 0.85 + this.sta / 200 : 1) * (this.stunned() ? 0.9 : 1); }
+  // effective mass behind a strike (kg): PUNCH.meff (or the kicking leg's segments) scaled by body mass (heavier classes
+  // hit with more effective mass [W05]; the linear scaling is tuned) and by the power stat (how well the chain transfers it — tuned)
+  meff(act) { const base = act.kind === 'kick' ? this.meffKick * this.mass : act.P.meff * this.mass / 80; return base * (0.75 + 0.5 * this.st.power); }
   canPunch(type) {
     if (this.sta < 1.5 || (this.mode !== 'fight' && this.mode !== 'shadow')) return false;
     if (type === 'kick' && !this.game.kicksOn()) return false;
@@ -3142,18 +3514,25 @@ class Fighter {
     const k = (1.13 - 0.28 * this.st.speed) * (this.sta < 30 ? 1 + (30 - this.sta) / 30 * 0.35 : 1) * (this.stunned() ? 1.25 : 1) * (this.counterT > 0 ? 0.85 : 1)
       / (0.78 + 0.22 * this.bodyF()) * (kick ? 1.25 - 0.25 * this.legF() : 1);
     this.act = { kind: kick ? 'kick' : 'punch', type, hand, realHand: this.realS(hand), body: !kick && body, t: 0, tS: P.tS * k, tA: P.tA, tR: P.tR * k, P,
-      aim: V(), track: true, resolved: false, extended: false, result: null, counter: this.counterT > 0, start: V() };
+      aim: V(), track: true, resolved: false, extended: false, result: null, counter: this.counterT > 0, start: V(),
+      vel: V(), vPeak: 0, pPrev: null, p: 1.5, vT: P.v * this.speedK(), reachable: true };
+    this.act.goal = this.act.aim;   // the glove-tip goal at full extension (tests and the overlay read it)
+    this.act.g0s = this.sm.gl[this.act.realHand].clone(); this.act.g0s.x *= this.side;   // where the hand is now (pose space): the path starts here
     this.state = kick ? 'kick' : 'punch'; this.sta = Math.max(0, this.sta - P.sta); this.guard = false;
     if (!kick) { this.lastHand = hand; this.lastPunchT = this.t; }
     this.targetPoint(this.act, this.act.aim);
     if (kick) {
-      const f = this.feet.R; this.toLocalV(f.w, this.act.start); this.act.start.y = 0; f.step = -1; f.lift = 0;
+      const f = this.feet.R; f.step = -1; f.lift = 0; f.r = Math.max(0, f.r); this.toLocalV(this.ankleFromBall(f, _v[3]), this.act.start); this.act.start.y = 0;
       const need = Math.hypot(this.act.aim.x - this.pos.x, this.act.aim.z - this.pos.z) - 0.52;   // step in behind it when a little far
       this.act.lunge = clamp(need + 0.04, P.lunge, 0.3);
     } else {
       // step in when the target is slightly out of reach: half as a real step, half as lean
       const sh = this.toWorld(this.rig.P['arm' + this.act.realHand], _v[8]), need = sh.distanceTo(this.act.aim) - this.armLen;
       this.act.lunge = clamp(need + 0.05, 0.04, P.lunge);
+      // retime the extension so the knuckles reach the measured peak speed at contact: with e = s^p over the last
+      // (1 − ant) of the startup, a path of length L is covered at ≈ L·p / ((1 − ant)·tS) at the end
+      const a = this.act, L = Math.max(0.12, this.tipWorld(a.realHand, _v[9]).distanceTo(a.aim) * ARC[type]);
+      a.p = clamp((a.vT - VBODY[type]) * (1 - ANT[type]) * a.tS / L, 1.2, 4.5);
     }
     this.knock.x += Math.sin(this.yaw) * this.act.lunge * 3.2; this.knock.z += Math.cos(this.yaw) * this.act.lunge * 3.2;
     this.game.onPunchStart(this, this.act);
@@ -3262,7 +3641,8 @@ class Fighter {
   }
   endStrike() {
     const a = this.act;
-    if (a.kind === 'kick') { const f = this.feet.R; this.toWorldV(a.start, f.w); f.w.y = 0; f.wy = this.yaw + this.side * STANCE.R[2]; f.step = -1; }
+    if (a.kind === 'kick') { const f = this.feet.R; f.wy = this.yaw + this.side * STANCE.R[2]; this.ballFromAnkle(this.toWorldV(a.start, _v[3]), f.wy, f.w); f.step = -1; f.r = 0.16; f.lift = 0; }
+    this.lastStrike = { type: a.type, vPeak: a.vPeak, err: a.tipErr, reachable: a.reachable };
     this.state = 'idle'; this.act = null;
   }
   // cuts keep bleeding (slowly clotting); blood runs further down the face while they do
@@ -3323,13 +3703,19 @@ class Fighter {
       R.chestToGroup(_v[0].set(mix('p', 0) * H + stun * s * 0.06, mix('p', 1) * H - (fat * 0.07 + hurt * 0.04) * wf - stun * 0.11 + wave, mix('p', 2) * H - gk * 0.09), p.gl[S]);
       R.chestDir(_v[0].set(mix('b', 0), mix('b', 1), mix('b', 2)), p.gb[S]); R.chestDir(_v[0].set(mix('e', 0), mix('e', 1), mix('e', 2)), p.ge[S]);
       R.chestDir(_v[0].set(mix('k', 0), mix('k', 1), mix('k', 2)), p.gk[S]);
-      p.shrug[S] += this.gW * 0.1 + wc * 0.24;
+      p.shrug[S] += this.gW * 0.1 + wc * 0.24; p.tw[S] = 0;   // no glove-tip goal unless a punch sets one this frame
     }
   }
   punchExt(a) {
     const t = a.t;
-    if (t < a.tS) { const u = t / a.tS, ant = a.type === 'jab' ? 0 : a.type === 'cross' ? 0.18 : a.type === 'kick' ? 0.12 : 0.3;
-      return u < ant ? -0.1 * Math.sin(Math.PI * u / ant) : ((u - ant) / (1 - ant)) ** 1.5; }
+    if (t < a.tS && a.kind === 'kick') {   // [GS17] phases: preparation, chamber (knee up), extension (the shin whips through)
+      const u = t / a.tS, ph = KICK_PHASE;
+      if (u < ph.prep) return -0.08 * Math.sin(Math.PI * u / ph.prep);
+      if (u < ph.chamber) return 0.5 * ease.inOutSine((u - ph.prep) / (ph.chamber - ph.prep));
+      return 0.5 + 0.5 * Math.pow((u - ph.chamber) / (1 - ph.chamber), a.p2 || 1.6);
+    }
+    if (t < a.tS) { const u = t / a.tS, ant = ANT[a.type];   // punches: e = s^p, p set at the start from the target speed
+      return u < ant ? -0.1 * Math.sin(Math.PI * u / ant) : ((u - ant) / (1 - ant)) ** a.p; }
     const miss = a.result === 'miss' || a.result === 'evade';
     if (t < a.tS + a.tA) return miss ? 1 + 0.12 * (t - a.tS) / a.tA : 1;
     return (1 - ease.outCubic(clamp((t - a.tS - a.tA) / a.tR, 0, 1))) * (miss ? 1.12 : 1);
@@ -3375,6 +3761,7 @@ class Fighter {
     p.hP += sp.hP.update(dt); p.hY += sp.hY.update(dt); p.hR += sp.hR.update(dt);
     p.sP += sp.sP.update(dt) + sp.fold.update(dt); p.sY += sp.sY.update(dt); p.sR += sp.sR.update(dt); p.pelvis.y += sp.py.update(dt) * 0.1 - Math.max(0, sp.fold.x) * 0.06;
     p.pelvis.x += sp.px.update(dt) * 0.05;
+    this.legReach(p, dt);
     this.guardArms(p, sp.gk.update(dt));
     if (this.state === 'punch') this.punchArm(p, e);
     if (this.state === 'kick') this.kickPose(p, e);
@@ -3396,15 +3783,66 @@ class Fighter {
       sm.pelvis.lerp(out.pelvis, strike ? fs : f); sm.look.lerp(out.look, f);
       for (const k of POSE_SCALARS) sm[k] = lerp(sm[k], out[k], strike ? fs : f);
       for (const S of ['L', 'R']) {
-        const ff = S === strike && !kick ? 1 : f;
-        for (const k of PKEYS) sm[k][S].lerp(out[k][S], ff);
+        const ff = S === strike && !kick ? 1 : f;   // the striking hand follows its path exactly (the path starts at the hand)
+        for (const k of PKEYS) sm[k][S].lerp(out[k][S], k === 'gl' ? ff : S === strike && !kick ? 1 - Math.exp(-60 * dt) : f);
         sm.shrug[S] = lerp(sm.shrug[S], out.shrug[S], ff);
         sm.ft[S].copy(out.ft[S]); sm.kp[S].copy(out.kp[S]); sm.fy[S] = out.fy[S]; sm.fp[S] = out.fp[S];
+        sm.tf[S] = out.tf[S]; sm.fc[S] = out.fc[S]; sm.tg[S].copy(out.tg[S]); sm.tw[S] = out.tw[S]; sm.fa[S] = out.fa[S];
       }
     }
     R.solve(sm);
+    if (this.state === 'punch') { const ar = R.arm[this.act.realHand]; if (sm.tw[this.act.realHand] > 0.9) { this.act.reachable = ar.short < 0.01; this.act.tipErr = ar.err; } }
     const rg = this.rag; rg.targets(); rg.step(dt); rg.apply(); this.ragEvents();
-    R.write(); this.storeTips();
+    R.write(); this.storeTips(); this.trackStrike(dt); this.balance(dt);
+  }
+  // world velocity of the striking glove's knuckles (or the kicking shin) — the v of J = meff · v · cleanness
+  trackStrike(dt) {
+    if (!this.striking() || dt <= 0) return;
+    const a = this.act, pt = a.kind === 'kick' ? this.shinWorld(a.realHand, _v[3]) : this.tipWorld(a.realHand, _v[3]);
+    if (!a.pPrev) a.pPrev = V(); else if (dt > 0.002) { a.vel.subVectors(pt, a.pPrev).divideScalar(dt); if (a.t <= a.tS + a.tA) a.vPeak = Math.max(a.vPeak, a.vel.length()); }   // hit-stop steps are too short to differentiate
+    a.pPrev.copy(pt);
+  }
+  // whole-body centre of mass (from the [K22]-weighted particles), its capture point, and the planted feet's support polygon [BV18]
+  balance(dt) {
+    const b = this.bal, g = this.fg; this.rag.com(b.com);
+    if (b.init && dt > 0) b.v.lerp(_v[3].subVectors(b.com, b.comP).divideScalar(dt), 1 - Math.exp(-30 * dt)); else b.v.set(0, 0, 0);
+    b.comP.copy(b.com); b.init = true;
+    b.w0 = Math.sqrt(9.81 / Math.max(0.4, b.com.y));                     // [BV18] inverted pendulum: ω₀ = √(g / l)
+    b.xi.set(b.com.x + b.v.x / b.w0, 0, b.com.z + b.v.z / b.w0);          // [BV18] extrapolated centre of mass (capture point)
+    const pts = this._pts || (this._pts = Array.from({ length: 12 }, () => V())); let n = 0;
+    if (!this.isDown()) for (const S of ['L', 'R']) {
+      const f = this.feet[S]; if (f.step >= 0 || (this.state === 'kick' && S === 'R') || (this.state === 'check' && S === 'L')) continue;
+      const sx = Math.sin(f.wy), cz = Math.cos(f.wy), add = (fw, la) => pts[n++].set(f.w.x + sx * fw + cz * la, 0, f.w.z + cz * fw - sx * la);
+      // contact patches from the foot model's geometry (forefoot ±4.5 cm, toes 5 cm ahead, heel ±3 cm): heel up → forefoot only
+      if (f.r > -0.05) { add(0.05, 0); add(0, 0.045); add(0, -0.045); }
+      if (f.r < 0.08) { const hb = g.heel - g.ball; add(hb, 0.03); add(hb, -0.03); }
+    }
+    b.n = n; hull2(pts, n, b.poly); b.margin = n ? polyMargin(b.poly, b.xi) : -1;
+  }
+  // hips drop when a loaded foot is out of reach, instead of the knee locking straight
+  legReach(p, dt) {
+    const R = this.rig, l = R.leg.L, maxD = hingeSpan(l.l1, l.l2, ROM.kneeStance), q = qYXZ(_q[0], p.pY, p.pP, p.pR);
+    let need = 0;
+    for (const S of ['L', 'R']) {
+      const f = this.feet[S]; this.reachLost[S] = false;
+      if (f.step >= 0 || (this.state === 'kick' && S === 'R') || (this.state === 'check' && S === 'L')) continue;
+      const short = R.leg[this.realS(S)].short;   // what the solved leg came up short by last frame (the solve sees the CCD's pelvis turn)
+      if (short > 0.02) this.reachLost[S] = true;
+      if (short > 0.003) need = Math.max(need, Math.min(PELVIS_DROP_MAX, this.pDrop + short));
+      const hip = _v[0].copy(R.off['thigh' + S]).applyQuaternion(q).add(p.pelvis), ank = this.toLocalV(this.ankleFromBall(f, _v[1]), _v[2]);
+      let dx = hip.x - ank.x, dz = hip.z - ank.z;
+      if (this.state === 'kick' && S === 'L') {   // the support foot cannot step during a kick: the hips stay within reach of it
+        const hl = Math.hypot(dx, dz), lim = maxD * 0.8;
+        if (hl > lim) { const k = (hl - lim) / hl; p.pelvis.x -= dx * k; p.pelvis.z -= dz * k; hip.x -= dx * k; hip.z -= dz * k; dx = hip.x - ank.x; dz = hip.z - ank.z; }
+      }
+      const dy = hip.y - ank.y, h2 = dx * dx + dz * dz;
+      if (h2 + dy * dy <= maxD * maxD) continue;
+      const drop = h2 < maxD * maxD ? dy - Math.sqrt(maxD * maxD - h2) : dy;
+      if (drop > PELVIS_DROP_MAX) this.reachLost[S] = true;
+      need = Math.max(need, Math.min(drop, PELVIS_DROP_MAX));
+    }
+    this.pDrop = damp(this.pDrop, need, need > this.pDrop ? 45 : 8, dt);
+    p.pelvis.y -= this.pDrop;
   }
   storeTips() {
     const R = this.rig;
@@ -3417,7 +3855,8 @@ class Fighter {
   }
   punchArm(p, e) {
     const a = this.act, S = a.hand, s = S === 'L' ? 1 : -1, R = this.rig;
-    const g0 = _v[0].copy(p.gl[S]), aim = this.toLocalV(a.aim, _v[1]);
+    // the path runs from where the hand was when the punch started, and hands back to the live guard during the recovery
+    const g0 = _v[0].lerpVectors(a.g0s, p.gl[S], ease.inOutSine(clamp((a.t - a.tS - a.tA) / a.tR, 0, 1))), aim = this.toLocalV(a.aim, _v[1]);
     const sh = _v[2].copy(R.P['arm' + a.realHand]); sh.x *= this.side;   // shoulder in pose space
     const kd = _v[11];
     if (a.type === 'hook') kd.set(-s * 0.85, 0, 0.55).normalize();
@@ -3429,6 +3868,8 @@ class Fighter {
     else if (a.type === 'hook') { const c = _v[4].copy(wT).add(_v[5].set(s * 0.36, 0.03, -0.14)); bez(out, g0, c, wT, t); }
     else if (a.type === 'upper') { const c = _v[4].set(lerp(g0.x, wT.x, 0.5), Math.min(g0.y, wT.y) - 0.3, lerp(g0.z, wT.z, 0.35)); bez(out, g0, c, wT, t); }
     else { out.lerpVectors(g0, wT, t); out.y += 0.035 * Math.sin(Math.PI * clamp(t, 0, 1)); }
+    // glove-tip goal: the knuckles follow the same path shifted onto the aim point; the rig walks the wrist until they land
+    p.tg[S].copy(out).add(_v[6].subVectors(aim, wT)); p.tw[S] = sstep(0.5, 0.95, e);
     const k = clamp(e, 0, 1);
     p.gb[S].lerp(a.type === 'upper' ? _v[5].set(kd.x, 0.15, kd.z) : _v[5].set(0, 1, 0.1), k).normalize();
     p.ge[S].lerp(a.type === 'hook' ? _v[5].set(s, 0.4, -0.25) : a.type === 'upper' ? _v[5].set(s * 0.25, -1, -0.6) : _v[5].set(s * 0.3, -1, -0.35), k);
@@ -3444,6 +3885,9 @@ class Fighter {
     const ch = _v[2].set(-0.12 * H, 0.36 * H, 0.08 * H);                             // chamber: knee up, foot under it
     const hit = _v[3].copy(aim).add(_v[4].set(0.3, -0.06, 0.06));                    // the foot whips past the target so the shin lands flat
     const foot = p.ft.R;
+    // extension: the bezier's second half is covered at |hit − ch|·p2 / ((1 − chamber)·tS) at contact → solve p2 for [GS17]'s speed
+    if (!a.p2) a.p2 = clamp(0.91 * a.vT * (1 - KICK_PHASE.chamber) * a.tS / Math.max(0.3, hit.distanceTo(ch)), 1, 3.5);   // 0.91: harness calibration (tuned)
+    p.tf.R = 0; p.fc.R = 0; p.fa.R = sstep(0.02, 0.2, u);
     if (k <= 0) foot.copy(st).y = R.bind.footR.y + 0.01;
     else if (a.t < a.tS + a.tA) bez(foot, st, ch, hit, Math.min(1.12, k));
     else bez(foot, st, _v[4].set(ch.x - 0.08, ch.y * 0.9, ch.z - 0.05), hit, Math.min(1.15, k));
@@ -3461,15 +3905,41 @@ class Fighter {
   checkLeg(p) {
     const a = this.act, R = this.rig, H = this.H, u = a.t / a.dur, k = u < 0.25 ? ease.outCubic(u / 0.25) : u < 0.7 ? 1 : 1 - ease.inOutSine((u - 0.7) / 0.3);
     const base = _v[0].copy(p.ft.L); p.ft.L.lerpVectors(base, _v[1].set(base.x + 0.06, R.bind.footL.y + 0.3 * H, base.z + 0.05), k);
-    p.fp.L = lerp(p.fp.L, 0.6, k); p.fy.L = lerp(p.fy.L, -0.7, k); p.kp.L.set(lerp(p.kp.L.x, 0.6, k), lerp(0, 0.3, k), 1);
+    p.fp.L = lerp(p.fp.L, 0.6, k); p.fy.L = lerp(p.fy.L, -0.7, k); p.kp.L.set(lerp(p.kp.L.x, 0.6, k), lerp(0, 0.3, k), 1); p.tf.L = 0; p.fc.L = 0; p.fa.L = k;
   }
   updateFeet(dt, p, e) {
-    const H = this.H, a = this.act, R = this.rig, side = this.side, legF = this.legF(), fat = 1 - this.sta / 100;
+    const H = this.H, a = this.act, R = this.rig, side = this.side, legF = this.legF(), fat = 1 - this.sta / 100, g = this.fg, b = this.bal;
+    const rStance = 0.16 - 0.1 * clamp(fat * 1.3 - 0.2, 0, 1);   // up on the balls of the feet; tired fighters come down on their heels — tuned, no source
+    // balance: if the capture point has left the support polygon while both feet are down — after a hit, a missed punch's
+    // lunge or a kick — the foot nearer the capture point steps toward it; if no single step can reach it, the fighter falls
+    let recS = null;
+    if (b.init && b.n >= 3 && b.margin < -0.02 && (this.knock.length() > 0.25 || b.margin < -0.12) && this.feet.L.step < 0 && this.feet.R.step < 0
+        && this.state !== 'kick' && this.state !== 'check' && this.mode === 'fight') {
+      let best = 1e9;
+      for (const S of ['L', 'R']) { const f = this.feet[S], d = Math.hypot(b.xi.x - f.w.x, b.xi.z - f.w.z); if (d < best) { best = d; recS = S; } }
+      const o = this.feet[FLIP[recS]], dx = b.xi.x - b.com.x, dz = b.xi.z - b.com.z, dl = Math.hypot(dx, dz) || 1;
+      const tx = b.xi.x + dx / dl * 0.05, tz = b.xi.z + dz / dl * 0.05;            // land a little past the capture point
+      const stride = 0.6 * this.legLen, ox = tx - o.w.x, oz = tz - o.w.z, od = Math.hypot(ox, oz) || 1e-6;   // one stride from the other foot — tuned, no source
+      if (od > stride + 0.25 && this.game.onBalanceLost(this)) return;
+      const k = Math.min(1, stride / od), kk = Math.max(k, 0.22 / od);             // and never closer than 22 cm to it (no crossed feet)
+      const B = RING.bound + 0.1; this.recTo.set(clamp(o.w.x + ox * kk, -B, B), 0, clamp(o.w.z + oz * kk, -B, B));
+      this.recLen = Math.hypot(this.recTo.x - this.feet[recS].w.x, this.recTo.z - this.feet[recS].w.z);
+      if (this.recLen < 0.04) recS = null;
+    }
+    for (const S of ['L', 'R']) {
+      const f = this.feet[S], busyNow = (this.state === 'kick' && S === 'R') || (this.state === 'check' && S === 'L');
+      if (f.busy && !busyNow && f.step < 0) {      // a kick or check cut short: start a landing step from wherever that foot is
+        const ank = this.toWorldV(_v[3].copy(p.ft[S]), _v[3]), h = ank.y - g.ankleY;
+        this.ballFromAnkle(ank, f.wy, _v[4]);
+        if (h > 0.02 || _v[4].distanceTo(f.w) > 0.02) { f.from.copy(_v[4]); f.w.copy(_v[4]); f.land = Math.max(0, h); f.step = -2; }   // −2: the loop starts the step
+      }
+      f.busy = busyNow;
+    }
     for (const S of ['L', 'R']) {
       const f = this.feet[S], st = STANCE[S];
       if ((this.state === 'kick' && S === 'R') || (this.state === 'check' && S === 'L')) {   // that leg is busy: keep its plant point under the action
-        if (this.state === 'check') { this.toLocalV(f.w, p.ft[S]); p.ft[S].y = R.bind['foot' + S].y + 0.02; p.fy[S] = side * wrapA(f.wy - this.yaw); p.fp[S] = 0.16; p.kp[S].set(0.25, 0, 1); }
-        continue;
+        if (this.state === 'check') { this.toLocalV(this.ankleFromBall(f, _v[3]), p.ft[S]); p.ft[S].y = R.bind['foot' + S].y + 0.02; p.fy[S] = side * wrapA(f.wy - this.yaw); p.fp[S] = 0.16; p.kp[S].set(0.25, 0, 1); }
+        p.fc[S] = 0; p.tf[S] = 0; if (this.state === 'check') p.fa[S] = 0; continue;
       }
       let ox = st[0] * H, oz = st[1] * H, oy = st[2], heel = 0;
       if (this.state === 'punch' && e > 0) {
@@ -3477,32 +3947,45 @@ class Fighter {
         if (S === 'R' && a.hand === 'R') { oy += 0.55 * e; heel += 0.3 * e; }          // rear heel turns out, onto the ball
         if (S === 'L' && a.hand === 'L' && a.type === 'hook') { oy -= 0.5 * e; heel += 0.22 * e; }
       }
-      if (this.state === 'kick' && S === 'L') { const k = clamp(e, 0, 1.1); oy += 1.15 * k; heel += 0.35 * k; }   // support foot pivots
+      if (this.state === 'kick' && S === 'L') { const k = clamp(e, 0, 1.1); oy += 1.15 * k; heel += 0.35 * k; }   // support foot pivots on the ball
       if (this.mode !== 'fight') { ox *= 0.85; oy *= 0.5; }
-      const want = this.toWorldV(_v[4].set(ox, 0, oz), _v[5]).addScaledVector(this.vel, 0.12);
+      const wantY = this.yaw + side * oy;
+      // where this foot's ball belongs (the stance table gives the ankle), led a little by the body's velocity
+      const want = this.toWorldV(_v[4].set(ox, 0, oz), _v[5]).add(this.ballVec(wantY, g.ball, _v[6])).addScaledVector(this.vel, 0.12); want.y = 0;
       const err = Math.hypot(want.x - f.w.x, want.z - f.w.z), other = this.feet[FLIP[S]];
-      // a planted foot the hip can no longer reach steps, rather than sliding
-      const lf = this.toLocalV(f.w, _v[6]), hipX = (S === 'L' ? 0.093 : -0.093) * H + p.pelvis.x;
-      const reach = Math.hypot(lf.x - hipX, lf.z - p.pelvis.z) > 0.36 * H;
       const busy = this.state === 'kick' || this.state === 'check';
-      if (f.step < 0 && (err > 0.085 * (0.8 + 0.2 * legF) || reach) && (other.step < 0 || other.step > 0.55) && !(busy && S === 'L')) {
-        f.step = 0; f.from.copy(f.w); f.to.copy(want).addScaledVector(this.vel, 0.08); f.dur = clamp(0.12 + err * 0.25, 0.12, 0.22) / (0.8 + 0.2 * legF);
+      // a step starts for footwork (the foot lags its stance spot), for balance (recovery), or when the hips cannot reach a planted foot
+      if (f.step === -2) {   // landing from a cut-short kick or check: down onto the stance spot
+        f.step = 0; f.to.copy(want); f.rec = false; f.rFrom = 0.1; f.rLand = rStance; f.len = f.from.distanceTo(f.to); f.dur = clamp(0.1 + f.land * 0.4, 0.1, 0.24);
+      } else if (f.step < 0 && (err > 0.085 * (0.8 + 0.2 * legF) || this.reachLost[S] || recS === S) && (other.step < 0 || other.step > 0.55 || this.reachLost[S]) && !(busy && S === 'L')) {
+        f.step = 0; f.from.copy(f.w); f.rFrom = Math.max(0, f.r); f.land = 0;
+        if (recS === S) { f.to.copy(this.recTo); f.rec = true; f.dur = clamp(0.1 + this.recLen * 0.18, 0.1, 0.17); }
+        else { f.to.copy(want).addScaledVector(this.vel, 0.08); f.to.y = 0; f.rec = false; f.dur = clamp(0.12 + err * 0.25, 0.12, 0.22) / (0.8 + 0.2 * legF); }
+        // landing: a longer step forward comes down heel first, everything else on the ball — tuned, no source
+        const sx = f.to.x - f.from.x, sz = f.to.z - f.from.z; f.len = Math.hypot(sx, sz);
+        f.rLand = f.len > 0.16 && sx * Math.sin(f.wy) + sz * Math.cos(f.wy) > 0.1 ? -0.14 : rStance;
       }
       if (f.step >= 0) {
-        f.step = Math.min(1, f.step + dt / f.dur); f.w.lerpVectors(f.from, f.to, ease.inOutSine(f.step));
-        f.lift = Math.sin(Math.PI * f.step) * clamp(0.025 + err * 0.12, 0.02, 0.07) * (0.6 + 0.4 * legF);
-        if (f.step >= 1) { f.step = -1; f.lift = 0; this.game.onStep(this); }
-      }
-      // turn the foot toward its stance angle; while planted it pivots about the ball, so the plant point never slides
-      const wantY = this.yaw + side * oy, dy = clamp(wrapA(wantY - f.wy), -10 * dt, 10 * dt);
-      if (f.step < 0 && Math.abs(dy) > 1e-5) {
-        const bx = f.w.x + Math.sin(f.wy) * BALL, bz = f.w.z + Math.cos(f.wy) * BALL;
-        f.wy += dy; f.w.x = bx - Math.sin(f.wy) * BALL; f.w.z = bz - Math.cos(f.wy) * BALL;
-      } else f.wy += dy;
-      this.toLocalV(f.w, p.ft[S]);
-      p.fy[S] = side * wrapA(f.wy - this.yaw); p.fp[S] = 0.16 - 0.1 * clamp(fat * 1.3 - 0.2, 0, 1) + heel + f.lift * 2.5;
-      p.ft[S].y = R.bind['foot' + S].y + 0.135 * p.fp[S] + f.lift;
-      p.kp[S].set(Math.sin(p.fy[S]) + (S === 'L' ? 0.25 : -0.25), 0, Math.cos(p.fy[S]));
+        f.step = Math.min(1, f.step + dt / f.dur); const s = f.step;
+        f.w.lerpVectors(f.from, f.to, ease.inOutSine(s));
+        f.lift = f.land > 0 ? f.land * (1 - ease.inOutSine(s)) + Math.sin(Math.PI * s) * 0.015 : Math.sin(Math.PI * s) * clamp(0.025 + f.len * 0.12, 0.02, 0.07) * (0.6 + 0.4 * legF) * (f.rec ? 0.7 : 1);
+        // roll through the step: the heel peels and the foot pushes off the ball, swings, and sets its landing roll
+        f.r = s < 0.3 ? lerp(f.rFrom, f.rFrom + 0.32, ease.outQuad(s / 0.3)) : s < 0.8 ? lerp(f.rFrom + 0.32, f.rLand, ease.inOutSine((s - 0.3) / 0.5)) : f.rLand;
+        if (s >= 1) { f.step = -1; f.lift = 0; f.land = 0; this.game.onStep(this); if (f.rec) { this.knock.multiplyScalar(0.35); f.rec = false; } }   // the step catches the body
+      } else f.r = damp(f.r, rStance + heel, f.r < 0 ? 12 : 22, dt);   // planted: settle to the stance roll (a heel strike rolls down onto the forefoot)
+      // turn toward the stance angle; planted, the foot pivots about whichever end carries it, so the contact never slides
+      const dy = clamp(wrapA(wantY - f.wy), -10 * dt, 10 * dt);
+      if (f.step < 0 && f.r < 0 && Math.abs(dy) > 1e-5) {        // on the heel: the ball sweeps round it
+        const k = g.ball - g.heel, hx = f.w.x - Math.sin(f.wy) * k, hz = f.w.z - Math.cos(f.wy) * k;
+        f.wy += dy; f.w.x = hx + Math.sin(f.wy) * k; f.w.z = hz + Math.cos(f.wy) * k;
+      } else f.wy += dy;                                             // on the ball (f.w is the ball), or in the air
+      this.toLocalV(this.ankleFromBall(f, _v[7]), p.ft[S]);
+      p.fy[S] = side * wrapA(f.wy - this.yaw); p.fp[S] = f.r;
+      p.tf[S] = f.step < 0 || f.step < 0.3 ? Math.max(0, f.r) : 0;   // the toes stay flat while the heel is up
+      p.fc[S] = f.step < 0 ? 1 : 0; p.fa[S] = 0;
+      // knee pole: over the foot, a touch outside its line, and no further round than the hip's rotation range [R16]
+      let ky = p.fy[S] + (S === 'L' ? 0.22 : -0.22); ky = p.pY + clamp(wrapA(ky - p.pY), -ROM.hipRot, ROM.hipRot);   // 0.22 rad: tuned, no source
+      p.kp[S].set(Math.sin(ky), 0, Math.cos(ky));
     }
   }
   // --- knockdowns -----------------------------------------------------------------
@@ -3572,7 +4055,7 @@ class Fighter {
       a.riseT += dt; const w = clamp(a.riseT / 1.3, 0, 1);
       const kneel = this.makeDownPose('knee', this.kneel);
       this.basePose(this.stand, 0); this.guardArms(this.stand, 0);
-      for (const S of ['L', 'R']) { const f = this.feet[S]; this.toLocalV(f.w, this.stand.ft[S]); this.stand.ft[S].y = this.rig.bind['foot' + S].y + 0.02; this.stand.fy[S] = this.side * wrapA(f.wy - this.yaw); this.stand.kp[S].set(S === 'L' ? 0.25 : -0.25, 0, 1); }
+      for (const S of ['L', 'R']) { const f = this.feet[S]; this.toLocalV(this.ankleFromBall(f, _v[3]), this.stand.ft[S]); this.stand.ft[S].y = this.rig.bind['foot' + S].y + 0.02; this.stand.fy[S] = this.side * wrapA(f.wy - this.yaw); this.stand.kp[S].set(S === 'L' ? 0.25 : -0.25, 0, 1); this.stand.fc[S] = 1; }
       if (w < 0.5) lerpPose(this.downP, kneel, ease.inOutSine(w * 2), p); else lerpPose(kneel, this.stand, ease.inOutSine(w * 2 - 1), p);
     }
     this.obj.root.position.set(this.pos.x, 0, this.pos.z); this.obj.root.rotation.y = this.yaw;
@@ -3587,7 +4070,7 @@ class Fighter {
     const v = upright ? 'knee' : down ? 'fours' : 'sit';
     this.yaw = upright ? this.yaw : down ? Math.atan2(ax.x, ax.z) : Math.atan2(-ax.x, -ax.z);
     this.makeDownPose(v, this.downP); this.followBody(this.downP.pelvis);
-    for (const S of ['L', 'R']) { const f = this.feet[S], st = STANCE[S]; this.toWorldV(_v[2].set(st[0] * this.H, 0, st[1] * this.H), f.w); f.wy = this.yaw + this.side * st[2]; f.step = -1; }
+    for (const S of ['L', 'R']) this.plantStance(S);
     this.rag.recover(0.95); a.phase = 'gather'; a.gT = 0;
   }
   finishRise() { this.state = 'idle'; this.act = null; for (const k in this.sp) this.sp[k].reset(); this.smSnap = false; }
@@ -3614,16 +4097,22 @@ class Fighter {
   // clean shot: springs give the reflex, the ragdoll takes the impulse where it landed
   react(act, power, attacker, info) {
     const sp = this.sp, side = (act.realHand === 'L' ? 1 : -1) * this.side, p = power;
+    // head snap: the neck spring is kicked in proportion to the rotational head acceleration this shot produced (resolve:
+    // [W05]-scaled from the impulse); HEADK.snap turns rad/s² into the spring's rad/s and is tuned
+    const al = Math.min(9, (info && info.alpha ? info.alpha : 0) * HEADK.snap);
     if (act.kind === 'kick') {
       const vS = this.side > 0 ? info.leg : FLIP[info.leg];
       sp['bk' + vS].kick(2.4 + 3.6 * p * (1.3 - this.legF())); sp.sR.kick((vS === 'L' ? -1 : 1) * 0.8 * p); sp.hP.kick(0.6 * p);
     } else if (act.body) { sp.fold.kick(2.6 + 2.8 * p); sp.py.kick(-0.9 * p); if (act.type === 'hook') sp.sR.kick(-side * 1.5 * p); sp.hP.kick(1.2 * p); }
-    else if (act.type === 'jab') { sp.hP.kick(-2.2 * p); sp.sP.kick(-0.6 * p); sp.hY.kick(side * 0.5 * p); }
-    else if (act.type === 'cross') { sp.hP.kick(-3.6 * p); sp.hY.kick(side * 1.1 * p); sp.sP.kick(-1.2 * p); }
-    else if (act.type === 'hook') { sp.hY.kick(side * 5.2 * p); sp.hR.kick(side * 2.6 * p); sp.sY.kick(side * 1.4 * p); sp.px.kick(-side * 0.6 * p); }
-    else { sp.hP.kick(-5.6 * p); sp.sP.kick(-1.6 * p); sp.py.kick(0.3 * p); }
+    else if (act.type === 'jab') { sp.hP.kick(-al * 0.62); sp.sP.kick(-0.6 * p); sp.hY.kick(side * al * 0.14); }
+    else if (act.type === 'cross') { sp.hP.kick(-al); sp.hY.kick(side * al * 0.3); sp.sP.kick(-1.2 * p); }
+    else if (act.type === 'hook') { sp.hY.kick(side * al * 0.82); sp.hR.kick(side * al * 0.41); sp.sY.kick(side * 1.4 * p); sp.px.kick(-side * 0.6 * p); }
+    else { sp.hP.kick(-al * 0.95); sp.sP.kick(-1.6 * p); sp.py.kick(0.3 * p); }
+    // the body is pushed by the impulse (J / body mass, scaled up because the trunk moves more than the centre of mass — tuned);
+    // the balance system then steps to catch it if the capture point leaves the feet
     const away = _v[7].subVectors(this.pos, attacker.pos).setY(0).normalize();
-    this.knock.addScaledVector(away, (0.4 + p * 0.85) * 82 / this.mass);
+    this.knock.addScaledVector(away, info && info.Jm ? info.Jm / this.mass * HEADK.push : (0.4 + p * 0.85) * 82 / this.mass);
+    this.lastHit = info ? { J: info.Jm, v: info.v, a: info.a, alpha: info.alpha, cp: info.cp, pkd: info.pkd, type: act.type, t: this.game.simT } : null;
     if (info && info.J) {
       const region = act.kind === 'kick' ? 'leg' + info.leg : act.body ? 'body' : 'head';
       this.rag.hit(info.point, info.J, region, p, (1 + this.stunW * 0.8) * (1.3 - 0.3 * this.headF()));
@@ -3636,6 +4125,25 @@ class Fighter {
   }
 }
 function bez(out, a, c, b, t) { const u = 1 - t; return out.set(u * u * a.x + 2 * u * t * c.x + t * t * b.x, u * u * a.y + 2 * u * t * c.y + t * t * b.y, u * u * a.z + 2 * u * t * c.z + t * t * b.z); }
+// convex hull (Andrew's monotone chain) of the first n points on the canvas plane (x, z), counter-clockwise
+function hull2(pts, n, out) {
+  const P = pts.slice(0, n).sort((a, b) => a.x - b.x || a.z - b.z); out.length = 0;
+  if (n < 3) { for (const q of P) out.push(q); return out; }
+  const cr = (o, a, b) => (a.x - o.x) * (b.z - o.z) - (a.z - o.z) * (b.x - o.x), lo = [], up = [];
+  for (const q of P) { while (lo.length >= 2 && cr(lo[lo.length - 2], lo[lo.length - 1], q) <= 0) lo.pop(); lo.push(q); }
+  for (let i = P.length - 1; i >= 0; i--) { const q = P[i]; while (up.length >= 2 && cr(up[up.length - 2], up[up.length - 1], q) <= 0) up.pop(); up.push(q); }
+  lo.pop(); up.pop(); for (const q of lo) out.push(q); for (const q of up) out.push(q); return out;
+}
+// signed distance from q to a convex polygon on the canvas plane: positive inside (the margin of stability)
+function polyMargin(poly, q) {
+  const n = poly.length; if (n === 1) return -Math.hypot(q.x - poly[0].x, q.z - poly[0].z);
+  let inside = n >= 3, d = 1e9;
+  for (let i = 0; i < n; i++) {
+    const a = poly[i], b = poly[(i + 1) % n], ex = b.x - a.x, ez = b.z - a.z, t = clamp(((q.x - a.x) * ex + (q.z - a.z) * ez) / (ex * ex + ez * ez || 1e-12), 0, 1);
+    d = Math.min(d, Math.hypot(q.x - a.x - ex * t, q.z - a.z - ez * t)); if (ex * (q.z - a.z) - ez * (q.x - a.x) < 0) inside = false;
+  }
+  return inside ? d : -d;
+}
 
 // ============================================================================
 // 8. AI — three styles; reactive defence with human-like reaction delay; combo
@@ -4060,6 +4568,7 @@ const SETTINGS = [
   { key: 'camera', label: 'Camera', opts: [['broadcast', 'Broadcast'], ['cinematic', 'Cinematic'], ['ots', 'Over-the-shoulder']] },
   { key: 'volume', label: 'Volume', opts: Array.from({ length: 11 }, (_, i) => [i / 10, String(i)]) },
   { key: 'fps', label: 'FPS counter', opts: [[false, 'Off'], [true, 'On']] },
+  { key: 'physics', label: 'Body physics', opts: [['full', 'Full'], ['lite', 'Lite']] },   // Lite: fewer IK / ragdoll limit passes
 ];
 class UI {
   constructor(game) {
@@ -4391,7 +4900,8 @@ const newRoundStats = () => ({ thrown: 0, landed: 0, power: 0, jab: 0, body: 0, 
 class Game {
   constructor() {
     this.settings = { quality: lsGet('quality', LOW_POWER ? 'low' : 'high'), rounds: lsGet('rounds', 3), roundLen: lsGet('roundLen', 90), difficulty: lsGet('difficulty', 'normal'),
-      camera: lsGet('camera', 'broadcast'), volume: lsGet('volume', 0.8), fps: lsGet('fps', false), rules: lsGet('rules', 'kickboxing') };
+      camera: lsGet('camera', 'broadcast'), volume: lsGet('volume', 0.8), fps: lsGet('fps', false), rules: lsGet('rules', 'kickboxing'),
+      physics: lsGet('physics', LOW_POWER ? 'lite' : 'full') };
     for (const k of FX_KEYS) this.settings[k] = lsGet(k, FX_PRESETS.realistic[k]);
     this.perf = { acc: 0, n: 0, win: 0, done: lsGet('quality', null) !== null };   // one-time frame-rate guard (see frame)
     this.post = new Post($('gl')); this.post.quality = this.settings.quality;
@@ -4400,6 +4910,7 @@ class Game {
     this.arena = new Arena(this.scene, this.post.r); this.arena.setShadowQuality(this.post.high);
     this.camDir = new CameraDirector(this.camera); this.camDir.view = this.settings.camera;
     this.input = new Input(); this.replay = new Replay(); this.ui = new UI(this); this.fx = new Particles(this.scene); this.blood = new BloodFX(this.scene, this);
+    this.debug = new DebugOverlay(this);
     this.state = 'loading'; this.simT = 0; this.realT = 0; this.ts = 1; this.slow = null; this.stopT = 0; this.fighters = []; this.baked = {};
     this.lastSetup = null; this.fpsT = 0; this.fpsN = 0; this.stepSnd = 0; this.beatT = 0;
     addEventListener('resize', () => this.resize()); this.resize();
@@ -4416,7 +4927,9 @@ class Game {
     if (k === 'camera') this.camDir.view = v;
     if (k === 'volume') audio.setVolume(v);
     if (k === 'fps') $('fps').hidden = !v;
+    if (k === 'physics') for (const f of this.fighters) this.physicsLevel(f);
   }
+  physicsLevel(f) { const lite = this.settings.physics === 'lite'; f.rag.angEvery = lite ? 2 : 1; f.rig.ccdIt = lite ? 2 : 3; f.rig.armIt = lite ? 5 : 12; }
   // fighter mesh detail follows the Graphics setting: rebake in the background, swap between fights
   meshRes(q = this.settings.quality) { return LOW_POWER ? 1.75 : q === 'high' ? 1 : 1.45; }
   async rebake() {
@@ -4462,7 +4975,7 @@ class Game {
   makeFighter(defIdx, idx, alt) {
     const def = ROSTER[defIdx], obj = buildFighterObject(this.baked[def.id], alt ? def.alt : def.colors, this.post);
     this.scene.add(obj.root);
-    const f = new Fighter(def, obj, idx, this); f.defIdx = defIdx; f.alt = alt; return f;
+    const f = new Fighter(def, obj, idx, this); f.defIdx = defIdx; f.alt = alt; this.physicsLevel(f); return f;
   }
   setFighters(i0, i1) {
     const want = [[i0, false], [i1, i0 === i1]];
@@ -4576,17 +5089,25 @@ class Game {
     }
     const bf = d.blockFactor(act), counter = act.counter || d.committed() || ev === 'caught';
     const clean = 1 - clamp(dist / Rr, 0, 1) * 0.55;                              // centred shots land fuller
-    const step = clamp((a.vel.x * fwdA.x + a.vel.z * fwdA.z) / 1.5, -0.5, 1);      // stepping into it…
-    const onto = clamp(-(d.vel.x * fwdA.x + d.vel.z * fwdA.z) / 1.5, -0.5, 1);     // …or the other man walking onto it
-    const massK = Math.sqrt(a.mass / 80);
-    let dmg = P.dmg * (0.75 + 0.5 * a.st.power) * (a.sta < 25 ? 0.75 + a.sta / 100 : 1) * (counter ? 1.4 : 1) * (ev === 'caught' ? 1.25 : 1) * rand(0.92, 1.08)
-      * (act.body ? 0.85 : 1) * (0.7 + 0.3 * clean) * (1 + 0.12 * step + 0.15 * onto) * (0.85 + 0.15 * a.legF()) * massK;
+    // the strike's line: straight on for straight punches, across for hooks and kicks, up for uppercuts
+    const dir = V();
+    if (kick) dir.copy(latA).multiplyScalar(act.realHand === 'R' ? 0.85 : -0.85).addScaledVector(fwdA, 0.5).setY(-0.1);
+    else if (act.type === 'hook') dir.copy(latA).multiplyScalar(act.realHand === 'L' ? -0.85 : 0.85).addScaledVector(fwdA, 0.45);
+    else if (act.type === 'upper' && !act.body) dir.copy(fwdA).multiplyScalar(0.45).setY(0.9);
+    else dir.copy(fwdA).setY(0.05);
+    dir.normalize();
+    // impulse J = m_eff · v · cleanness. v: the closing speed the glove (or shin) actually reached along that line, the other
+    // man's own movement included (stepping in, walking onto it); m_eff: the effective mass behind the strike (PUNCH, [W05])
+    const sv = act.vel || V(), vImp = Math.max(0.5, (sv.x - d.vel.x - d.knock.x) * dir.x + sv.y * dir.y + (sv.z - d.vel.z - d.knock.z) * dir.z);
+    const Jm = a.meff(act) * vImp * clean;
+    const Jnom = (kick ? a.meffKick * 80 : P.meff) * P.v * 0.8;   // a typical clean full-effort strike from an 80 kg, mid-power fighter — sets damage scale
+    let dmg = P.dmg * (Jm / Jnom) * (counter ? 1.4 : 1) * (ev === 'caught' ? 1.25 : 1) * rand(0.92, 1.08) * (act.body ? 0.85 : 1) * (0.85 + 0.15 * a.legF());
     if (bf > 0 && (bf >= 0.99 || chance(bf))) {           // blocked: chip damage, stamina drain, push the guard back
       act.blocked = true; dmg *= 0.12; d.hp -= dmg; d.sta = Math.max(0, d.sta - P.sta * 0.55 - dmg * 2); rs[d.idx].blocked++;
       d.sp.gk.kick(1.2 + 2.4 * P.pw); d.sp.sP.kick(-0.6 * P.pw);
       if (d.state === 'idle' || d.state === 'hit') { d.state = 'hit'; d.act = { kind: 'hit', t: 0, dur: 0.1 + P.pw * 0.06, blocked: true }; }
       const bp = d.tipWorld(act.realHand === 'L' ? 'R' : 'L', V());
-      d.rag.hit(bp, fwdA.clone().multiplyScalar(P.mom * 0.25 * massK), 'head', 0.25);
+      d.rag.hit(bp, fwdA.clone().multiplyScalar(Jm * 0.25), 'head', 0.25);
       audio.punchImpact(act.body ? 'body' : 'head', P.pw, true, pan); this.camDir.shake(0.06 + P.pw * 0.06);
       this.replay.event(this.simT, () => audio.punchImpact(act.body ? 'body' : 'head', P.pw, true, 0));
       return;
@@ -4594,27 +5115,31 @@ class Game {
     // clean shot
     const s = rs[a.idx]; s.landed++; if (act.type === 'jab') s.jab++; else s.power++; if (act.body) s.body++; s.dmg += dmg;
     const power = dmg / 3.2;
-    // momentum: direction set by the strike, size by power, cleanness and the striker's mass
-    const dir = V();
-    if (kick) dir.copy(latA).multiplyScalar(act.realHand === 'R' ? 0.85 : -0.85).addScaledVector(fwdA, 0.5).setY(-0.1);
-    else if (act.type === 'hook') dir.copy(latA).multiplyScalar(act.realHand === 'L' ? -0.85 : 0.85).addScaledVector(fwdA, 0.45);
-    else if (act.type === 'upper' && !act.body) dir.copy(fwdA).multiplyScalar(0.45).setY(0.9);
-    else dir.copy(fwdA).setY(0.05);
-    dir.normalize();
-    const Jm = P.mom * (0.7 + 0.5 * a.st.power) * clean * (counter ? 1.25 : 1) * (0.6 + 0.4 * a.sta / 100) * massK * (1 + 0.2 * step);
+    // head kinematics, scaled from [W05] (2.9 kg × 9.14 m/s straight punches → 58 g, 6343 rad/s²); the chin term stands for
+    // neck strength and bracing (tuned, no source); [RD13] turns the pair into a combined concussion probability
+    let hk = null, pkd = 0;
+    if (!kick && !act.body) {
+      const k = Jm / HEADK.Jref * (1.2 - 0.4 * d.st.chin);
+      hk = { a: HEADK.aRef * k, alpha: HEADK.alphaRef * k * P.rot }; hk.cp = concussionP(hk.a, hk.alpha);
+      // knockdown chance per clean head shot: the concussion probability, raised by accumulated damage, a stunned fighter
+      // and a counter (gains tuned, no source)
+      pkd = clamp(hk.cp * HEADK.kd * (1 + d.headDmg / 140) * (d.stunned() ? 2 : 1) * (counter ? 1.3 : 1), 0, 0.95);
+    }
     const point = tgt.clone().addScaledVector(V().subVectors(tip, tgt).normalize(), kick ? 0.06 : act.body ? 0.1 : 0.09);
     let regs = null;
     if (kick) { d.legDmg[legS] = Math.min(100, d.legDmg[legS] + dmg * 2.6); d.hp -= dmg * 0.3; d.sta = Math.max(0, d.sta - dmg * 1.4); d.mark('thigh' + legS, point, 0.05, 0.25 + power * 0.2, 0); }
     else if (act.body) { d.hp -= dmg * 0.55; d.sta = Math.max(0, d.sta - dmg * 3.2); d.bodyDmg += dmg * 2; d.mark('spine1', point, 0.055, 0.18 + power * 0.15, a.gloveBlood[act.realHand] * 0.5); }
     else {
-      d.hp -= dmg; d.headDmg += dmg; if (!d.stunned()) d.stun += P.stun * (counter ? 1.9 : 1) * (1.3 - 0.55 * d.st.chin) * (1 + d.headDmg / 260);
+      // stun builds with the head's rotational acceleration (the old per-punch values sit at [W05]'s mean)
+      d.hp -= dmg; d.headDmg += dmg; if (!d.stunned()) d.stun += hk.alpha * HEADK.stun * (counter ? 1.9 : 1) * (1.3 - 0.55 * d.st.chin) * (1 + d.headDmg / 260);
       const sb = act.realHand === 'L' ? 1 : 0, sc = act.realHand === 'L' ? 3 : 2;   // a left hand lands on the right side of the face
       regs = act.type === 'upper' ? [4, 4] : act.type === 'hook' ? [sb, sc] : [4, sb];
       d.wound(regs, dmg, power);
     }
     d.sweat = Math.min(1, d.sweat + 0.004);
     if (d.state !== 'down' && d.state !== 'ko') { d.state = 'hit'; d.act = { kind: 'hit', t: 0, dur: 0.15 + P.pw * 0.17 + (kick ? 0.12 : 0), blocked: false }; d.buffer = null; }
-    d.react(act, power * (counter ? 1.15 : 1), a, { point, J: dir.clone().multiplyScalar(Jm), leg: legS });
+    act.hitInfo = { J: Jm, v: vImp, clean, a: hk && hk.a, alpha: hk && hk.alpha, cp: hk && hk.cp, pkd };
+    d.react(act, power * (counter ? 1.15 : 1), a, { point, J: dir.clone().multiplyScalar(Jm), leg: legS, Jm, v: vImp, a: hk && hk.a, alpha: hk && hk.alpha, cp: hk && hk.cp, pkd });
     // spray: sweat off every head shot, blood once the struck area is open
     const bleed = regs ? regs.reduce((t, r) => t + d.cuts[r].bleed, 0) + d.cuts.reduce((t, c) => t + c.bleed, 0) * 0.15 : 0;
     const sprayDir = dir.clone(), pt = point.clone();
@@ -4628,19 +5153,26 @@ class Game {
     this.camDir.shake(0.1 + power * 0.22); audio.bump(0.03 + power * 0.07); this.hitstop(0.035 + power * 0.045);
     if (power > 1 || (counter && P.pw > 0.7)) { audio.reaction('ooh', Math.min(1, power)); this.arena.flash(3 + Math.round(power * 4)); }
     if (counter && P.pw >= 0.75 && dmg > 3.8 && this.state === 'fight') { this.slowmo(0.3, 0.45); this.camDir.kick(1, tgt); audio.slowmo(); }
-    this.lastImpact = { t: this.simT, a, d, act, point: pt.clone(), dir: dir.clone(), power, mid: V().addVectors(a.pos, d.pos).multiplyScalar(0.5), axis: V().subVectors(d.pos, a.pos).setY(0).normalize(), legS };
-    // knockdown / stun checks
+    this.lastImpact = { t: this.simT, a, d, act, point: pt.clone(), dir: dir.clone(), power, mid: V().addVectors(a.pos, d.pos).multiplyScalar(0.5), axis: V().subVectors(d.pos, a.pos).setY(0).normalize(), legS, hk, J: Jm };
+    // knockdown / stun checks: out of health, the head-acceleration roll, a body or leg that gives out, or a stun
     let kd = false;
     if (d.hp <= 0) kd = true;
-    else if (!kick && !act.body && d.stunned() && P.pw >= 0.75 && dmg > 2.6 && chance(0.04 + (1 - d.hp / d.maxHp) * 0.24)) kd = true;
+    else if (hk && chance(pkd)) kd = true;
     else if (act.body && d.sta < 5 && d.bodyDmg > 40 && dmg > 2.6 && chance(0.14)) kd = true;
     else if (kick && d.legDmg[legS] > 70 && power > 0.75 && chance((d.legDmg[legS] - 60) / 120)) kd = true;
     else if (!kick && d.stun >= 100 && !d.stunned()) { d.stunT = 2.2 + rand(0, 0.9); d.stun = 0; audio.reaction('ooh', 0.9); this.camDir.kick(0.7, tgt); }
     if (kd && this.state === 'fight') this.knockdown(d, a, act, counter);
   }
+  // the balance system could not catch a fighter (capture point beyond a step): a fall right after a clean shot is a knockdown
+  onBalanceLost(f) {
+    const li = this.lastImpact;
+    if (this.state !== 'fight' || f.isDown() || !li || li.d !== f || this.simT - li.t > 0.6) return false;
+    this.knockdown(f, li.a, li.act, false); return true;
+  }
   knockdown(d, a, act, counter) {
     d.kdRound++; d.kdTotal++; this.roundStats[a.idx].kd++;
-    const sev = -d.hp / 12 + (d.kdTotal - 1) * 0.28 + (counter ? 0.12 : 0) - d.st.chin * 0.3 + (act.type === 'hook' || act.type === 'upper' ? 0.08 : 0) + d.headDmg / 400;
+    const cp = this.lastImpact && this.lastImpact.d === d && this.lastImpact.hk ? this.lastImpact.hk.cp : 0;   // [RD13] probability of the finishing shot
+    const sev = -d.hp / 12 + (d.kdTotal - 1) * 0.28 + (counter ? 0.12 : 0) - d.st.chin * 0.3 + cp * 0.6 + d.headDmg / 400;   // cp weight: tuned, no source
     const tko = d.kdRound >= 3, aiKO = d.idx === 1 && (tko || d.hp < -12 || (d.kdTotal >= 2 && chance(clamp(0.05 + sev, 0, 0.85))));
     const variant = act.kind === 'kick' || act.body ? 'knee' : 'sit';
     const stiff = aiKO && !act.body && act.kind !== 'kick' && act.type !== 'hook' && chance(0.6);   // straight shots can leave them rigid as they go
@@ -4828,7 +5360,7 @@ class Game {
       this.ui.hud(dtR, this.fighters, this.round, this.totalRounds, this.clock);
     const vel = this.post.high && (this.state === 'fight' || rep) && this.fighters.some(f => f.striking());
     this.post.r.info.reset();
-    if (!this.noRender) this.post.render(this.scene, this.camera, { time: this.realT, key: this.arena.key, beams: this.arena.beams, velActive: vel });
+    if (!this.noRender) { this.post.render(this.scene, this.camera, { time: this.realT, key: this.arena.key, beams: this.arena.beams, velActive: vel }); this.debug.draw(); }
     // performance guard: if the first fight runs well under 40 fps on High, drop to Low once (lighter meshes are rebaked for the next fight)
     const pf = this.perf;
     if (!pf.done && this.state === 'fight' && this.post.quality === 'high' && !this.noRender && dtR > 0) {
@@ -4895,6 +5427,69 @@ class Game {
     if (!this.finish) return;
     const prev = this.state; this.ui.show(null);
     this.startKOReplay(() => { this.state = prev; this.camDir.mode = 'ko'; $('letterbox').classList.add('on'); this.ui.show('results'); }, true);
+  }
+}
+
+// ============================================================================
+// 13b. DEBUG OVERLAY (F3) — per fighter: centre of mass and its ground point, the support polygon of the planted
+//      feet, the capture point (green inside the polygon, red outside), IK targets against the effectors that
+//      reached for them (glove tip vs aim, ankle vs planted-foot target), and joints that hit a limit this frame
+//      (rig clamps in amber, ragdoll corrections in red), plus a panel with the numbers.
+// ============================================================================
+class DebugOverlay {
+  constructor(game) {
+    this.g = game; this.on = false; this.v = V(); this.w = V(); this.u = V();
+    const c = this.c = document.createElement('canvas'); c.id = 'dbg'; c.hidden = true;
+    c.style.cssText = 'position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:2';
+    $('ui').before(c); this.x = c.getContext('2d');
+    addEventListener('keydown', e => { if (e.code === 'F3') { e.preventDefault(); this.toggle(); } });
+  }
+  toggle(on = !this.on) { this.on = on; this.c.hidden = !on; }
+  proj(p) { const v = this.v.copy(p).project(this.g.camera); return v.z > 1 ? null : [(v.x * 0.5 + 0.5) * this.W, (-v.y * 0.5 + 0.5) * this.H]; }
+  dot(p, r, fill, stroke) { const s = this.proj(p); if (!s) return null; const x = this.x; x.beginPath(); x.arc(s[0], s[1], r, 0, TAU); if (fill) { x.fillStyle = fill; x.fill(); } if (stroke) { x.strokeStyle = stroke; x.stroke(); } return s; }
+  line(a, b, col, w = 1) { const s = this.proj(a), t = this.proj(b); if (!s || !t) return; const x = this.x; x.beginPath(); x.moveTo(s[0], s[1]); x.lineTo(t[0], t[1]); x.strokeStyle = col; x.lineWidth = w; x.stroke(); x.lineWidth = 1; }
+  draw() {
+    if (!this.on) return;
+    const dpr = Math.min(2, devicePixelRatio || 1), W = innerWidth, H = innerHeight, c = this.c;
+    if (c.width !== Math.round(W * dpr) || c.height !== Math.round(H * dpr)) { c.width = Math.round(W * dpr); c.height = Math.round(H * dpr); }
+    this.W = W; this.H = H; const x = this.x; x.setTransform(dpr, 0, 0, dpr, 0, 0); x.clearRect(0, 0, W, H);
+    x.font = '11px ui-monospace, Menlo, Consolas, monospace'; x.textBaseline = 'middle';
+    for (const f of this.g.fighters) { f.obj.root.updateMatrixWorld(true); this.fighter(f); }
+    this.panel();
+  }
+  fighter(f) {
+    const x = this.x, b = f.bal, col = f.idx === 0 ? '#ff7a66' : '#7fb2ff';
+    if (b.poly.length) {
+      x.beginPath(); let ok = true;
+      b.poly.forEach((p, i) => { const s = this.proj(p); if (!s) { ok = false; return; } if (i) x.lineTo(s[0], s[1]); else x.moveTo(s[0], s[1]); });
+      if (ok) { x.closePath(); x.fillStyle = col + '30'; x.fill(); x.strokeStyle = col; x.stroke(); }
+    }
+    const g = this.w.copy(b.com).setY(0);
+    this.line(b.com, g, col + 'aa'); this.dot(b.com, 5, col, '#000'); this.dot(g, 3, col);
+    this.line(g, b.xi, b.margin >= 0 ? '#7ddc7a' : '#ff4d4d', 2); this.dot(b.xi, 5, b.margin >= 0 ? '#7ddc7a' : '#ff4d4d', '#000');
+    // IK: glove tip goal vs knuckles (while punching), ankle target vs ankle (planted feet)
+    const a = f.act;
+    if (f.state === 'punch' && a) { const tip = f.tipWorld(a.realHand, this.u); this.dot(a.aim, 6, null, '#ffe14d'); this.line(a.aim, tip, '#ffe14d'); this.dot(tip, 3, '#ffe14d'); }
+    for (const S of ['L', 'R']) {
+      const ft = f.feet[S]; if (ft.step >= 0 || f.isDown()) continue;
+      const t = f.ankleFromBall(ft, this.u), r = f.obj.bones['foot' + f.realS(S)].getWorldPosition(this.v.clone());
+      this.dot(t, 4, null, '#ffe14d'); this.dot(r, 2, '#ffe14d'); this.dot(ft.w, 2, '#ffffff');
+    }
+    // joint-limit hits: amber = the pose asked past a limit and the rig clamped it; red = the ragdoll was pushed back inside
+    const mark = (src, colr) => { for (const k in src) { const bn = k.split('·')[0], bone = f.obj.bones[bn]; if (!bone) continue;
+      const s = this.dot(bone.getWorldPosition(this.u), 7, null, colr); if (s) { x.fillStyle = colr; x.fillText(`${k} ${src[k].toFixed(1)}`, s[0] + 9, s[1]); } } };
+    mark(f.rig.viol, '#ffb340'); if (f.rag.active) mark(f.rag.viol, '#ff4d4d');
+  }
+  panel() {
+    const x = this.x, lines = ['F3 · biomechanics overlay'];
+    for (const f of this.g.fighters) {
+      const b = f.bal, ls = f.lastStrike, lh = f.lastHit;
+      lines.push(`${f.def.last}: COM ${(b.com.y * 100).toFixed(0)} cm  |v| ${Math.hypot(b.v.x, b.v.z).toFixed(2)} m/s  margin ${(b.margin * 100).toFixed(1)} cm  hips −${(f.pDrop * 100).toFixed(1)} cm`);
+      if (ls) lines.push(`   last ${ls.type}: peak ${ls.vPeak.toFixed(1)} m/s${ls.err != null ? `  glove error ${(ls.err * 100).toFixed(2)} cm${ls.reachable ? '' : ' (out of reach)'}` : ''}`);
+      if (lh) lines.push(`   took ${lh.type}: J ${lh.J.toFixed(1)} N·s  v ${lh.v.toFixed(1)} m/s${lh.a ? `  head ${lh.a.toFixed(0)} g  ${lh.alpha.toFixed(0)} rad/s²  CP ${(lh.cp * 100).toFixed(1)} %  KD ${(lh.pkd * 100).toFixed(1)} %` : ''}`);
+    }
+    const w = 520, h = lines.length * 15 + 12; x.fillStyle = 'rgba(0,0,0,0.62)'; x.fillRect(10, this.H - h - 10, w, h);
+    lines.forEach((l, i) => { x.fillStyle = i ? '#e8e2d6' : '#ffe14d'; x.fillText(l, 18, this.H - h - 2 + i * 15 + 8); });
   }
 }
 

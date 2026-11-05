@@ -1,0 +1,294 @@
+{
+ "file": "/home/user/idk/iron-canvas/before.html",
+ "bootMs": 13779,
+ "gl": {
+  "webgl2": true,
+  "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)"
+ },
+ "fight": {
+  "footSlideMm": {
+   "n": 3112,
+   "mean": 3.8168,
+   "p50": 0.2606,
+   "p95": 16.9351,
+   "max": 1210.8107,
+   "min": 0
+  },
+  "over5mm": 275,
+  "footLiftMm": {
+   "n": 3112,
+   "mean": 0.9733,
+   "p50": 0.0035,
+   "p95": 4.173,
+   "max": 390.0618,
+   "min": 0
+  },
+  "knee": {
+   "minSignedFlexDeg": -105.05,
+   "framesHyperextended": 1628,
+   "frames": 176228
+  },
+  "elbow": {
+   "minSignedFlexDeg": -3.641,
+   "framesHyperextended": 6,
+   "frames": 176228
+  },
+  "ragdollKnee": {
+   "minSignedFlexDeg": 0.206,
+   "framesHyperextended": 0,
+   "frames": 45988
+  },
+  "ragdollElbow": {
+   "minSignedFlexDeg": -6.42,
+   "framesHyperextended": 27,
+   "frames": 45988
+  },
+  "gloveErrCm": {
+   "n": 269,
+   "mean": 5.0561,
+   "p50": 4.0428,
+   "p95": 12.6063,
+   "max": 63.5804,
+   "min": 0.2113
+  },
+  "gloveErrReachableCm": {
+   "n": 269,
+   "mean": 5.0561,
+   "p50": 4.0428,
+   "p95": 12.6063,
+   "max": 63.5804,
+   "min": 0.2113
+  },
+  "unreachablePunches": 0,
+  "gloveOver1cmReachable": 260,
+  "speeds": {
+   "jab": {
+    "tip": {
+     "n": 140,
+     "mean": 9.1006,
+     "p50": 9.3764,
+     "p95": 11.631,
+     "max": 12.947,
+     "min": 3.6537
+    },
+    "foot": {
+     "n": 140,
+     "mean": 1.4768,
+     "p50": 1.3745,
+     "p95": 2.5355,
+     "max": 3.5854,
+     "min": 0.0212
+    },
+    "shin": {
+     "n": 140,
+     "mean": 1.3672,
+     "p50": 1.2978,
+     "p95": 2.1635,
+     "max": 2.6987,
+     "min": 0.1372
+    },
+    "results": {
+     "null": 11,
+     "hit": 120,
+     "miss": 4,
+     "evade": 5
+    }
+   },
+   "cross": {
+    "tip": {
+     "n": 108,
+     "mean": 10.9777,
+     "p50": 6.7362,
+     "p95": 18.0635,
+     "max": 239.1966,
+     "min": 2.1839
+    },
+    "foot": {
+     "n": 108,
+     "mean": 4.417,
+     "p50": 1.3291,
+     "p95": 26.7405,
+     "max": 42.9266,
+     "min": 0.0966
+    },
+    "shin": {
+     "n": 108,
+     "mean": 4.1411,
+     "p50": 1.3334,
+     "p95": 24.4493,
+     "max": 38.094,
+     "min": 0.1593
+    },
+    "results": {
+     "null": 13,
+     "miss": 8,
+     "hit": 79,
+     "evade": 8
+    }
+   },
+   "kick": {
+    "tip": {
+     "n": 74,
+     "mean": 2.0518,
+     "p50": 2.1328,
+     "p95": 2.5416,
+     "max": 2.6974,
+     "min": 0.9946
+    },
+    "foot": {
+     "n": 74,
+     "mean": 10.9603,
+     "p50": 10.9738,
+     "p95": 16.2266,
+     "max": 16.945,
+     "min": 1.4856
+    },
+    "shin": {
+     "n": 74,
+     "mean": 11.0314,
+     "p50": 10.5343,
+     "p95": 14.9983,
+     "max": 26.1308,
+     "min": 6.0965
+    },
+    "results": {
+     "evade": 10,
+     "null": 10,
+     "miss": 23,
+     "hit": 30,
+     "checked": 1
+    }
+   },
+   "upper": {
+    "tip": {
+     "n": 7,
+     "mean": 7.4688,
+     "p50": 8.1835,
+     "p95": 9.1266,
+     "max": 9.6893,
+     "min": 1.9015
+    },
+    "foot": {
+     "n": 7,
+     "mean": 1.2335,
+     "p50": 1.1251,
+     "p95": 1.4468,
+     "max": 2.224,
+     "min": 0.6037
+    },
+    "shin": {
+     "n": 7,
+     "mean": 1.1757,
+     "p50": 1.1515,
+     "p95": 1.3837,
+     "max": 1.8306,
+     "min": 0.6726
+    },
+    "results": {
+     "miss": 2,
+     "null": 1,
+     "hit": 4
+    }
+   },
+   "hook": {
+    "tip": {
+     "n": 99,
+     "mean": 10.4896,
+     "p50": 4.71,
+     "p95": 33.1958,
+     "max": 37.7207,
+     "min": 0.9717
+    },
+    "foot": {
+     "n": 99,
+     "mean": 0.7354,
+     "p50": 0.7464,
+     "p95": 1.4941,
+     "max": 3.4108,
+     "min": 0.001
+    },
+    "shin": {
+     "n": 99,
+     "mean": 0.7444,
+     "p50": 0.7609,
+     "p95": 1.3517,
+     "max": 2.7843,
+     "min": 0.0762
+    },
+    "results": {
+     "null": 61,
+     "miss": 13,
+     "hit": 18,
+     "evade": 7
+    }
+   }
+  },
+  "strikes": 428,
+  "fightSeconds": 270,
+  "simSeconds": 367.1,
+  "frames": 44057,
+  "msPerFrame": 0.195,
+  "knockdowns": 4,
+  "finishes": 0,
+  "fights": [
+   {
+    "pair": [
+     "anvil",
+     "needle"
+    ],
+    "end": "fight"
+   }
+  ]
+ },
+ "perf": {
+  "frameSimMs": 0.217,
+  "fighterUpdateMsEach": 0.081,
+  "softwareRenderMs": 5.2
+ },
+ "shots": {
+  "jab": {
+   "file": "/home/user/idk/iron-canvas/verify/before/shot-jab.png",
+   "kind": "jab",
+   "frames": 16,
+   "state": "fight",
+   "aState": "punch",
+   "bState": "idle"
+  },
+  "cross": {
+   "file": "/home/user/idk/iron-canvas/verify/before/shot-cross.png",
+   "kind": "cross",
+   "frames": 24,
+   "state": "fight",
+   "aState": "punch",
+   "bState": "idle"
+  },
+  "kick": {
+   "file": "/home/user/idk/iron-canvas/verify/before/shot-kick.png",
+   "kind": "kick",
+   "frames": 29,
+   "state": "fight",
+   "aState": "kick",
+   "bState": "hit"
+  },
+  "hit": {
+   "file": "/home/user/idk/iron-canvas/verify/before/shot-hit.png",
+   "kind": "hit",
+   "frames": 25,
+   "result": "hit",
+   "state": "fight",
+   "aState": "punch",
+   "bState": "hit"
+  },
+  "ko": {
+   "file": "/home/user/idk/iron-canvas/verify/before/shot-ko.png",
+   "kind": "ko",
+   "frames": 25,
+   "result": "hit",
+   "state": "fight",
+   "aState": "idle",
+   "bState": "ko"
+  }
+ },
+ "consoleErrors": [],
+ "consoleWarnings": []
+}
