@@ -2650,6 +2650,7 @@ const CHAIN_LIM = {
 const PELVIS_SHARE = 0.25;   // trunk twist the pelvis takes on when the spine runs out of range (rad) — tuned, no source
 const TWIST_SPLIT = 0.5;     // share of forearm pronation carried by the forearm bone (the rest at the wrist) — tuned, no source
 const WRIST_RATE = 25;       // fastest the clamped wrist rotation may change (rad/s) — tuned, no source
+const ELBOW_RATE = 30;       // fastest the elbow's bend plane may turn about the arm (rad/s) — tuned, no source
 const XAXIS = V(1, 0, 0);
 function newPose() {
   const side = () => ({ L: V(), R: V() }), sc = v => ({ L: v, R: v });
@@ -2715,7 +2716,8 @@ class Rig {
     }
     this.viol = {};   // joint-limit hits this frame (name → excess, degrees or cm), for the debug overlay
     this.ccdIt = 3; this.armIt = 12;
-    this.tmp = { B: V(), C: V(), H: V(), y: V(), z: V(), x: V(), wT: V(), tip: V(), e: V(), e2: V() };
+    this.tmp = { B: V(), C: V(), H: V(), y: V(), z: V(), x: V(), wT: V(), tip: V(), e: V(), e2: V(), pp: V() };
+    this.perp = { L: V(), R: V() }; this.perpNext = { L: V(), R: V() };   // elbow bend planes, last frame and this frame
   }
   child(n, localQ) {
     const p = BONE_PARENT[n], P = this.P, Q = this.Q;
@@ -2757,7 +2759,7 @@ class Rig {
   chestDir(local, out) { return out.copy(local).applyQuaternion(this.Q.spine2).normalize(); }
   // analytic two-bone IK. The hinge flexion is kept inside [thMin, thMax]; returns how far the target lies out of
   // reach (> 0) or too close (< 0) after that clamp.
-  ik(A, T, l1, l2, pole, thMin = 0, thMax = Math.PI - 0.05) {
+  ik(A, T, l1, l2, pole, thMin = 0, thMax = Math.PI - 0.05, prev = null, maxTurn = 0) {
     const { B, C, H } = this.tmp, dir = _v[8].subVectors(T, A);
     const d0 = dir.length(); dir.divideScalar(d0 || 1);
     const d = clamp(d0, hingeSpan(l1, l2, thMax) + 1e-4, hingeSpan(l1, l2, thMin) - 1e-4);
@@ -2765,6 +2767,14 @@ class Rig {
     const perp = _v[9].copy(pole).addScaledVector(dir, -pole.dot(dir));
     if (perp.lengthSq() < 1e-8) perp.set(0, -1, 0).addScaledVector(dir, dir.y);
     perp.normalize();
+    // continuity: the bend plane may turn about the limb by at most maxTurn per solve (a pole passing the limb's line
+    // would otherwise flip the elbow to the other side in one frame)
+    if (prev && maxTurn > 0 && prev.lengthSq() > 0.5) {
+      const pp = this.tmp.pp.copy(prev).addScaledVector(dir, -prev.dot(dir));
+      if (pp.lengthSq() > 1e-6) { pp.normalize(); const ang = Math.atan2(_v[10].crossVectors(pp, perp).dot(dir), pp.dot(perp));
+        if (Math.abs(ang) > maxTurn) perp.copy(pp).applyAxisAngle(dir, Math.sign(ang) * maxTurn); }
+    }
+    if (prev) prev.copy(perp);
     B.copy(A).addScaledVector(dir, l1 * ca).addScaledVector(perp, l1 * sa);
     C.copy(A).addScaledVector(dir, d);
     H.crossVectors(perp, dir).normalize();
@@ -2819,7 +2829,8 @@ class Rig {
     for (let it = 0; it < (goal ? this.armIt : 1); it++) {
       this.child('clav' + S, qYXZ(_q[0], -s * prot, 0, s * pose.shrug[S]));
       this.child('arm' + S);
-      const short = this.ik(P['arm' + S], wT, a.l1, a.l2, pose.ge[S], 0, ROM.elbowFlex);   // elbow: [CDC] 0…144.6°
+      const pv = this.perpNext[S].copy(this.perp[S]);
+      const short = this.ik(P['arm' + S], wT, a.l1, a.l2, pose.ge[S], 0, ROM.elbowFlex, this.dt > 0 ? pv : null, ELBOW_RATE * (this.dt || 0));   // elbow: [CDC] 0…144.6°
       this.hinge[S].copy(t.H);
       this.boneFromTo(Q['arm' + S], t.H, P['arm' + S], t.B, a.u0i);
       P['fore' + S].copy(t.B); this.boneFromTo(Q['fore' + S], t.H, t.B, t.C, a.f0i);
@@ -2841,6 +2852,7 @@ class Rig {
       // a reach past the straight arm: the shoulder slides forward round the ribcage
       if (short > 0.002 && prot < a.protMax) prot = Math.min(a.protMax, prot + short / a.cl);
     }
+    this.perp[S].copy(this.perpNext[S]);
     a.prot = prot; if (a.relCur) (a.relPrev || (a.relPrev = new THREE.Quaternion())).copy(a.relCur);
     if (a.short > 0.01 && goal) this.viol['arm' + S] = a.short * 100;
   }

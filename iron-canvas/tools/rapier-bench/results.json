@@ -1,0 +1,45 @@
+{
+ "initMs": 36.8,
+ "version": "0.19.3",
+ "pbd": {
+  "mean": 0.069,
+  "p95": 0.2,
+  "p99": 0.3,
+  "max": 1.3,
+  "particles": 50,
+  "constraints": 200
+ },
+ "rapier_240x4": {
+  "mean": 0.506,
+  "p95": 0.8,
+  "p99": 1.1,
+  "max": 1.7,
+  "nb": 32,
+  "nan": false,
+  "maxv": 0.2,
+  "pelvisY": 0.12
+ },
+ "rapier_120x2": {
+  "mean": 0.318,
+  "p95": 0.5,
+  "p99": 0.7,
+  "max": 1.4,
+  "nb": 32,
+  "nan": false,
+  "maxv": 0.28,
+  "pelvisY": 0.13
+ },
+ "rapier_60x1": {
+  "mean": 0.141,
+  "p95": 0.2,
+  "p99": 0.3,
+  "max": 0.9,
+  "nb": 32,
+  "nan": false,
+  "maxv": 0.34,
+  "pelvisY": 0.12
+ },
+ "moduleBytes": 2238719,
+ "cores": 4,
+ "cpu": "Intel(R) Xeon(R) Processor @ 2.10GHz"
+}

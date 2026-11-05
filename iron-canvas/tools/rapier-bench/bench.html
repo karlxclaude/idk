@@ -1,0 +1,125 @@
+<!doctype html><meta charset="utf-8"><title>rapier bench</title>
+<script type="module">
+import RAPIER from '/rapier.mjs';
+const qmul=(a,b)=>({w:a.w*b.w-a.x*b.x-a.y*b.y-a.z*b.z,x:a.w*b.x+a.x*b.w+a.y*b.z-a.z*b.y,y:a.w*b.y-a.x*b.z+a.y*b.w+a.z*b.x,z:a.w*b.z+a.x*b.y-a.y*b.x+a.z*b.w});
+const qinv=a=>({w:a.w,x:-a.x,y:-a.y,z:-a.z});
+const qaxis=(ax,ay,az,ang)=>{const s=Math.sin(ang/2);return{w:Math.cos(ang/2),x:ax*s,y:ay*s,z:az*s}};
+
+function buildFighter(R,world,ox,face){
+  const bodies=[],hinges=[],sph=[];
+  const mk=(name,cx,cy,cz,shape,parent,jt,jp,opt={})=>{
+    const rb=world.createRigidBody(R.RigidBodyDesc.dynamic().setTranslation(ox+face*cx,cy,cz).setLinearDamping(0.2).setAngularDamping(0.5).setCanSleep(false));
+    let cd;
+    if(shape.cap) cd=R.ColliderDesc.capsule(shape.cap[0],shape.cap[1]);
+    else cd=R.ColliderDesc.cuboid(...shape.box);
+    cd.setDensity(opt.density||900).setFriction(0.8).setCollisionGroups(0x00010002); // fighters don't self-collide w/ each other? keep ground collisions only
+    world.createCollider(cd,rb);
+    const b={name,rb};bodies.push(b);
+    if(parent){
+      const pp=parent.rb.translation(),cp=rb.translation();
+      const J={x:ox+face*jp[0],y:jp[1],z:jp[2]};
+      const a1={x:J.x-pp.x,y:J.y-pp.y,z:J.z-pp.z},a2={x:J.x-cp.x,y:J.y-cp.y,z:J.z-cp.z};
+      if(jt==='sph'){
+        world.createImpulseJoint(R.JointData.spherical(a1,a2),parent.rb,rb,true);
+        sph.push({parent,child:b,amp:opt.amp||0.5,ph:Math.random()*6,ax:opt.ax||[0,0,1]});
+      } else {
+        const jd=R.JointData.revolute(a1,a2,{x:0,y:0,z:1});
+        jd.limitsEnabled=true;jd.limits=opt.lim;
+        const j=world.createImpulseJoint(jd,parent.rb,rb,true);
+        hinges.push({j,lim:opt.lim,ph:Math.random()*6});
+      }
+    }
+    return b;
+  };
+  const pel=mk('pelvis',0,1.0,0,{cap:[0.05,0.12]},null);
+  const abd=mk('abdomen',0,1.15,0,{cap:[0.06,0.1]},pel,'sph',[0,1.08,0],{amp:.25});
+  const che=mk('chest',0,1.36,0,{box:[0.1,0.14,0.18]},abd,'sph',[0,1.24,0],{amp:.25});
+  mk('head',0,1.62,0,{cap:[0.05,0.1]},che,'sph',[0,1.5,0],{amp:.3});
+  for(const s of [-1,1]){
+    const ua=mk('ua'+s,0,1.30,s*.24,{cap:[0.12,0.05]},che,'sph',[0,1.46,s*.22],{amp:.9});
+    const la=mk('la'+s,0,1.06,s*.24,{cap:[0.12,0.045]},ua,'rev',[0,1.18,s*.24],{lim:[0,2.4]});
+    mk('hand'+s,0,0.88,s*.24,{box:[0.04,0.06,0.03]},la,'rev',[0,0.94,s*.24],{lim:[-0.8,0.8]});
+    const th=mk('th'+s,0,0.75,s*.1,{cap:[0.17,0.07]},pel,'sph',[0,0.93,s*.1],{amp:.7});
+    const sh=mk('sh'+s,0,0.38,s*.1,{cap:[0.17,0.055]},th,'rev',[0,0.56,s*.1],{lim:[-2.4,0]});
+    mk('ft'+s,0.05,0.05,s*.1,{box:[0.13,0.04,0.05]},sh,'rev',[0,0.1,s*.1],{lim:[-0.6,0.6]});
+  }
+  return {bodies,hinges,sph};
+}
+
+function run(R,{dt,sub,frames,warm,kp,kd}){
+  const world=new R.World({x:0,y:-9.81,z:0});
+  world.timestep=dt/sub;
+  const g=world.createRigidBody(R.RigidBodyDesc.fixed());
+  world.createCollider(R.ColliderDesc.cuboid(20,0.5,20).setTranslation(0,-0.5,0).setCollisionGroups(0x00020001),g);
+  const F=[buildFighter(R,world,-0.6,1),buildFighter(R,world,0.6,-1)];
+  const nb=F[0].bodies.length+F[1].bodies.length;
+  const ts=[];let t=0,nan=false,maxv=0;
+  for(let f=0;f<warm+frames;f++){
+    const t0=performance.now();
+    t+=1/60;
+    for(const fi of F){
+      for(const h of fi.hinges){
+        const mid=(h.lim[0]+h.lim[1])/2,amp=(h.lim[1]-h.lim[0])/2*0.8;
+        h.j.configureMotorPosition(mid+amp*Math.sin(t*5+h.ph),kp,kd);
+      }
+    }
+    for(let s=0;s<sub;s++){
+      for(const fi of F)for(const sp of fi.sph){
+        const target=qaxis(sp.ax[0],sp.ax[1],sp.ax[2],sp.amp*Math.sin(t*5+sp.ph));
+        const qp=sp.parent.rb.rotation(),qc=sp.child.rb.rotation();
+        // child desired = parent * target (rest relative = identity)
+        let e=qmul(qmul(qp,target),qinv(qc));if(e.w<0){e={w:-e.w,x:-e.x,y:-e.y,z:-e.z}}
+        const wp=sp.parent.rb.angvel(),wc=sp.child.rb.angvel();
+        let tx=2*e.x*0.25-0.02*(wc.x-wp.x),ty=2*e.y*0.25-0.02*(wc.y-wp.y),tz=2*e.z*0.25-0.02*(wc.z-wp.z);
+        const k=dt/sub;
+        sp.child.rb.applyTorqueImpulse({x:tx*k*40,y:ty*k*40,z:tz*k*40},true);
+        sp.parent.rb.applyTorqueImpulse({x:-tx*k*40,y:-ty*k*40,z:-tz*k*40},true);
+      }
+      world.step();
+    }
+    const t1=performance.now();
+    if(f>=warm)ts.push(t1-t0);
+  }
+  for(const fi of F)for(const b of fi.bodies){const p=b.rb.translation();if(!isFinite(p.x+p.y+p.z))nan=true;const v=b.rb.linvel();maxv=Math.max(maxv,Math.hypot(v.x,v.y,v.z));}
+  const pelY=F[0].bodies[0].rb.translation().y;
+  world.free();
+  return stats(ts,{nb,nan,maxv:+maxv.toFixed(2),pelvisY:+pelY.toFixed(2)});
+}
+function stats(ts,extra){const s=[...ts].sort((a,b)=>a-b);const m=ts.reduce((a,b)=>a+b)/ts.length;return{mean:+m.toFixed(3),p95:+s[Math.floor(s.length*.95)].toFixed(3),p99:+s[Math.floor(s.length*.99)].toFixed(3),max:+s[s.length-1].toFixed(3),...extra}}
+
+function pbd(frames,warm,sub=4,iters=6){
+  const N=50,C=200;
+  const x=new Float32Array(N*3),p=new Float32Array(N*3),im=new Float32Array(N).fill(1);
+  for(let i=0;i<N;i++){x[i*3]=(i%25)*0.07+(i>=25?1:0);x[i*3+1]=1+Math.random()*.5;x[i*3+2]=Math.random()*.3;p.set(x.subarray(i*3,i*3+3),i*3);}
+  const ca=new Int32Array(C),cb=new Int32Array(C),cl=new Float32Array(C);
+  for(let c=0;c<C;c++){const f=c<100?0:25;ca[c]=f+(c%25);cb[c]=f+((c*7+3)%25);if(ca[c]===cb[c])cb[c]=f+((c+1)%25);cl[c]=Math.hypot(x[ca[c]*3]-x[cb[c]*3],x[ca[c]*3+1]-x[cb[c]*3+1],x[ca[c]*3+2]-x[cb[c]*3+2]);}
+  const v=new Float32Array(N*3),h=1/60/sub;const ts=[];
+  for(let f=0;f<warm+frames;f++){
+    const t0=performance.now();
+    for(let s=0;s<sub;s++){
+      for(let i=0;i<N;i++){const k=i*3;v[k+1]-=9.81*h;for(let d=0;d<3;d++){p[k+d]=x[k+d]+v[k+d]*h;}}
+      for(let it=0;it<iters;it++){
+        for(let c=0;c<C;c++){const a=ca[c]*3,b=cb[c]*3;let dx=p[a]-p[b],dy=p[a+1]-p[b+1],dz=p[a+2]-p[b+2];const d=Math.sqrt(dx*dx+dy*dy+dz*dz)||1e-6;const k=(d-cl[c])/d*0.5;p[a]-=dx*k;p[a+1]-=dy*k;p[a+2]-=dz*k;p[b]+=dx*k;p[b+1]+=dy*k;p[b+2]+=dz*k;}
+        for(let i=0;i<N;i++){if(p[i*3+1]<0.03)p[i*3+1]=0.03;}
+      }
+      for(let i=0;i<N*3;i++){v[i]=(p[i]-x[i])/h*0.99;x[i]=p[i];}
+    }
+    const t1=performance.now();if(f>=warm)ts.push(t1-t0);
+  }
+  return stats(ts,{particles:N,constraints:C});
+}
+
+window.runBench=async()=>{
+  const out={};
+  let t0=performance.now();
+  await RAPIER.init();
+  out.initMs=+(performance.now()-t0).toFixed(1);
+  out.version=RAPIER.version();
+  const base={frames:1200,warm:300,kp:300,kd:30};
+  out.pbd=pbd(1200,300);
+  out.rapier_240x4=run(RAPIER,{...base,dt:1/60,sub:4});
+  out.rapier_120x2=run(RAPIER,{...base,dt:1/60,sub:2});
+  out.rapier_60x1=run(RAPIER,{...base,dt:1/60,sub:1});
+  window.__done=true;return out;
+};
+</script>

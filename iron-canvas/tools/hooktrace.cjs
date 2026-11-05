@@ -15,7 +15,7 @@ const HTML = path.resolve(process.argv[2]), OUT = process.argv[3];
     const g = window.ironCanvas, real = g.frame.bind(g); g.frame = () => {};
     g.setSetting('roundLen', 90); g.autopilot = true; g.startFight({ p0: 0, p1: 1 });
     const hooks = [], cur = new Map();
-    for (let i = 0; i < 120 * 150 && hooks.length < 25; i++) {
+    for (let i = 0; i < 120 * 400 && hooks.length < 60; i++) {
       const s0 = g.simT; g.noRender = true; real(1 / 120); const dt = g.simT - s0;
       if (g.state === 'break') g.nextRound();
       for (const f of g.fighters) {
