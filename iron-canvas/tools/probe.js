@@ -50,7 +50,8 @@ window.__probe = (() => {
         if (!st.on) { st.on = true; st.ax = ball.x; st.az = ball.z; st.ay = ball.y; st.max = 0; st.maxY = 0; st.n = 0; st.piv = piv; }
         else if (piv !== st.piv) { st.ax = ball.x; st.az = ball.z; st.ay = ball.y; st.piv = piv; }   // contact handed from heel to ball (or back): re-anchor on the new pivot
         st.max = Math.max(st.max, Math.hypot(ball.x - st.ax, ball.z - st.az)); st.maxY = Math.max(st.maxY, Math.abs(ball.y - st.ay)); st.n++;
-      } else if (st.on) { st.on = false; if (st.n >= 3) { rec.slides.push(st.max * 1000); rec.slideY.push(st.maxY * 1000); } }
+      } else if (st.on) { st.on = false; if (st.n >= 3) { rec.slides.push(st.max * 1000); rec.slideY.push(st.maxY * 1000); if (st.max > 0.005) (rec.bigSlides || (rec.bigSlides = [])).push({ mm: +(st.max * 1000).toFixed(1), ctx: st.ctx }); } }
+      if (planted && st.on) st.ctx = f.state + (f.rag && f.rag.active ? '/rag' : '') + ' r' + ft.r.toFixed(2) + ' short' + (f.rig.leg ? f.rig.leg[R].short.toFixed(3) : '');
     }
     // --- knees and elbows: no hyperextension (CDC limits: knee extension 1.0°, elbow extension 0.8°) ---
     for (const R of SIDES) {
@@ -59,7 +60,7 @@ window.__probe = (() => {
       const kf = sflex(hip, kn, an, Hk); rec.knee.min = Math.min(rec.knee.min, kf); rec.knee.frames++; if (kf < -1.0) { rec.knee.bad++; const k = g.state + '/' + f.state; (rec.knee.where || (rec.knee.where = {}))[k] = (rec.knee.where[k] || 0) + 1; }
       const sh = bw(f, 'arm' + R, T[8]), el = bw(f, 'fore' + R, T[9]), wr = bw(f, 'hand' + R, T[10]);
       const He = T[11].copy(pi.hE[R]).applyQuaternion(f.obj.bones['arm' + R].getWorldQuaternion(TQ));
-      const ef = sflex(sh, el, wr, He); rec.elbow.min = Math.min(rec.elbow.min, ef); rec.elbow.frames++; if (ef < -0.8) rec.elbow.bad++;
+      const ef = sflex(sh, el, wr, He); rec.elbow.min = Math.min(rec.elbow.min, ef); rec.elbow.frames++; if (ef < -0.8) { rec.elbow.bad++; const k = g.state + '/' + f.state + (f.rag && f.rag.active ? '/' + f.rag.mode : ''); (rec.elbow.where || (rec.elbow.where = {}))[k] = (rec.elbow.where[k] || 0) + 1; }
       const rg = f.rag;
       if (rg && rg.active && rg.href) {
         const x = rg.x, k2 = sflex(x[RIx.hip[R]], x[RIx.kn[R]], x[RIx.an[R]], rg.href['leg' + R]), e2 = sflex(x[RIx.sh[R]], x[RIx.el[R]], x[RIx.wr[R]], rg.href['arm' + R]);
@@ -112,8 +113,8 @@ window.__probe = (() => {
         band: b ? { mean: b[0], sd: b[1], measure: b[2], within1sd: +(arr.filter(v => Math.abs(v - b[0]) <= b[1]).length / Math.max(1, arr.length)).toFixed(3), within2sd: +(arr.filter(v => Math.abs(v - b[0]) <= 2 * b[1]).length / Math.max(1, arr.length)).toFixed(3) } : null }; }
     const reach = all.glove.filter(x => x.reachable !== false), unreach = all.glove.filter(x => x.reachable === false);
     return {
-      footSlideMm: stats(all.slides), over5mm: all.slides.filter(x => x > 5).length, footLiftMm: stats(all.slideY),
-      knee: { minSignedFlexDeg: +knee.min.toFixed(3), framesHyperextended: knee.bad, frames: knee.frames, where: recs.reduce((o, r) => { for (const k in (r.knee.where || {})) o[k] = (o[k] || 0) + r.knee.where[k]; return o; }, {}) }, elbow: { minSignedFlexDeg: +elbow.min.toFixed(3), framesHyperextended: elbow.bad, frames: elbow.frames },
+      footSlideMm: stats(all.slides), over5mm: all.slides.filter(x => x > 5).length, bigSlides: recs.flatMap(r => r.bigSlides || []), footLiftMm: stats(all.slideY),
+      knee: { minSignedFlexDeg: +knee.min.toFixed(3), framesHyperextended: knee.bad, frames: knee.frames, where: recs.reduce((o, r) => { for (const k in (r.knee.where || {})) o[k] = (o[k] || 0) + r.knee.where[k]; return o; }, {}) }, elbow: { minSignedFlexDeg: +elbow.min.toFixed(3), framesHyperextended: elbow.bad, frames: elbow.frames, where: recs.reduce((o, r) => { for (const k in (r.elbow.where || {})) o[k] = (o[k] || 0) + r.elbow.where[k]; return o; }, {}) },
       ragdollKnee: { minSignedFlexDeg: rk.frames ? +rk.min.toFixed(3) : null, framesHyperextended: rk.bad, frames: rk.frames }, ragdollElbow: { minSignedFlexDeg: re.frames ? +re.min.toFixed(3) : null, framesHyperextended: re.bad, frames: re.frames },
       gloveMisses: all.glove.filter(x => x.reachable !== false && (x.errGoal ?? x.err) > 1).slice(0, 12), gloveErrCm: stats(all.glove.map(x => x.err)), gloveErrReachableCm: stats(reach.map(x => x.errGoal ?? x.err)), unreachablePunches: unreach.length, gloveOver1cmReachable: reach.filter(x => (x.errGoal ?? x.err) > 1).length,
       speeds, strikes: all.strikes.length,

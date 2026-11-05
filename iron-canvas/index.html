@@ -2636,6 +2636,7 @@ const ROM = {          // joint ranges, radians
   shoulderExt: 60 * D2R, shoulderAdd: 40 * D2R,           // tuned, no source
   neckSwingF: 50 * D2R, neckSwingB: 60 * D2R, neckSwingL: 40 * D2R, neckTwist: 75 * D2R,   // tuned, no source
   ankleTwist: 35 * D2R,      // how far the foot may turn about the shin off the knee's line (tibial torsion + subtalar) — tuned, no source
+  ankleRoll: 30 * D2R,       // inversion / eversion: how far the foot may roll about its own length off the knee's axis — tuned, no source
   kneeStance: 7 * D2R,       // knee bend kept under a loaded leg so the knee never locks straight — tuned, no source
   protract: 0.4,             // clavicle protraction available to a long reach (rad, ~23°) — tuned, no source
 };
@@ -2704,7 +2705,7 @@ class Rig {
         f0: f0.clone(), wf: gx.clone(), wd: gz.clone(), tipL: gy.clone().multiplyScalar(0.15), short: 0, err: 0, prot: 0 };
       const T = this.bind['thigh' + S], K = this.bind['shin' + S], F = this.bind['foot' + S];
       const t0 = K.clone().sub(T).normalize(), s0 = F.clone().sub(K).normalize(), k0 = t0.clone().cross(s0).normalize();
-      this.leg[S] = { s, l1: T.distanceTo(K), l2: K.distanceTo(F), short: 0, k0: k0.clone(),
+      this.leg[S] = { s, l1: T.distanceTo(K), l2: K.distanceTo(F), short: 0, k0: k0.clone(), s0: s0.clone(), f0: V().crossVectors(s0, k0).normalize(),
         t0i: qBasis(new THREE.Quaternion(), k0, t0, V().crossVectors(k0, t0)).invert(),
         s0i: qBasis(new THREE.Quaternion(), k0, s0, V().crossVectors(k0, s0)).invert() };
     }
@@ -2821,6 +2822,28 @@ class Rig {
     Q['hand' + S].copy(qf).multiply(rel2);
     Q['fore' + S].copy(qf).multiply(_q[4].setFromAxisAngle(ax, tauC * TWIST_SPLIT));
   }
+  // ankle: the foot relative to the shin — twist about the shin limited to ROM.ankleTwist, roll about the foot's length to
+  // ROM.ankleRoll (flexion is left to the pose; a loaded foot is never clamped, so it cannot slide)
+  ankleClamp(S) {
+    const l = this.leg[S], Q = this.Q, qs = _q[0].copy(Q['shin' + S]), ax = l.s0;
+    const rel = _q[1].copy(qs).invert().multiply(Q['foot' + S]);
+    const d = rel.x * ax.x + rel.y * ax.y + rel.z * ax.z, tw = _q[2].set(ax.x * d, ax.y * d, ax.z * d, rel.w);
+    if (tw.lengthSq() < 1e-12) tw.identity(); else tw.normalize();
+    if (tw.w < 0) { tw.x = -tw.x; tw.y = -tw.y; tw.z = -tw.z; tw.w = -tw.w; }
+    const tau = 2 * Math.atan2(tw.x * ax.x + tw.y * ax.y + tw.z * ax.z, tw.w), sw = _q[3].copy(tw).invert().multiply(rel);
+    if (sw.w < 0) { sw.x = -sw.x; sw.y = -sw.y; sw.z = -sw.z; sw.w = -sw.w; }
+    const tauC = clamp(tau, -ROM.ankleTwist, ROM.ankleTwist), sa = Math.hypot(sw.x, sw.y, sw.z);
+    let changed = Math.abs(tau - tauC) > 1e-4;
+    if (sa > 1e-7) {
+      const ang = 2 * Math.atan2(sa, sw.w), ix = sw.x / sa, iy = sw.y / sa, iz = sw.z / sa;
+      const fl = ang * (ix * l.k0.x + iy * l.k0.y + iz * l.k0.z), ro = ang * (ix * l.f0.x + iy * l.f0.y + iz * l.f0.z), roC = clamp(ro, -ROM.ankleRoll, ROM.ankleRoll);
+      if (Math.abs(ro - roC) > 1e-4) {
+        changed = true; const vx = l.k0.x * fl + l.f0.x * roC, vy = l.k0.y * fl + l.f0.y * roC, vz = l.k0.z * fl + l.f0.z * roC, va = Math.hypot(vx, vy, vz);
+        if (va > 1e-7) sw.setFromAxisAngle(_v[11].set(vx / va, vy / va, vz / va), va); else sw.identity();
+      }
+    }
+    if (changed) Q['foot' + S].copy(qs).multiply(_q[4].setFromAxisAngle(ax, tauC)).multiply(sw);
+  }
   // one arm: clavicle (shrug + protraction on long reaches), two-bone IK, glove frame, wrist limits; with a glove-tip
   // goal (pose.tg / pose.tw) the wrist target is walked until the knuckles sit on it
   armSolve(S, pose) {
@@ -2882,6 +2905,7 @@ class Rig {
       P['foot' + S].copy(t.C); qYXZ(Q['foot' + S], pose.fy[S], pose.fp[S], 0);
       if (pose.fa[S] > 0.001)   // in the air the foot hangs off the shin: fp becomes an ankle angle, inside the [CDC] range
         Q['foot' + S].slerp(_q[1].copy(Q['shin' + S]).multiply(_q[2].setFromAxisAngle(l.k0, clamp(pose.fp[S], -ROM.ankleDorsi, ROM.anklePlantar))), pose.fa[S]);
+      if (pose.fc[S] < 0.5) this.ankleClamp(S);   // an unloaded foot may not twist or roll off the shin past the ankle's range
       this.child('toes' + S, _q[0].setFromAxisAngle(XAXIS, -clamp(pose.tf[S], 0, ROM.mtpExt)));
     }
     // a loaded foot must be reachable: if a planted leg came up short (the hips turned or rose more than the fighter's
@@ -3056,7 +3080,7 @@ class Ragdoll {
     for (const c2 of this.cColl) c2.eff = Math.min(c2.min, this.T[c2.a].distanceTo(this.T[c2.b]) * 0.95);
     for (const cb of this.cBone) if (cb.soft) cb.rest = lerp(cb.bind, this.T[cb.a].distanceTo(this.T[cb.b]), clamp(this.tone, 0, 1));
     for (const cs of this.cShape) cs.rest = this.T[cs.a].distanceTo(this.T[cs.b]);
-    if (this.mode !== 'limp') for (const S of ['L', 'R']) {   // hinge references follow the animation while it is in charge
+    if (this.mode === 'anim') for (const S of ['L', 'R']) {   // hinge references follow the animation while it is in charge (not while limp or getting up)
       const ha = R.hinge[S], hl = R.khinge[S];
       this.href['arm' + S].set(ha.x * c + ha.z * s, ha.y, -ha.x * s + ha.z * c);
       this.href['leg' + S].set(hl.x * c + hl.z * s, hl.y, -hl.x * s + hl.z * c);
@@ -3083,7 +3107,9 @@ class Ragdoll {
   }
   // knockdown / knockout: muscles let go. tone = joint stiffness left; pins = how hard the animation still guides the fall
   limp({ tone = 0.03, pins = 0, toneTo = tone, toneRate = 0 } = {}) {
-    this.wake(); this.mode = 'limp'; this.tone = tone; this.toneTo = toneTo; this.toneRate = toneRate; this.pinBase = pins; this.wUp = 9;
+    // the physical body takes over the whole skeleton within a couple of frames (wake() starts the particles on the animated pose,
+    // so nothing pops); a slow per-particle ramp would blend animated and physical frames unevenly along a limb
+    this.wake(); this.mode = 'limp'; this.tone = tone; this.toneTo = toneTo; this.toneRate = toneRate; this.pinBase = pins; this.wUp = 60;
     for (let i = 0; i < this.N; i++) this.slack[i] = 0;
     for (const g in this.groups) this.groups[g].slack = 0;
     this.age = 0;
@@ -3223,6 +3249,13 @@ class Ragdoll {
     ft.addScaledVector(sh, -ft.dot(sh)); if (ft.lengthSq() < 1e-8) return; ft.normalize();
     const tau = Math.atan2(_v[3].crossVectors(kf, ft).dot(sh), kf.dot(ft)), ex = Math.abs(tau) - ROM.ankleTwist;
     if (ex > 0) { this.rotParticles(I['an' + S], _q[5].setFromAxisAngle(sh, -Math.sign(tau) * ex), list); if (record) this.viol['foot' + S + '·twist'] = Math.max(this.viol['foot' + S + '·twist'] || 0, ex / D2R); }
+    // roll (inversion / eversion): the foot's side-to-side axis stays within ROM.ankleRoll of the knee's hinge axis, measured
+    // about the foot's length; the heel–toe line swings round the ankle to correct it
+    const z = _v[1].subVectors(p[I['toe' + S]], p[I['heel' + S]]); if (z.lengthSq() < 1e-8) return; z.normalize();
+    const mid = _v[2].addVectors(p[I['toe' + S]], p[I['heel' + S]]).multiplyScalar(0.5), lat = _v[3].subVectors(an, mid).cross(z); lat.addScaledVector(z, -lat.dot(z));
+    const hr = _v[4].copy(this.href['leg' + S]).addScaledVector(z, -this.href['leg' + S].dot(z)); if (lat.lengthSq() < 1e-8 || hr.lengthSq() < 1e-8) return; lat.normalize(); hr.normalize();
+    const rho = Math.atan2(_v[0].crossVectors(hr, lat).dot(z), hr.dot(lat)), rx = Math.abs(rho) - ROM.ankleRoll;
+    if (rx > 0) { this.rotParticles(I['an' + S], _q[5].setFromAxisAngle(z, -Math.sign(rho) * rx), list); if (record) this.viol['foot' + S + '·roll'] = Math.max(this.viol['foot' + S + '·roll'] || 0, rx / D2R); }
   }
   // swing: the limb's direction may not leave an elliptical cone about "straight down" in the parent frame;
   // twist: the plane the limb folds in may not turn past the limit relative to the parent's front carried along
@@ -3278,7 +3311,7 @@ class Ragdoll {
       const ac = _v[3].subVectors(C, A), L2 = ac.lengthSq(); if (L2 < 1e-6) return;
       const t = _v[4].subVectors(Bp, A).dot(ac) / L2, o = _v[4].subVectors(Bp, A).addScaledVector(ac, -t);
       Bp.addScaledVector(o, -k); A.addScaledVector(o, k * 0.21); C.addScaledVector(o, k * 0.21);
-    } else if (this.mode === 'limp' && lh > 0.2 * u.length() * f.length()) ref.copy(H).divideScalar(lh);
+    } else if (this.mode !== 'anim' && lh > 0.2 * u.length() * f.length()) ref.copy(H).divideScalar(lh);
   }
   // physical frame for a bone, computed the same way from any set of particle positions (A)
   frame(n, A, out) {
@@ -3390,13 +3423,13 @@ const ANT = { jab: 0, cross: 0.18, hook: 0.3, upper: 0.3, kick: 0.12 };   // win
 const ARC = { jab: 1, cross: 1, hook: 1.25, upper: 1.3 };   // path length over chord for the glove's curve — from the curves' geometry, approx.
 // glove speed that the body (lunge, trunk turn) and the glove's own rotation add at contact, outside the arm path's speed (m/s):
 // tuned, no source — calibrated in the headless harness so measured peak speeds sit on the targets above
-const VBODY = { jab: 2.6, cross: 0.9, hook: 2.3, upper: 3.0 };
+const VBODY = { jab: 1.6, cross: -1.0, hook: 1.2, upper: 2.7 };   // negative: the arm path has to run faster than the target to land on it
 // head kinematics from a punch's impulse, scaled from [W05]: their straight punches averaged 2.9 kg × 9.14 m/s and gave
 // the head 58 g (translational) and 6343 rad/s² (rotational)
 const HEADK = { Jref: 2.9 * 9.14, aRef: 58, alphaRef: 6343,
   snap: 5.7e-4,          // spring kick (rad/s) per rad/s² of rotational acceleration: maps [W05]'s mean to the old cross snap — tuned, no source
   stun: 6.5 / 6343,      // stun per rad/s² (the old cross value at [W05]'s mean) — tuned, no source
-  kd: 0.25,              // knockdown chance per unit of [RD13] concussion probability — tuned, no source
+  kd: 0.2,               // knockdown chance per unit of [RD13] concussion probability — tuned, no source
   push: 3.2 };           // root push per unit of J / body mass (the upper body moves more than the centre of mass) — tuned, no source
 // [RD13] combined probability of concussion from peak linear (g) and rotational (rad/s²) head acceleration
 const concussionP = (a, al) => 1 / (1 + Math.exp(-(-10.2 + 0.0433 * a + 0.000873 * al - 0.00000092 * a * al)));
@@ -3537,7 +3570,7 @@ class Fighter {
     this.act = { kind: kick ? 'kick' : 'punch', type, hand, realHand: this.realS(hand), body: !kick && body, t: 0, tS: P.tS * k, tA: P.tA, tR: P.tR * k, P,
       aim: V(), track: true, resolved: false, extended: false, result: null, counter: this.counterT > 0, start: V(),
       vel: V(), vPeak: 0, pPrev: null, p: 1.5, vT: P.v * this.speedK(), reachable: true };
-    this.act.goal = this.act.aim;   // the glove-tip goal at full extension (tests and the overlay read it)
+    this.act.goal = V().copy(this.act.aim);   // the glove-tip goal in world space (punchArm keeps it current; tests and the overlay read it)
     this.act.g0s = this.sm.gl[this.act.realHand].clone(); this.act.g0s.x *= this.side;   // where the hand is now (pose space): the path starts here
     this.state = kick ? 'kick' : 'punch'; this.sta = Math.max(0, this.sta - P.sta); this.guard = false;
     if (!kick) { this.lastHand = hand; this.lastPunchT = this.t; }
@@ -3891,6 +3924,7 @@ class Fighter {
     else { out.lerpVectors(g0, wT, t); out.y += 0.035 * Math.sin(Math.PI * clamp(t, 0, 1)); }
     // glove-tip goal: the knuckles follow the same path shifted onto the aim point; the rig walks the wrist until they land
     p.tg[S].copy(out).add(_v[6].subVectors(aim, wT)); p.tw[S] = sstep(0.3, 0.97, e);
+    this.toWorldV(p.tg[S], a.goal);   // the aim itself at full extension; a little past it when a miss carries through
     const k = clamp(e, 0, 1);
     p.gb[S].lerp(a.type === 'upper' ? _v[5].set(kd.x, 0.15, kd.z) : _v[5].set(0, 1, 0.1), k).normalize();
     p.ge[S].lerp(a.type === 'hook' ? _v[5].set(s, 0.4, -0.25) : a.type === 'upper' ? _v[5].set(s * 0.25, -1, -0.6) : _v[5].set(s * 0.3, -1, -0.35), k);
@@ -3907,7 +3941,7 @@ class Fighter {
     const hit = _v[3].copy(aim).add(_v[4].set(0.3, -0.06, 0.06));                    // the foot whips past the target so the shin lands flat
     const foot = p.ft.R;
     // extension: the bezier's second half is covered at |hit − ch|·p2 / ((1 − chamber)·tS) at contact → solve p2 for [GS17]'s speed
-    if (!a.p2) a.p2 = clamp(0.91 * a.vT * (1 - KICK_PHASE.chamber) * a.tS / Math.max(0.3, hit.distanceTo(ch)), 1, 3.5);   // 0.91: harness calibration (tuned)
+    if (!a.p2) a.p2 = clamp(0.85 * a.vT * (1 - KICK_PHASE.chamber) * a.tS / Math.max(0.3, hit.distanceTo(ch)), 1, 3.5);   // 0.85: harness calibration (tuned)
     p.tf.R = 0; p.fc.R = 0; p.fa.R = sstep(0.02, 0.2, u);
     if (k <= 0) foot.copy(st).y = R.bind.footR.y + 0.01;
     else if (a.t < a.tS + a.tA) bez(foot, st, ch, hit, Math.min(1.12, k));
@@ -4049,7 +4083,7 @@ class Fighter {
       set(p.ft.L, 0.17 * H, 0.09, 0.42 * H); set(p.ft.R, -0.19 * H, 0.09, 0.34 * H); p.fy.L = 0.15; p.fy.R = -0.35; p.fp.L = p.fp.R = -0.55;
       set(p.kp.L, 0.35, 1, 0.4); set(p.kp.R, -0.35, 1, 0.4);
     }
-    for (const S of ['L', 'R']) p.shrug[S] = 0.1;
+    for (const S of ['L', 'R']) { p.shrug[S] = 0.1; p.fc[S] = 0; p.tf[S] = 0; p.tw[S] = 0; }   // on the canvas no foot carries the body
     return p;
   }
   // keep the fighter's root under the body while it is on the canvas (camera framing, spacing, getting up)
@@ -5487,29 +5521,30 @@ class DebugOverlay {
     }
     const g = this.w.copy(b.com).setY(0);
     this.line(b.com, g, col + 'aa'); this.dot(b.com, 5, col, '#000'); this.dot(g, 3, col);
-    this.line(g, b.xi, b.margin >= 0 ? '#7ddc7a' : '#ff4d4d', 2); this.dot(b.xi, 5, b.margin >= 0 ? '#7ddc7a' : '#ff4d4d', '#000');
+    if (b.poly.length) { this.line(g, b.xi, b.margin >= 0 ? '#7ddc7a' : '#ff4d4d', 2); this.dot(b.xi, 5, b.margin >= 0 ? '#7ddc7a' : '#ff4d4d', '#000'); }
     // IK: glove tip goal vs knuckles (while punching), ankle target vs ankle (planted feet)
     const a = f.act;
-    if (f.state === 'punch' && a) { const tip = f.tipWorld(a.realHand, this.u); this.dot(a.aim, 6, null, '#ffe14d'); this.line(a.aim, tip, '#ffe14d'); this.dot(tip, 3, '#ffe14d'); }
+    if (f.state === 'punch' && a) { const tip = f.tipWorld(a.realHand, this.u), gl = a.goal || a.aim; this.dot(gl, 6, null, '#ffe14d'); this.line(gl, tip, '#ffe14d'); this.dot(tip, 3, '#ffe14d'); }
     for (const S of ['L', 'R']) {
       const ft = f.feet[S]; if (ft.step >= 0 || f.isDown()) continue;
       const t = f.ankleFromBall(ft, this.u), r = f.obj.bones['foot' + f.realS(S)].getWorldPosition(this.v.clone());
       this.dot(t, 4, null, '#ffe14d'); this.dot(r, 2, '#ffe14d'); this.dot(ft.w, 2, '#ffffff');
     }
     // joint-limit hits: amber = the pose asked past a limit and the rig clamped it; red = the ragdoll was pushed back inside
-    const mark = (src, colr) => { for (const k in src) { const bn = k.split('·')[0], bone = f.obj.bones[bn]; if (!bone) continue;
-      const s = this.dot(bone.getWorldPosition(this.u), 7, null, colr); if (s) { x.fillStyle = colr; x.fillText(`${k} ${src[k].toFixed(1)}`, s[0] + 9, s[1]); } } };
+    const mark = (src, colr) => { for (const k in src) { if (src[k] < 0.5) continue; const bn = k.split('·')[0], bone = f.obj.bones[bn]; if (!bone) continue;
+      const s = this.dot(bone.getWorldPosition(this.u), 7, null, colr); if (s) { const label = `${k} ${src[k].toFixed(1)}`;
+        x.lineWidth = 3; x.strokeStyle = 'rgba(0,0,0,0.85)'; x.strokeText(label, s[0] + 9, s[1]); x.lineWidth = 1; x.fillStyle = colr; x.fillText(label, s[0] + 9, s[1]); } } };
     mark(f.rig.viol, '#ffb340'); if (f.rag.active) mark(f.rag.viol, '#ff4d4d');
   }
   panel() {
     const x = this.x, lines = ['F3 · biomechanics overlay'];
     for (const f of this.g.fighters) {
       const b = f.bal, ls = f.lastStrike, lh = f.lastHit;
-      lines.push(`${f.def.last}: COM ${(b.com.y * 100).toFixed(0)} cm  |v| ${Math.hypot(b.v.x, b.v.z).toFixed(2)} m/s  margin ${(b.margin * 100).toFixed(1)} cm  hips −${(f.pDrop * 100).toFixed(1)} cm`);
+      lines.push(`${f.def.last}: COM ${(b.com.y * 100).toFixed(0)} cm  |v| ${Math.hypot(b.v.x, b.v.z).toFixed(2)} m/s  margin ${b.poly.length ? (b.margin * 100).toFixed(1) + ' cm' : 'n/a (no support)'}  hips −${(f.pDrop * 100).toFixed(1)} cm`);
       if (ls) lines.push(`   last ${ls.type}: peak ${ls.vPeak.toFixed(1)} m/s${ls.err != null ? `  glove error ${(ls.err * 100).toFixed(2)} cm${ls.reachable ? '' : ' (out of reach)'}` : ''}`);
       if (lh) lines.push(`   took ${lh.type}: J ${lh.J.toFixed(1)} N·s  v ${lh.v.toFixed(1)} m/s${lh.a ? `  head ${lh.a.toFixed(0)} g  ${lh.alpha.toFixed(0)} rad/s²  CP ${(lh.cp * 100).toFixed(1)} %  KD ${(lh.pkd * 100).toFixed(1)} %` : ''}`);
     }
-    const w = 520, h = lines.length * 15 + 12; x.fillStyle = 'rgba(0,0,0,0.62)'; x.fillRect(10, this.H - h - 10, w, h);
+    const w = Math.ceil(Math.max(...lines.map(l => x.measureText(l).width))) + 16, h = lines.length * 15 + 12; x.fillStyle = 'rgba(0,0,0,0.62)'; x.fillRect(10, this.H - h - 10, w, h);
     lines.forEach((l, i) => { x.fillStyle = i ? '#e8e2d6' : '#ffe14d'; x.fillText(l, 18, this.H - h - 2 + i * 15 + 8); });
   }
 }

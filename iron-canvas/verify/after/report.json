@@ -1,401 +1,308 @@
 {
  "file": "/home/user/idk/iron-canvas/index.html",
- "bootMs": 15858,
+ "bootMs": 11185,
  "gl": {
   "webgl2": true,
   "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)"
  },
  "fight": {
   "footSlideMm": {
-   "n": 3050,
-   "mean": 0.0017,
+   "n": 3189,
+   "mean": 0.0028,
    "p50": 0,
    "p95": 0,
-   "max": 0.8494,
+   "max": 0.8869,
    "min": 0
   },
   "over5mm": 0,
+  "bigSlides": [],
   "footLiftMm": {
-   "n": 3050,
-   "mean": 0.0034,
+   "n": 3189,
+   "mean": 0.0057,
    "p50": 0,
    "p95": 0,
-   "max": 1.7824,
+   "max": 1.7582,
    "min": 0
   },
   "knee": {
-   "minSignedFlexDeg": -127.747,
-   "framesHyperextended": 29,
-   "frames": 189828,
-   "where": {
-    "knockdown/down": 9,
-    "replay/down": 19,
-    "count/down": 1
-   }
+   "minSignedFlexDeg": 1.702,
+   "framesHyperextended": 0,
+   "frames": 195580,
+   "where": {}
   },
   "elbow": {
-   "minSignedFlexDeg": -1.66,
-   "framesHyperextended": 13,
-   "frames": 189828
+   "minSignedFlexDeg": 1.076,
+   "framesHyperextended": 0,
+   "frames": 195580,
+   "where": {}
   },
   "ragdollKnee": {
-   "minSignedFlexDeg": 0.125,
+   "minSignedFlexDeg": 0.113,
    "framesHyperextended": 0,
-   "frames": 57724
+   "frames": 52052
   },
   "ragdollElbow": {
-   "minSignedFlexDeg": 0.029,
+   "minSignedFlexDeg": 0.026,
    "framesHyperextended": 0,
-   "frames": 57724
+   "frames": 52052
   },
   "gloveMisses": [
    {
-    "err": 1.231687112767431,
-    "aimDist": 0.5102566427669903,
-    "errGoal": 1.231687112767431,
+    "err": 1.8729557022349832,
+    "aimDist": 0.7669246336198127,
+    "errGoal": 1.8729557022349619,
     "reachable": true,
     "type": "hook",
     "rag": null,
     "state": "punch",
-    "rigErr": 0.07515293633647081,
-    "viol": "head,neck"
-   },
-   {
-    "err": 1.0704916626005467,
-    "aimDist": 0.3923214396502961,
-    "errGoal": 1.0704916626005467,
-    "reachable": true,
-    "type": "hook",
-    "rag": "anim",
-    "state": "punch",
-    "rigErr": 0.07768350367439658,
-    "viol": "head,neck"
-   },
-   {
-    "err": 1.8869129458011433,
-    "aimDist": 0.6147164821113376,
-    "errGoal": 1.8869129458011433,
-    "reachable": true,
-    "type": "upper",
-    "rag": null,
-    "state": "punch",
-    "rigErr": 0.1936427973268776,
-    "viol": ""
-   },
-   {
-    "err": 1.3249607647100918,
-    "aimDist": 0.5342428397329287,
-    "errGoal": 1.3249607647100918,
-    "reachable": true,
-    "type": "hook",
-    "rag": "anim",
-    "state": "punch",
-    "rigErr": 0.07147316382200482,
-    "viol": "foreL"
-   },
-   {
-    "err": 1.226007933161014,
-    "aimDist": 0.4421759088535663,
-    "errGoal": 1.226007933161014,
-    "reachable": true,
-    "type": "hook",
-    "rag": "anim",
-    "state": "punch",
-    "rigErr": 0.10248747347444571,
-    "viol": "head,neck,handL"
-   },
-   {
-    "err": 1.2790812362966948,
-    "aimDist": 0.646550803253359,
-    "errGoal": 1.2790812362966948,
-    "reachable": true,
-    "type": "hook",
-    "rag": "anim",
-    "state": "punch",
-    "rigErr": 1.279081236296686,
-    "viol": "head,neck,foreL,handL"
-   },
-   {
-    "err": 1.3274182358414106,
-    "aimDist": 0.40559101368419026,
-    "errGoal": 1.3274182358414106,
-    "reachable": true,
-    "type": "hook",
-    "rag": null,
-    "state": "punch",
-    "rigErr": 0.05810680070377185,
-    "viol": "head,neck,foreL"
-   },
-   {
-    "err": 1.0509327960755666,
-    "aimDist": 0.5298765259122402,
-    "errGoal": 1.0509327960755666,
-    "reachable": true,
-    "type": "cross",
-    "rag": null,
-    "state": "punch",
-    "rigErr": 0.0883005956180019,
-    "viol": "foreR"
-   },
-   {
-    "err": 1.1109585105263624,
-    "aimDist": 0.7619602813629532,
-    "errGoal": 1.1109585105263624,
-    "reachable": true,
-    "type": "cross",
-    "rag": null,
-    "state": "punch",
-    "rigErr": 0.061767016230762375,
-    "viol": "foreL"
-   },
-   {
-    "err": 1.7542521631753467,
-    "aimDist": 0.431310863158844,
-    "errGoal": 1.7542521631753467,
-    "reachable": true,
-    "type": "hook",
-    "rag": "anim",
-    "state": "punch",
-    "rigErr": 0.07892008278170358,
-    "viol": "head,neck"
+    "rigErr": 1.8729557022349803,
+    "viol": "head,neck,foreR,handR"
    }
   ],
   "gloveErrCm": {
-   "n": 331,
-   "mean": 1.3741,
-   "p50": 0.0986,
-   "p95": 1.0509,
-   "max": 117.0955,
-   "min": 0.0593
+   "n": 323,
+   "mean": 1.4273,
+   "p50": 0.1028,
+   "p95": 5.3128,
+   "max": 97.4364,
+   "min": 0.0384
   },
   "gloveErrReachableCm": {
-   "n": 321,
-   "mean": 0.151,
-   "p50": 0.098,
-   "p95": 0.2204,
-   "max": 1.8869,
-   "min": 0.0593
+   "n": 282,
+   "mean": 0.1193,
+   "p50": 0.0986,
+   "p95": 0.1813,
+   "max": 1.873,
+   "min": 0.0515
   },
-  "unreachablePunches": 10,
-  "gloveOver1cmReachable": 10,
+  "unreachablePunches": 41,
+  "gloveOver1cmReachable": 1,
   "speeds": {
    "cross": {
     "tip": {
      "n": 116,
-     "mean": 7.0463,
-     "p50": 6.8595,
-     "p95": 9.1779,
-     "max": 12.8284,
-     "min": 4.6987
+     "mean": 8.677,
+     "p50": 8.4267,
+     "p95": 10.7731,
+     "max": 12.4898,
+     "min": 6.4435
     },
     "foot": {
      "n": 116,
-     "mean": 1.8819,
-     "p50": 1.4952,
-     "p95": 4.7472,
-     "max": 6.7699,
-     "min": 0.2409
+     "mean": 1.9675,
+     "p50": 1.5142,
+     "p95": 4.7209,
+     "max": 10.7529,
+     "min": 0.2665
     },
     "shin": {
      "n": 116,
-     "mean": 3.1379,
-     "p50": 2.7152,
-     "p95": 8.9135,
-     "max": 10.7713,
-     "min": 0.3404
+     "mean": 3.2826,
+     "p50": 2.8251,
+     "p95": 8.8518,
+     "max": 12.7565,
+     "min": 0.3224
     },
     "results": {
-     "hit": 105,
-     "null": 25,
-     "evade": 6,
-     "miss": 5
+     "hit": 98,
+     "miss": 10,
+     "null": 18,
+     "evade": 8
     },
     "band": {
      "mean": 9.14,
      "sd": 2.06,
      "measure": "tip",
-     "within1sd": 0.336,
-     "within2sd": 0.983
-    }
-   },
-   "hook": {
-    "tip": {
-     "n": 59,
-     "mean": 9.9358,
-     "p50": 10.1444,
-     "p95": 13.5731,
-     "max": 20.0777,
-     "min": 5.6472
-    },
-    "foot": {
-     "n": 59,
-     "mean": 1.4256,
-     "p50": 1.4603,
-     "p95": 2.5361,
-     "max": 2.7592,
-     "min": 0.1873
-    },
-    "shin": {
-     "n": 59,
-     "mean": 2.1399,
-     "p50": 2.5792,
-     "p95": 2.7618,
-     "max": 3.0494,
-     "min": 0.3082
-    },
-    "results": {
-     "miss": 13,
-     "hit": 39,
-     "null": 50,
-     "evade": 7
-    },
-    "band": {
-     "mean": 11.2,
-     "sd": 2,
-     "measure": "tip",
-     "within1sd": 0.508,
-     "within2sd": 0.847
-    }
-   },
-   "jab": {
-    "tip": {
-     "n": 146,
-     "mean": 7.4826,
-     "p50": 7.0085,
-     "p95": 11.7328,
-     "max": 19.5814,
-     "min": 4.7807
-    },
-    "foot": {
-     "n": 146,
-     "mean": 1.607,
-     "p50": 1.5761,
-     "p95": 2.9934,
-     "max": 8.6025,
-     "min": 0.0045
-    },
-    "shin": {
-     "n": 146,
-     "mean": 2.3239,
-     "p50": 2.6495,
-     "p95": 3.1882,
-     "max": 9.0901,
-     "min": 0.1134
-    },
-    "results": {
-     "hit": 134,
-     "evade": 9,
-     "null": 13,
-     "miss": 3
-    },
-    "band": {
-     "mean": 9.14,
-     "sd": 2.06,
-     "measure": "tip",
-     "within1sd": 0.418,
-     "within2sd": 0.966
+     "within1sd": 0.948,
+     "within2sd": 1
     }
    },
    "kick": {
     "tip": {
-     "n": 56,
-     "mean": 3.2188,
-     "p50": 3.1433,
-     "p95": 3.8822,
-     "max": 12.9003,
-     "min": 2.3307
+     "n": 35,
+     "mean": 3.3909,
+     "p50": 3.401,
+     "p95": 3.7822,
+     "max": 4.0247,
+     "min": 2.9808
     },
     "foot": {
-     "n": 56,
-     "mean": 13.5413,
-     "p50": 12.7528,
-     "p95": 16.6181,
-     "max": 21.9488,
-     "min": 9.832
+     "n": 35,
+     "mean": 14.7267,
+     "p50": 15.1593,
+     "p95": 17.5396,
+     "max": 17.9371,
+     "min": 9.9847
     },
     "shin": {
-     "n": 56,
-     "mean": 11.163,
-     "p50": 11.0209,
-     "p95": 13.8645,
-     "max": 18.7492,
-     "min": 7.9878
+     "n": 35,
+     "mean": 12.0298,
+     "p50": 11.4969,
+     "p95": 15.124,
+     "max": 17.5076,
+     "min": 8.939
     },
     "results": {
-     "miss": 13,
-     "null": 13,
-     "hit": 37,
-     "evade": 5,
+     "null": 12,
+     "miss": 10,
+     "hit": 22,
+     "evade": 2,
      "checked": 1
     },
     "band": {
      "mean": 13.24,
      "sd": 2.3,
      "measure": "foot",
-     "within1sd": 0.571,
-     "within2sd": 0.946
+     "within1sd": 0.429,
+     "within2sd": 0.971
+    }
+   },
+   "hook": {
+    "tip": {
+     "n": 55,
+     "mean": 11.1878,
+     "p50": 10.8157,
+     "p95": 14.2006,
+     "max": 21.059,
+     "min": 7.2505
+    },
+    "foot": {
+     "n": 55,
+     "mean": 1.6552,
+     "p50": 1.4407,
+     "p95": 3.3353,
+     "max": 10.0829,
+     "min": 0.1689
+    },
+    "shin": {
+     "n": 55,
+     "mean": 1.9927,
+     "p50": 2.4623,
+     "p95": 3.1259,
+     "max": 10.6072,
+     "min": 0.2987
+    },
+    "results": {
+     "null": 24,
+     "hit": 31,
+     "evade": 13,
+     "miss": 11
+    },
+    "band": {
+     "mean": 11.2,
+     "sd": 2,
+     "measure": "tip",
+     "within1sd": 0.8,
+     "within2sd": 0.945
+    }
+   },
+   "jab": {
+    "tip": {
+     "n": 143,
+     "mean": 9.2467,
+     "p50": 9.0227,
+     "p95": 13.4128,
+     "max": 14.8268,
+     "min": 5.0816
+    },
+    "foot": {
+     "n": 143,
+     "mean": 2.0188,
+     "p50": 1.709,
+     "p95": 3.4377,
+     "max": 9.5697,
+     "min": 0
+    },
+    "shin": {
+     "n": 143,
+     "mean": 2.7769,
+     "p50": 2.7736,
+     "p95": 3.2999,
+     "max": 9.7312,
+     "min": 0.1192
+    },
+    "results": {
+     "evade": 40,
+     "hit": 100,
+     "null": 10,
+     "miss": 3
+    },
+    "band": {
+     "mean": 9.14,
+     "sd": 2.06,
+     "measure": "tip",
+     "within1sd": 0.804,
+     "within2sd": 0.937
     }
    },
    "upper": {
     "tip": {
-     "n": 7,
-     "mean": 9.956,
-     "p50": 10.0151,
-     "p95": 11.1595,
-     "max": 12.0801,
-     "min": 7.7389
+     "n": 8,
+     "mean": 10.1537,
+     "p50": 9.3045,
+     "p95": 11.9588,
+     "max": 12.8129,
+     "min": 8.0492
     },
     "foot": {
-     "n": 7,
-     "mean": 1.9841,
-     "p50": 1.4972,
-     "p95": 1.6373,
-     "max": 4.8643,
-     "min": 1.4227
+     "n": 8,
+     "mean": 1.533,
+     "p50": 1.3441,
+     "p95": 1.9603,
+     "max": 3.7399,
+     "min": 0.0162
     },
     "shin": {
-     "n": 7,
-     "mean": 3.5554,
-     "p50": 2.671,
-     "p95": 2.7016,
-     "max": 9.4214,
-     "min": 2.3126
+     "n": 8,
+     "mean": 2.0175,
+     "p50": 2.2778,
+     "p95": 2.7452,
+     "max": 3.6578,
+     "min": 0.3163
     },
     "results": {
+     "null": 3,
+     "evade": 1,
      "hit": 5,
-     "evade": 2,
-     "null": 1
+     "miss": 2
     },
     "band": {
      "mean": 10.2,
      "sd": 1.8,
      "measure": "tip",
-     "within1sd": 0.714,
+     "within1sd": 0.75,
      "within2sd": 1
     }
    }
   },
-  "strikes": 486,
+  "strikes": 424,
   "fightSeconds": 270,
-  "simSeconds": 395.5,
-  "frames": 47457,
-  "msPerFrame": 0.313,
+  "simSeconds": 407.5,
+  "frames": 48895,
+  "msPerFrame": 0.206,
   "knockdowns": 6,
-  "finishes": 0,
+  "finishes": 1,
   "fights": [
    {
     "pair": [
      "anvil",
      "needle"
     ],
+    "end": "TKO"
+   },
+   {
+    "pair": [
+     "needle",
+     "silk"
+    ],
     "end": "fight"
    }
   ]
  },
  "perf": {
-  "frameSimMs": 0.243,
-  "fighterUpdateMsEach": 0.111,
-  "softwareRenderMs": 5.5
+  "frameSimMs": 0.281,
+  "fighterUpdateMsEach": 0.132,
+  "softwareRenderMs": 201.4
  },
  "consoleErrors": [],
  "consoleWarnings": []
