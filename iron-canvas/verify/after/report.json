@@ -1,348 +1,401 @@
 {
  "file": "/home/user/idk/iron-canvas/index.html",
- "bootMs": 12969,
+ "bootMs": 15858,
  "gl": {
   "webgl2": true,
   "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)"
  },
  "fight": {
   "footSlideMm": {
-   "n": 3178,
-   "mean": 0.0014,
+   "n": 3050,
+   "mean": 0.0017,
    "p50": 0,
    "p95": 0,
-   "max": 0.8216,
+   "max": 0.8494,
    "min": 0
   },
   "over5mm": 0,
   "footLiftMm": {
-   "n": 3178,
-   "mean": 0.0027,
+   "n": 3050,
+   "mean": 0.0034,
    "p50": 0,
    "p95": 0,
-   "max": 1.5221,
+   "max": 1.7824,
    "min": 0
   },
   "knee": {
-   "minSignedFlexDeg": -129.012,
-   "framesHyperextended": 195,
-   "frames": 187668,
+   "minSignedFlexDeg": -127.747,
+   "framesHyperextended": 29,
+   "frames": 189828,
    "where": {
-    "knockdown/down": 88,
-    "replay/down": 100,
-    "count/down": 7
+    "knockdown/down": 9,
+    "replay/down": 19,
+    "count/down": 1
    }
   },
   "elbow": {
-   "minSignedFlexDeg": -4.471,
-   "framesHyperextended": 12,
-   "frames": 187668
+   "minSignedFlexDeg": -1.66,
+   "framesHyperextended": 13,
+   "frames": 189828
   },
   "ragdollKnee": {
-   "minSignedFlexDeg": 0.12,
+   "minSignedFlexDeg": 0.125,
    "framesHyperextended": 0,
-   "frames": 49978
+   "frames": 57724
   },
   "ragdollElbow": {
-   "minSignedFlexDeg": 0.008,
+   "minSignedFlexDeg": 0.029,
    "framesHyperextended": 0,
-   "frames": 49978
+   "frames": 57724
   },
   "gloveMisses": [
    {
-    "err": 2.3219621430936126,
-    "aimDist": 0.6122613049137402,
-    "errGoal": 2.3219621430936126,
+    "err": 1.231687112767431,
+    "aimDist": 0.5102566427669903,
+    "errGoal": 1.231687112767431,
+    "reachable": true,
+    "type": "hook",
+    "rag": null,
+    "state": "punch",
+    "rigErr": 0.07515293633647081,
+    "viol": "head,neck"
+   },
+   {
+    "err": 1.0704916626005467,
+    "aimDist": 0.3923214396502961,
+    "errGoal": 1.0704916626005467,
+    "reachable": true,
+    "type": "hook",
+    "rag": "anim",
+    "state": "punch",
+    "rigErr": 0.07768350367439658,
+    "viol": "head,neck"
+   },
+   {
+    "err": 1.8869129458011433,
+    "aimDist": 0.6147164821113376,
+    "errGoal": 1.8869129458011433,
     "reachable": true,
     "type": "upper",
     "rag": null,
     "state": "punch",
-    "rigErr": 0.0740914812558346,
+    "rigErr": 0.1936427973268776,
     "viol": ""
    },
    {
-    "err": 1.1534018272219082,
-    "aimDist": 0.7234325549420054,
-    "errGoal": 1.1534018272219082,
+    "err": 1.3249607647100918,
+    "aimDist": 0.5342428397329287,
+    "errGoal": 1.3249607647100918,
     "reachable": true,
-    "type": "cross",
-    "rag": null,
+    "type": "hook",
+    "rag": "anim",
     "state": "punch",
-    "rigErr": 0.10557575400714535,
+    "rigErr": 0.07147316382200482,
     "viol": "foreL"
    },
    {
-    "err": 1.0308552633657895,
-    "aimDist": 0.5920381870525567,
-    "errGoal": 1.0308552633657895,
+    "err": 1.226007933161014,
+    "aimDist": 0.4421759088535663,
+    "errGoal": 1.226007933161014,
     "reachable": true,
-    "type": "cross",
-    "rag": null,
-    "state": "punch",
-    "rigErr": 0.0957642401133156,
-    "viol": "foreR"
-   },
-   {
-    "err": 1.0325263408846748,
-    "aimDist": 0.6829566272273684,
-    "errGoal": 1.0325263408846748,
-    "reachable": true,
-    "type": "cross",
-    "rag": null,
-    "state": "punch",
-    "rigErr": 0.062027006823946185,
-    "viol": "foreR"
-   },
-   {
-    "err": 1.1023322138046963,
-    "aimDist": 0.683484786636561,
-    "errGoal": 1.1023322138046963,
-    "reachable": true,
-    "type": "cross",
+    "type": "hook",
     "rag": "anim",
     "state": "punch",
-    "rigErr": 0.07589367002531688,
+    "rigErr": 0.10248747347444571,
+    "viol": "head,neck,handL"
+   },
+   {
+    "err": 1.2790812362966948,
+    "aimDist": 0.646550803253359,
+    "errGoal": 1.2790812362966948,
+    "reachable": true,
+    "type": "hook",
+    "rag": "anim",
+    "state": "punch",
+    "rigErr": 1.279081236296686,
+    "viol": "head,neck,foreL,handL"
+   },
+   {
+    "err": 1.3274182358414106,
+    "aimDist": 0.40559101368419026,
+    "errGoal": 1.3274182358414106,
+    "reachable": true,
+    "type": "hook",
+    "rag": null,
+    "state": "punch",
+    "rigErr": 0.05810680070377185,
+    "viol": "head,neck,foreL"
+   },
+   {
+    "err": 1.0509327960755666,
+    "aimDist": 0.5298765259122402,
+    "errGoal": 1.0509327960755666,
+    "reachable": true,
+    "type": "cross",
+    "rag": null,
+    "state": "punch",
+    "rigErr": 0.0883005956180019,
     "viol": "foreR"
+   },
+   {
+    "err": 1.1109585105263624,
+    "aimDist": 0.7619602813629532,
+    "errGoal": 1.1109585105263624,
+    "reachable": true,
+    "type": "cross",
+    "rag": null,
+    "state": "punch",
+    "rigErr": 0.061767016230762375,
+    "viol": "foreL"
+   },
+   {
+    "err": 1.7542521631753467,
+    "aimDist": 0.431310863158844,
+    "errGoal": 1.7542521631753467,
+    "reachable": true,
+    "type": "hook",
+    "rag": "anim",
+    "state": "punch",
+    "rigErr": 0.07892008278170358,
+    "viol": "head,neck"
    }
   ],
   "gloveErrCm": {
-   "n": 330,
-   "mean": 2.5366,
-   "p50": 0.1036,
-   "p95": 4.148,
-   "max": 187.0785,
-   "min": 0.0455
+   "n": 331,
+   "mean": 1.3741,
+   "p50": 0.0986,
+   "p95": 1.0509,
+   "max": 117.0955,
+   "min": 0.0593
   },
   "gloveErrReachableCm": {
-   "n": 284,
-   "mean": 0.152,
-   "p50": 0.1016,
-   "p95": 0.444,
-   "max": 2.322,
-   "min": 0.0455
+   "n": 321,
+   "mean": 0.151,
+   "p50": 0.098,
+   "p95": 0.2204,
+   "max": 1.8869,
+   "min": 0.0593
   },
-  "unreachablePunches": 46,
-  "gloveOver1cmReachable": 5,
+  "unreachablePunches": 10,
+  "gloveOver1cmReachable": 10,
   "speeds": {
-   "jab": {
-    "tip": {
-     "n": 140,
-     "mean": 9.3983,
-     "p50": 8.9975,
-     "p95": 12.564,
-     "max": 13.3987,
-     "min": 5.7777
-    },
-    "foot": {
-     "n": 140,
-     "mean": 1.7245,
-     "p50": 1.6414,
-     "p95": 3.1136,
-     "max": 7.8626,
-     "min": 0.0028
-    },
-    "shin": {
-     "n": 140,
-     "mean": 2.4554,
-     "p50": 2.7587,
-     "p95": 3.2403,
-     "max": 8.0917,
-     "min": 0.1265
-    },
-    "results": {
-     "miss": 5,
-     "evade": 25,
-     "hit": 110,
-     "null": 17
-    },
-    "band": {
-     "mean": 9.14,
-     "sd": 2.06,
-     "measure": "tip",
-     "within1sd": 0.764,
-     "within2sd": 0.986
-    }
-   },
    "cross": {
     "tip": {
-     "n": 122,
-     "mean": 9.4866,
-     "p50": 9.4124,
-     "p95": 11.885,
-     "max": 17.0088,
-     "min": 6.5574
+     "n": 116,
+     "mean": 7.0463,
+     "p50": 6.8595,
+     "p95": 9.1779,
+     "max": 12.8284,
+     "min": 4.6987
     },
     "foot": {
-     "n": 122,
-     "mean": 1.8419,
-     "p50": 1.5135,
-     "p95": 3.7432,
-     "max": 8.822,
-     "min": 0.2098
+     "n": 116,
+     "mean": 1.8819,
+     "p50": 1.4952,
+     "p95": 4.7472,
+     "max": 6.7699,
+     "min": 0.2409
     },
     "shin": {
-     "n": 122,
-     "mean": 3.1411,
-     "p50": 2.7947,
-     "p95": 5.1715,
-     "max": 11.0146,
-     "min": 0.319
+     "n": 116,
+     "mean": 3.1379,
+     "p50": 2.7152,
+     "p95": 8.9135,
+     "max": 10.7713,
+     "min": 0.3404
     },
     "results": {
-     "miss": 11,
-     "hit": 100,
-     "null": 18,
-     "evade": 11
+     "hit": 105,
+     "null": 25,
+     "evade": 6,
+     "miss": 5
     },
     "band": {
      "mean": 9.14,
      "sd": 2.06,
      "measure": "tip",
-     "within1sd": 0.836,
-     "within2sd": 0.984
+     "within1sd": 0.336,
+     "within2sd": 0.983
     }
    },
    "hook": {
     "tip": {
-     "n": 56,
-     "mean": 14.427,
-     "p50": 13.732,
-     "p95": 24.0867,
-     "max": 26.6342,
-     "min": 5.9453
+     "n": 59,
+     "mean": 9.9358,
+     "p50": 10.1444,
+     "p95": 13.5731,
+     "max": 20.0777,
+     "min": 5.6472
     },
     "foot": {
-     "n": 56,
-     "mean": 1.8573,
-     "p50": 1.5627,
-     "p95": 3.3997,
-     "max": 3.5828,
-     "min": 0.141
+     "n": 59,
+     "mean": 1.4256,
+     "p50": 1.4603,
+     "p95": 2.5361,
+     "max": 2.7592,
+     "min": 0.1873
     },
     "shin": {
-     "n": 56,
-     "mean": 2.3381,
-     "p50": 2.6213,
-     "p95": 3.2202,
-     "max": 3.4705,
-     "min": 0.3224
+     "n": 59,
+     "mean": 2.1399,
+     "p50": 2.5792,
+     "p95": 2.7618,
+     "max": 3.0494,
+     "min": 0.3082
     },
     "results": {
-     "miss": 9,
-     "hit": 37,
-     "null": 23,
-     "evade": 10
+     "miss": 13,
+     "hit": 39,
+     "null": 50,
+     "evade": 7
     },
     "band": {
      "mean": 11.2,
      "sd": 2,
      "measure": "tip",
-     "within1sd": 0.214,
-     "within2sd": 0.571
+     "within1sd": 0.508,
+     "within2sd": 0.847
+    }
+   },
+   "jab": {
+    "tip": {
+     "n": 146,
+     "mean": 7.4826,
+     "p50": 7.0085,
+     "p95": 11.7328,
+     "max": 19.5814,
+     "min": 4.7807
+    },
+    "foot": {
+     "n": 146,
+     "mean": 1.607,
+     "p50": 1.5761,
+     "p95": 2.9934,
+     "max": 8.6025,
+     "min": 0.0045
+    },
+    "shin": {
+     "n": 146,
+     "mean": 2.3239,
+     "p50": 2.6495,
+     "p95": 3.1882,
+     "max": 9.0901,
+     "min": 0.1134
+    },
+    "results": {
+     "hit": 134,
+     "evade": 9,
+     "null": 13,
+     "miss": 3
+    },
+    "band": {
+     "mean": 9.14,
+     "sd": 2.06,
+     "measure": "tip",
+     "within1sd": 0.418,
+     "within2sd": 0.966
     }
    },
    "kick": {
     "tip": {
-     "n": 38,
-     "mean": 3.3378,
-     "p50": 3.4068,
-     "p95": 3.7326,
-     "max": 3.8523,
-     "min": 2.6793
+     "n": 56,
+     "mean": 3.2188,
+     "p50": 3.1433,
+     "p95": 3.8822,
+     "max": 12.9003,
+     "min": 2.3307
     },
     "foot": {
-     "n": 38,
-     "mean": 13.6678,
-     "p50": 12.7316,
-     "p95": 17.3436,
-     "max": 17.647,
-     "min": 9.6182
+     "n": 56,
+     "mean": 13.5413,
+     "p50": 12.7528,
+     "p95": 16.6181,
+     "max": 21.9488,
+     "min": 9.832
     },
     "shin": {
-     "n": 38,
-     "mean": 11.823,
-     "p50": 11.9655,
-     "p95": 14.437,
-     "max": 15.8481,
-     "min": 6.7534
+     "n": 56,
+     "mean": 11.163,
+     "p50": 11.0209,
+     "p95": 13.8645,
+     "max": 18.7492,
+     "min": 7.9878
     },
     "results": {
-     "null": 11,
-     "miss": 15,
-     "hit": 16,
-     "evade": 7
+     "miss": 13,
+     "null": 13,
+     "hit": 37,
+     "evade": 5,
+     "checked": 1
     },
     "band": {
      "mean": 13.24,
      "sd": 2.3,
      "measure": "foot",
-     "within1sd": 0.579,
-     "within2sd": 1
+     "within1sd": 0.571,
+     "within2sd": 0.946
     }
    },
    "upper": {
     "tip": {
-     "n": 12,
-     "mean": 11.4932,
-     "p50": 11.6204,
-     "p95": 12.6709,
-     "max": 13.424,
-     "min": 8.3961
+     "n": 7,
+     "mean": 9.956,
+     "p50": 10.0151,
+     "p95": 11.1595,
+     "max": 12.0801,
+     "min": 7.7389
     },
     "foot": {
-     "n": 12,
-     "mean": 1.7781,
-     "p50": 1.4394,
-     "p95": 3.4718,
-     "max": 3.4926,
-     "min": 1.3597
+     "n": 7,
+     "mean": 1.9841,
+     "p50": 1.4972,
+     "p95": 1.6373,
+     "max": 4.8643,
+     "min": 1.4227
     },
     "shin": {
-     "n": 12,
-     "mean": 2.63,
-     "p50": 2.5304,
-     "p95": 3.1833,
-     "max": 3.2333,
-     "min": 2.329
+     "n": 7,
+     "mean": 3.5554,
+     "p50": 2.671,
+     "p95": 2.7016,
+     "max": 9.4214,
+     "min": 2.3126
     },
     "results": {
-     "evade": 4,
-     "hit": 6,
-     "miss": 2,
-     "null": 2
+     "hit": 5,
+     "evade": 2,
+     "null": 1
     },
     "band": {
      "mean": 10.2,
      "sd": 1.8,
      "measure": "tip",
-     "within1sd": 0.417,
+     "within1sd": 0.714,
      "within2sd": 1
     }
    }
   },
-  "strikes": 439,
+  "strikes": 486,
   "fightSeconds": 270,
-  "simSeconds": 391,
-  "frames": 46917,
-  "msPerFrame": 0.262,
-  "knockdowns": 5,
-  "finishes": 1,
+  "simSeconds": 395.5,
+  "frames": 47457,
+  "msPerFrame": 0.313,
+  "knockdowns": 6,
+  "finishes": 0,
   "fights": [
    {
     "pair": [
      "anvil",
      "needle"
     ],
-    "end": "TKO"
-   },
-   {
-    "pair": [
-     "needle",
-     "silk"
-    ],
     "end": "fight"
    }
   ]
+ },
+ "perf": {
+  "frameSimMs": 0.243,
+  "fighterUpdateMsEach": 0.111,
+  "softwareRenderMs": 5.5
  },
  "consoleErrors": [],
  "consoleWarnings": []
