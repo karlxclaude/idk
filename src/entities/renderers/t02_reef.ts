@@ -262,8 +262,8 @@ export default defineRenderers([
     },
     update(v, e) {
       const open = 0.12 + 0.34 * (0.5 + 0.5 * Math.sin(e.age * 4.5 + e.uid));
-      v.children[1].rotation = open;
-      v.children[2].rotation = -open;
+      v.children[1].rotation = -open;
+      v.children[2].rotation = open;
       v.children[3].alpha = 0.6 + 0.4 * Math.sin(e.age * 9);
     },
   },

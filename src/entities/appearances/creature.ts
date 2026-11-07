@@ -199,9 +199,9 @@ const creature: PlayerAppearanceDef = {
         const target = Math.max(R.eat, 0.04 + 0.04 * Math.sin(t * 2.5));
         open += (target - open) * Math.min(1, dt * 18);
         mouth.alpha = Math.min(1, open * 3);
-        mouth.scale.y = (2.6 / mouth.texture.height) * 0 + open * 1.0 * (2.6 / 256 * 256 / 256);
+        mouth.height = Math.max(0.001, 2.6 * Math.min(1, open * 1.4));
         mouthGlow.alpha = open * 0.9;
-        mouthGlow.scale.set(0.9 / 128 * (0.6 + open));
+        mouthGlow.width = mouthGlow.height = 0.9 * (0.6 + open);
         // lure sway + pulse
         lure.rotation = Math.sin(t * 1.7) * 0.12 + Math.sin(t * rate * 0.5) * 0.05 * sp;
         const pulse = 0.65 + Math.sin(t * 3.1) * 0.25 + f * 0.4;
