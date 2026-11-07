@@ -53,11 +53,11 @@ export interface GameEvents {
   pause: { paused: boolean };
   /** Floating origin rebased: every local coordinate was shifted by (-dx, -dy). */
   originRebased: { dx: number; dy: number };
-  /** Tier 15 completed: the cycle restarts at tier 1. */
+  /** Final tier completed: the cycle restarts at tier 1. */
   ngPlus: { count: number };
   /** Settings object changed (UI writes settings, then emits this). */
   settingsChanged: { settings: Settings };
-  /** Generic tier-mechanic event, e.g. { mechanic: 'gluonStrings', kind: 'snap' }. */
+  /** Generic tier-mechanic event, e.g. { mechanic: 'ionize', kind: 'strip' }. */
   mechanic: { mechanic: string; kind: string; x: number; y: number; value?: number };
   /** Raw action pressed (keyboard or UI button), before gameplay handles it. */
   action: { action: Action };

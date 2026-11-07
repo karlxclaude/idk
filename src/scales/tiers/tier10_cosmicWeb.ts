@@ -1,12 +1,12 @@
 import { stubTier } from '../stubTier';
 
 /**
- * Tier 13 - Cosmic Web (10²⁴ m). STUB: playable with generic archetypes.
+ * Tier 10 - Cosmic Web (10²⁴ m). STUB: playable with generic archetypes.
  * Content agent: replace with a full defineTier({...}) + tier-specific archetypes/mechanics.
  */
 export default stubTier({
   id: 'cosmicWeb',
-  index: 13,
+  index: 10,
   name: 'Cosmic Web',
   scaleLabel: '10²⁴ m',
   scaleExponent: 24,

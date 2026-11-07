@@ -1,12 +1,12 @@
 import { stubTier } from '../stubTier';
 
 /**
- * Tier 12 - Galactic (10²¹ m). STUB: playable with generic archetypes.
+ * Tier 9 - Galactic (10²¹ m). STUB: playable with generic archetypes.
  * Content agent: replace with a full defineTier({...}) + tier-specific archetypes/mechanics.
  */
 export default stubTier({
   id: 'galactic',
-  index: 12,
+  index: 9,
   name: 'Galactic',
   scaleLabel: '10²¹ m',
   scaleExponent: 21,

@@ -1,0 +1,88 @@
+/** Tier 1 - Elemental archetypes: free electrons, light atoms, heavy atoms, ions. */
+import { defineArchetypes } from '../define';
+
+// Element colours (CPK-inspired, pushed toward neon).
+const H = 0xf2f6ff, He = 0x7ff7ff, C = 0x9aa4c4, N = 0x5b8cff, O = 0xff5a6e, Na = 0xc77dff, Fe = 0xffa040, Au = 0xffd84a, U = 0x7dff7a;
+
+export default defineArchetypes([
+  {
+    id: 't01_electron',
+    name: 'Free electron',
+    renderer: { id: 'glowOrb', params: { glow: 3.2, glowAlpha: 0.7, core: 0.5 } },
+    behaviors: [
+      { id: 'wander', params: { speed: 2.2 } },
+      { id: 'flee', params: { speed: 3, range: 3.5 } },
+      { id: 'flicker', params: { on: [3, 7], off: [0.15, 0.35], startOn: true } },
+    ],
+    colors: [0x7ad7ff, 0x9ef0ff, 0xb59bff],
+    tags: ['electron'],
+    essence: 1,
+    drag: 1.4,
+  },
+  {
+    id: 't01_photon',
+    name: 'Photon',
+    renderer: { id: 'polygon', params: { sides: 3, glow: 2.8 } },
+    behaviors: [{ id: 'schooling', params: { speed: 3.2, neighbor: 7 } }, { id: 'faceVelocity' }, { id: 'flee', params: { speed: 2.8, range: 4 } }],
+    colors: [0xfff3a8, 0xffffff],
+    essence: 1,
+    drag: 0.6,
+  },
+  {
+    id: 't01_lightAtom',
+    name: 'Light atom (H, He)',
+    renderer: { id: 'atom', params: { shells: 1 } },
+    behaviors: [{ id: 'wander', params: { speed: 0.9 } }, { id: 'flee', params: { speed: 1.4, range: 3 } }],
+    colors: [H, He],
+    colors2: [0x7ad7ff],
+    tags: ['atom'],
+    massValue: 1.1,
+    essence: 2,
+  },
+  {
+    id: 't01_midAtom',
+    name: 'Mid atom (C, N, O)',
+    renderer: { id: 'atom', params: { shells: 2 } },
+    behaviors: [{ id: 'wander', params: { speed: 0.7 } }, { id: 'separate' }],
+    colors: [C, N, O],
+    colors2: [0x7ad7ff, 0xb59bff],
+    tags: ['atom'],
+    edible: 'closeInSizeOnly',
+    closeDamage: 0.05,
+    massValue: 1.2,
+    essence: 3,
+  },
+  {
+    id: 't01_ion',
+    name: 'Reactive ion (Na+)',
+    renderer: { id: 'atom', params: { shells: 2, glow: 3, glowAlpha: 0.6 } },
+    behaviors: [{ id: 'wander', params: { speed: 1 } }, { id: 'chase', params: { speed: 1.25, range: 5 } }, { id: 'pulse', params: { amount: 0.12, speed: 3 } }],
+    colors: [Na],
+    colors2: [0xff9bf0],
+    tags: ['atom'],
+    damage: 0.14,
+    essence: 5,
+  },
+  {
+    id: 't01_heavyAtom',
+    name: 'Heavy atom (Fe, Au) - predator',
+    renderer: { id: 'atom', params: { shells: 3, glow: 2.8, glowAlpha: 0.55 } },
+    behaviors: [{ id: 'wander', params: { speed: 0.6 } }, { id: 'chase', params: { speed: 1.05, range: 6 } }],
+    colors: [Fe, Au],
+    colors2: [0xffe7b0],
+    tags: ['atom'],
+    damage: 0.18,
+    essence: 7,
+  },
+  {
+    id: 't01_radioactive',
+    name: 'Unstable nucleus (U) - hazard',
+    renderer: { id: 'spiky', params: { spikes: 12, depth: 0.2, glow: 3, glowAlpha: 0.65 } },
+    behaviors: [{ id: 'drift', params: { speed: 0.15 } }, { id: 'pulse', params: { amount: 0.14, speed: 2.2 } }],
+    colors: [U],
+    colors2: [0x0a2a08],
+    edible: 'never',
+    damage: 0.16,
+    spin: [0.2, 0.5],
+  },
+]);

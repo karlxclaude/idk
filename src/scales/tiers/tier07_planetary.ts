@@ -1,12 +1,12 @@
 import { stubTier } from '../stubTier';
 
 /**
- * Tier 10 - Planetary (10⁷ m). STUB: playable with generic archetypes.
+ * Tier 7 - Planetary (10⁷ m). STUB: playable with generic archetypes.
  * Content agent: replace with a full defineTier({...}) + tier-specific archetypes/mechanics.
  */
 export default stubTier({
   id: 'planetary',
-  index: 10,
+  index: 7,
   name: 'Planetary',
   scaleLabel: '10⁷ m',
   scaleExponent: 7,

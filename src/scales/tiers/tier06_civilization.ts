@@ -1,12 +1,12 @@
 import { stubTier } from '../stubTier';
 
 /**
- * Tier 9 - Civilization (10⁴ m). STUB: playable with generic archetypes.
+ * Tier 6 - Civilization (10⁴ m). STUB: playable with generic archetypes.
  * Content agent: replace with a full defineTier({...}) + tier-specific archetypes/mechanics.
  */
 export default stubTier({
   id: 'civilization',
-  index: 9,
+  index: 6,
   name: 'Civilization',
   scaleLabel: '10⁴ m',
   scaleExponent: 4,

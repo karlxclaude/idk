@@ -29,9 +29,9 @@ const abilities: AbilityDef[] = [
     },
   },
   {
-    id: 'quantumTunnel',
-    name: 'Quantum Tunnel',
-    description: 'Blink a short distance in your steering direction, passing through anything.',
+    id: 'quantumLeap',
+    name: 'Quantum Leap',
+    description: 'Jump shells like an electron: blink forward, passing through anything.',
     cooldown: 4,
     icon: '⟿',
     activate(ctx) {

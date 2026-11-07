@@ -1,12 +1,12 @@
 import { stubTier } from '../stubTier';
 
 /**
- * Tier 8 - Living Shore (10² m). STUB: playable with generic archetypes.
+ * Tier 5 - Living Shore (10² m). STUB: playable with generic archetypes.
  * Content agent: replace with a full defineTier({...}) + tier-specific archetypes/mechanics.
  */
 export default stubTier({
   id: 'livingShore',
-  index: 8,
+  index: 5,
   name: 'Living Shore',
   scaleLabel: '10² m',
   scaleExponent: 2,

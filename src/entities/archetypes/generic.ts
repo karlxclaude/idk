@@ -1,5 +1,5 @@
 /**
- * Generic archetypes reused (and re-coloured via SpawnEntry.colors) by stub tiers 4-15.
+ * Generic archetypes reused (and re-coloured via SpawnEntry.colors) by stub tiers 2-12.
  * Content agents should create tier-specific archetypes in their own files instead of editing these.
  */
 import { defineArchetypes } from '../define';

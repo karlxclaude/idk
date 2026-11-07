@@ -125,7 +125,7 @@ export interface TitleCard {
 }
 
 export interface TierConfig {
-  /** Stable id, e.g. 'quantumFoam'. */
+  /** Stable id, e.g. 'elemental'. */
   id: string;
   /** 1-based position on the ladder (unique, contiguous). */
   index: number;

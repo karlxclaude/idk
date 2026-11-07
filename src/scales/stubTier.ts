@@ -1,6 +1,6 @@
 /**
- * Helper used by the STUB tiers 4-15 so the whole ladder is walkable. Content agents should
- * replace a stub's file with a full defineTier({...}) (like tier01-03) and their own archetypes.
+ * Helper used by the STUB tiers 2-12 so the whole ladder is walkable. Content agents should
+ * replace a stub's file with a full defineTier({...}) (like tier01) and their own archetypes.
  */
 import { defineTier, type MusicMode, type TierConfig } from './types';
 

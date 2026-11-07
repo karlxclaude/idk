@@ -1,12 +1,12 @@
 import { stubTier } from '../stubTier';
 
 /**
- * Tier 14 - Observable Universe (10²⁶ m). STUB: playable with generic archetypes.
+ * Tier 11 - Observable Universe (10²⁶ m). STUB: playable with generic archetypes.
  * Content agent: replace with a full defineTier({...}) + tier-specific archetypes/mechanics.
  */
 export default stubTier({
   id: 'observableUniverse',
-  index: 14,
+  index: 11,
   name: 'Observable Universe',
   scaleLabel: '10²⁶ m',
   scaleExponent: 26,

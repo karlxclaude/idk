@@ -1,12 +1,12 @@
 import { stubTier } from '../stubTier';
 
 /**
- * Tier 7 - The Abyss (10⁰ m). STUB: playable with generic archetypes.
+ * Tier 4 - The Abyss (10⁰ m). STUB: playable with generic archetypes.
  * Content agent: replace with a full defineTier({...}) + tier-specific archetypes/mechanics.
  */
 export default stubTier({
   id: 'abyss',
-  index: 7,
+  index: 4,
   name: 'The Abyss',
   scaleLabel: '10⁰ m',
   scaleExponent: 0,

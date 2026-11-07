@@ -1,12 +1,12 @@
 import { stubTier } from '../stubTier';
 
 /**
- * Tier 5 - Molecular Reef (10⁻⁸ m). STUB: playable with generic archetypes.
+ * Tier 2 - Molecular Reef (10⁻⁸ m). STUB: playable with generic archetypes.
  * Content agent: replace with a full defineTier({...}) + tier-specific archetypes/mechanics.
  */
 export default stubTier({
   id: 'molecularReef',
-  index: 5,
+  index: 2,
   name: 'Molecular Reef',
   scaleLabel: '10⁻⁸ m',
   scaleExponent: -8,

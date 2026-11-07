@@ -1,12 +1,12 @@
 import { stubTier } from '../stubTier';
 
 /**
- * Tier 6 - Primordial Pond (10⁻⁵ m). STUB: playable with generic archetypes.
+ * Tier 3 - Primordial Pond (10⁻⁵ m). STUB: playable with generic archetypes.
  * Content agent: replace with a full defineTier({...}) + tier-specific archetypes/mechanics.
  */
 export default stubTier({
   id: 'primordialPond',
-  index: 6,
+  index: 3,
   name: 'Primordial Pond',
   scaleLabel: '10⁻⁵ m',
   scaleExponent: -5,

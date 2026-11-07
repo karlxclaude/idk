@@ -1,12 +1,12 @@
 import { stubTier } from '../stubTier';
 
 /**
- * Tier 15 - Eternal Inflation (beyond 10²⁷ m). STUB: playable with generic archetypes.
+ * Tier 12 - Eternal Inflation (beyond 10²⁷ m). STUB: playable with generic archetypes.
  * Content agent: replace with a full defineTier({...}) + tier-specific archetypes/mechanics.
  */
 export default stubTier({
   id: 'eternalInflation',
-  index: 15,
+  index: 12,
   name: 'Eternal Inflation',
   scaleLabel: 'beyond 10²⁷ m',
   scaleExponent: 30,

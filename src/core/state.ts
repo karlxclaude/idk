@@ -42,7 +42,7 @@ export interface GameState {
   maxTierReached: number;
   /** Tier indexes unlocked (for Scale Map / title screen). */
   unlockedTiers: number[];
-  /** New Game+ cycle count (incremented when tier 15 loops to tier 1). */
+  /** New Game+ cycle count (incremented when the final tier loops to tier 1). */
   ngPlus: number;
   settings: Settings;
   stats: GameStats;
