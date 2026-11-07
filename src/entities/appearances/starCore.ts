@@ -76,7 +76,7 @@ const starCore: PlayerAppearanceDef = {
           const len = (0.7 + k * 0.7 + f * 0.7 + R.eat * 0.5) * (1 + R.speed * 0.2);
           fl.rotation = (i / N) * TAU + Math.sin(t * 0.4 + i) * 0.25 + t * 0.1;
           fl.width = len * 2;
-          fl.height = 0.5 + k * 0.4;
+          fl.height = 1.1 + k * 0.6;
           fl.alpha = 0.35 + k * 0.5;
         });
         plasma1.rotation = t * 0.35;

@@ -20,6 +20,13 @@ function box(tex: Texture, w: number, h: number, o: { add?: boolean; alpha?: num
   return s;
 }
 
+
+/** Scale relative to the sprite's baked size (setting width/height already changed scale). */
+function mul(s: any, kx: number, ky = kx) {
+  if (s.bx === undefined) { s.bx = s.scale.x; s.by = s.scale.y; }
+  s.scale.set(s.bx * kx, s.by * ky);
+}
+
 const barTex = () =>
   bakeTexture('t02:bar', 32, (c, s) => {
     c.fillStyle = '#fff';
@@ -207,7 +214,7 @@ export default defineRenderers([
     },
     update(v, e) {
       v.children[2].rotation = Math.sin(e.age * 0.7 + e.uid) * 0.25;
-      v.children[2].scale.set(1 + Math.sin(e.age * 1.7) * 0.03);
+      mul(v.children[2], 1 + Math.sin(e.age * 1.7) * 0.03);
     },
   },
   {
@@ -234,8 +241,8 @@ export default defineRenderers([
       const t = e.age + (e.uid % 17);
       inner.rotation = Math.sin(t * 0.9) * 0.14;
       // twist illusion: strands narrow and widen out of phase with the rungs
-      inner.children[2].scale.x = 0.8 + 0.2 * Math.abs(Math.sin(t * 1.6));
-      inner.children[1].scale.x = 0.8 + 0.2 * Math.abs(Math.cos(t * 1.6));
+      mul(inner.children[2], 0.8 + 0.2 * Math.abs(Math.sin(t * 1.6)), 1);
+      mul(inner.children[1], 0.8 + 0.2 * Math.abs(Math.cos(t * 1.6)), 1);
     },
   },
   {

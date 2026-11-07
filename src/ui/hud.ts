@@ -159,7 +159,7 @@ export function mountHud(game: Game, root: HTMLElement) {
       b.cd.style.setProperty('--cd', `${(1 - r) * 360}deg`);
       const cooling = r < 1;
       b.el.classList.toggle('cooling', cooling);
-      b.cdt.textContent = cooling && cdSec > 0.05 ? (cdSec >= 10 ? Math.ceil(cdSec) : cdSec.toFixed(1)) : '';
+      b.cdt.textContent = cooling && cdSec > 0.05 ? (cdSec >= 10 ? String(Math.ceil(cdSec)) : cdSec.toFixed(1)) : '';
       if (was >= 0 && was < 1 && r >= 1) {
         b.el.classList.remove('pop');
         void b.el.offsetWidth;

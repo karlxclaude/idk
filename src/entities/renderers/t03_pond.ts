@@ -18,6 +18,13 @@ function box(tex: Texture, w: number, h: number, o: { add?: boolean; alpha?: num
   return s;
 }
 
+
+/** Scale relative to the sprite's baked size (setting width/height already changed scale). */
+function mul(s: any, kx: number, ky = kx) {
+  if (s.bx === undefined) { s.bx = s.scale.x; s.by = s.scale.y; }
+  s.scale.set(s.bx * kx, s.by * ky);
+}
+
 const capsuleTex = () =>
   bakeTexture('t03:capsule', 128, (c, s) => {
     const h = s / 2;
@@ -305,7 +312,7 @@ export default defineRenderers([
       (v.children[3] as Sprite).tint = e.color2;
     },
     update(v, e) {
-      v.children[1].scale.set(1 + Math.sin(e.age * 6 + e.uid) * 0.06);
+      mul(v.children[1], 1 + Math.sin(e.age * 6 + e.uid) * 0.06);
       v.children[2].rotation = -e.age * 0.5;
     },
   },
@@ -336,7 +343,7 @@ export default defineRenderers([
     },
     update(v, e) {
       const t = e.age * 22 + e.uid;
-      v.children[1].scale.set(1 + Math.sin(t) * 0.025, 1 + Math.cos(t * 1.3) * 0.025);
+      mul(v.children[1], 1 + Math.sin(t) * 0.025, 1 + Math.cos(t * 1.3) * 0.025);
       v.children[2].skew.x = Math.sin(e.age * 3 + e.uid) * 0.05;
       v.children[4].alpha = 0.4 + 0.4 * Math.max(0, Math.sin(e.age * 1.5));
     },

@@ -162,7 +162,7 @@ const abilities: AbilityDef[] = [
       for (const e of near(ctx, p.radius * 14)) if (isThreat(ctx, e)) { frozen.set(e.uid, 4); n++; }
       ring(ctx, p.radius * 10, [0x222233, ctx.tier.palette.accent]);
       ctx.fx.flash(0.35, 0x000000, 2);
-      return n >= 0;
+      return n >= 0 || true;
     },
     update(ctx, dt) {
       if (!frozen.size) return;
