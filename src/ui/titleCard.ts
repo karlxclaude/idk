@@ -8,7 +8,7 @@ import type { Game } from '../core/Game';
 import { injectTheme } from './dom';
 
 const CSS = /* css */ `
-#title-card { position:absolute; left:0; right:0; top:30%; text-align:center; pointer-events:none; padding:0 16px; font-family:var(--eh-font); --tc:#fff; visibility:hidden; }
+#title-card { position:absolute; left:0; right:0; top:30%; text-align:center; pointer-events:none; padding:0 16px; font-family:var(--ehx-font); --tc:#fff; visibility:hidden; }
 #title-card.run { visibility:visible; }
 #title-card > * { opacity:0; will-change:opacity, transform, filter; }
 #title-card .line { width:min(60vw, 360px); height:2px; margin:14px auto; background:linear-gradient(90deg, transparent, var(--tc), transparent); box-shadow:0 0 14px var(--tc); transform:scaleX(0); }

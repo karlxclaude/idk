@@ -1,20 +1,70 @@
-import { stubTier } from '../stubTier';
+import { defineTier } from '../types';
 
-/**
- * Tier 3 - Primordial Pond (10⁻⁵ m). STUB: playable with generic archetypes.
- * Content agent: replace with a full defineTier({...}) + tier-specific archetypes/mechanics.
- */
-export default stubTier({
+/** Tier 3 - Primordial Pond (10^-5 m). Bacteria, diatoms, ciliates; amoebas are the first real predators. */
+export default defineTier({
   id: 'primordialPond',
   index: 3,
   name: 'Primordial Pond',
   scaleLabel: '10⁻⁵ m',
   scaleExponent: -5,
-  colors: { top: 0x061a08, bottom: 0x020a04, center: 0x1d4a1a, accent: 0xa8ff60, glow: 0x3fd9a0, player: 0xf2ffe0 },
-  music: { root: 'G', mode: 'dorian', tempo: 76, mood: 'Warm murky water, slow organic pulses, first life.' },
+  palette: {
+    bgTop: 0x1a3a14,
+    bgBottom: 0x0a1a06,
+    bgCenter: 0x4a5a1a,
+    fog: 0x2a3a12,
+    fogAlpha: 0.35,
+    accent: 0xb6ff5a,
+    glow: 0xffc24a,
+    player: 0xf2ffe0,
+    playerGlow: 0xb6ff5a,
+    particles: [0xb6ff5a, 0xffc24a],
+  },
+  background: [
+    { type: 'gradient', depth: 0, alpha: 0.55 },
+    { type: 'lightShafts', depth: 0.05, density: 6, color: 0xffd47a, alpha: 0.2, scale: 1, speed: 1 },
+    { type: 'blobs', depth: 0.08, density: 5, alpha: 0.14, colors: [0x8a9a2a, 0xc88a2a, 0x3a8a4a] },
+    { type: 'pondSilhouettes', depth: 0.18, density: 9, colors: [0x0a2a0a, 0x2a3a0a], alpha: 0.4, scale: 1.4 },
+    { type: 'dots', depth: 0.35, color: 0xdfe89a, density: 1, alpha: 0.4, blend: 'add', params: { twinkle: 0.2 } },
+    { type: 'pondSilhouettes', depth: 0.45, density: 6, colors: [0x3a5a1a, 0x5a4a1a], alpha: 0.22, scale: 0.8 },
+  ],
+  ambient: [
+    { count: 36, colors: [0xd8e87a, 0xffd47a], size: [1.5, 4], drift: 7, flicker: 0.2, depth: 0.7, alpha: 0.7 },
+    { count: 10, colors: [0xf0ffc0], size: [3, 8], drift: 10, flicker: 0.15, depth: 1.4, alpha: 0.3 },
+  ],
+  music: {
+    root: 'G', octave: 2, mode: 'dorian', tempo: 76,
+    timbre: { pad: 'sine', bass: 'sine', lead: 'triangle', texture: 'noise', perc: 'click' },
+    mood: 'Warm murky water, slow organic pulses, first life stirring under shafts of light.',
+    layers: ['drone', 'bubbles', 'pulse', 'lead'],
+    reverb: 0.55,
+  },
+  spawns: [
+    { archetype: 't03_bacterium', count: 20, size: [0.1, 0.22], group: { size: [4, 8], spread: 3 } },
+    { archetype: 't03_diatom', count: 6, size: [0.3, 0.6] },
+    { archetype: 't03_pennate', count: 5, size: [0.4, 0.75] },
+    { archetype: 't03_paramecium', count: 4, size: [0.9, 1.1], progress: [0.05, 1] },
+    { archetype: 't03_amoeba', count: 2, size: [1.5, 2.3], progress: [0.12, 1] },
+  ],
+  hazards: [
+    { archetype: 't03_virus', count: 3, size: [0.14, 0.26], progress: [0.15, 1] },
+    { archetype: 't03_toxinBloom', count: 1, size: [1.8, 2.6], progress: [0.35, 1] },
+  ],
+  mechanics: [{ id: 't03_microbialLife' }],
   abilityId: 'flagellumBurst',
   playerStage: 'cell',
-  previousLabel: 'a tangle of molecules',
-  previousColors: [0x5dffb0, 0xff7ad9],
-  title: { subtitle: 'First Life', flavor: 'Cells, flagella and the first hunger.' },
+  growthTarget: 16,
+  nutrition: 0.5,
+  previousSpeck: {
+    count: 3,
+    size: [0.3, 0.5],
+    label: 'a molecule',
+    colors: [0x5dffb0, 0xff7ad9],
+    nutritionMul: 1.5,
+    essence: 2,
+  },
+  titleCard: {
+    title: 'Primordial Pond',
+    subtitle: 'First Life',
+    flavor: 'Cells, flagella and the first hunger. Beware what engulfs.',
+  },
 });

@@ -1,20 +1,68 @@
-import { stubTier } from '../stubTier';
+import { defineTier } from '../types';
 
-/**
- * Tier 2 - Molecular Reef (10⁻⁸ m). STUB: playable with generic archetypes.
- * Content agent: replace with a full defineTier({...}) + tier-specific archetypes/mechanics.
- */
-export default stubTier({
+/** Tier 2 - Molecular Reef (10^-8 m). Water, small molecules, proteins and DNA kelp; enzymes hunt. */
+export default defineTier({
   id: 'molecularReef',
   index: 2,
   name: 'Molecular Reef',
   scaleLabel: '10⁻⁸ m',
   scaleExponent: -8,
-  colors: { top: 0x02141a, bottom: 0x01060d, center: 0x0c4a4a, accent: 0x5dffb0, glow: 0xff7ad9, player: 0xeafff5 },
-  music: { root: 'D', mode: 'mixolydian', tempo: 92, mood: 'Bubbly, crystalline, playful molecular clicks.' },
+  palette: {
+    bgTop: 0x03221f,
+    bgBottom: 0x0a0522,
+    bgCenter: 0x0c5a52,
+    fog: 0x0b3a40,
+    fogAlpha: 0.3,
+    accent: 0x5dffb0,
+    glow: 0xc27aff,
+    player: 0xeafff5,
+    playerGlow: 0x5dffb0,
+    particles: [0x5dffb0, 0xc27aff, 0xff7ad9],
+  },
+  background: [
+    { type: 'gradient', depth: 0, alpha: 0.55 },
+    { type: 'nebula', depth: 0.1, colors: [0x0c4a4a, 0x2a2a8a, 0x7a3bd8], alpha: 0.45, scale: 1.2, speed: 1 },
+    { type: 'reefKelp', depth: 0.14, density: 7, colors: [0x5a2aa8, 0x2a5aa8], alpha: 0.4, speed: 0.7, params: { height: 0.85 } },
+    { type: 'reefKelp', depth: 0.32, density: 8, colors: [0x1fa890, 0x48f0b4], alpha: 0.28, blend: 'add', speed: 1.1, params: { height: 0.55 } },
+    { type: 'dots', depth: 0.4, color: 0x9fffe0, density: 0.9, alpha: 0.4, blend: 'add', params: { twinkle: 0.25 } },
+    { type: 'sparks', depth: 0.55, colors: [0x5dffb0, 0xc27aff, 0xffffff], alpha: 0.5, params: { count: 40, size: [1.5, 4], drift: 8, flicker: 0.6 } },
+  ],
+  ambient: [
+    { count: 34, colors: [0x5dffb0, 0xc27aff], size: [2, 6], drift: 12, flicker: 0.3, depth: 0.7 },
+    { count: 10, colors: [0xdfffee], size: [3, 8], drift: 18, flicker: 0.2, depth: 1.4, alpha: 0.35 },
+  ],
+  music: {
+    root: 'D', octave: 2, mode: 'mixolydian', tempo: 92,
+    timbre: { pad: 'sine', bass: 'triangle', lead: 'square', texture: 'noise', perc: 'click' },
+    mood: 'Bubbly, crystalline, playful molecular clicks over a glowing teal reef.',
+    layers: ['drone', 'bubbles', 'pulse', 'arp'],
+    reverb: 0.6,
+  },
+  spawns: [
+    { archetype: 't02_water', count: 18, size: [0.12, 0.24], group: { size: [4, 8], spread: 3 } },
+    { archetype: 't02_smallMol', count: 9, size: [0.3, 0.6] },
+    { archetype: 't02_dna', count: 5, size: [0.4, 0.8], progress: [0, 1] },
+    { archetype: 't02_protein', count: 4, size: [0.92, 1.1], progress: [0.05, 1] },
+    { archetype: 't02_dna', count: 2, size: [1.2, 1.9], progress: [0.15, 1] },
+    { archetype: 't02_enzyme', count: 2, size: [1.5, 2.4], progress: [0.12, 1] },
+  ],
+  hazards: [{ archetype: 't02_radical', count: 1, size: [1.7, 2.5], progress: [0.3, 1] }],
+  mechanics: [{ id: 't02_bonding' }],
   abilityId: 'bondSnap',
   playerStage: 'cell',
-  previousLabel: 'a glittering atom',
-  previousColors: [0x5ad1ff, 0x9bf0ff],
-  title: { subtitle: 'Chemistry Blooms', flavor: 'Bonds form and break. Swallow whole molecules.' },
+  growthTarget: 15,
+  nutrition: 0.5,
+  previousSpeck: {
+    count: 3,
+    size: [0.3, 0.5],
+    label: 'a glittering atom',
+    colors: [0x5ad1ff, 0x9bf0ff],
+    nutritionMul: 1.5,
+    essence: 2,
+  },
+  titleCard: {
+    title: 'Molecular Reef',
+    subtitle: 'Chemistry Blooms',
+    flavor: 'Bonds form and break. Pair them off, unzip the helix, outrun the enzymes.',
+  },
 });

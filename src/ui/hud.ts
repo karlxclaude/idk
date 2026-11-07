@@ -18,54 +18,54 @@ const BUTTONS: Action[] = ['dash', 'split', 'ability1', 'ability2', 'ability3', 
 const CSS = /* css */ `
 #hud { position:absolute; inset:0; overflow:hidden; text-shadow: 0 1px 4px rgba(0,0,0,.7); }
 #hud .top { position:absolute; top:max(12px, env(safe-area-inset-top)); left:50%; transform:translateX(-50%); width:min(70vw, 460px); text-align:center; }
-#hud .tierline { font-size:12px; font-weight:600; letter-spacing:.2em; text-transform:uppercase; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:var(--eh-text); }
-#hud .tierline b { color: var(--eh-accent); font-weight:700; text-shadow:0 0 12px var(--eh-accent); }
-#hud .tierline .sc { opacity:.65; font-variant-numeric: tabular-nums; }
+#hud .tierline { font-size:12px; font-weight:600; letter-spacing:.2em; text-transform:uppercase; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:var(--ehx-text); }
+#hud .tierline b { color: var(--ehx-accent); font-weight:700; text-shadow:0 0 12px var(--ehx-accent); }
+#hud .tierline .sc { text-transform:none; opacity:.65; font-variant-numeric: tabular-nums; }
 #hud .meter { position:relative; margin-top:7px; height:12px; border-radius:8px; padding:2px; }
 #hud .track { position:relative; height:100%; border-radius:6px; background:rgba(0,0,0,.45); overflow:hidden; }
-#hud .fill { position:absolute; left:0; top:0; bottom:0; width:0; border-radius:6px; transition:width .22s cubic-bezier(.2,.8,.3,1); background:linear-gradient(90deg, var(--eh-accent-dim), var(--eh-accent)); box-shadow:0 0 14px var(--eh-accent); }
+#hud .fill { position:absolute; left:0; top:0; bottom:0; width:0; border-radius:6px; transition:width .22s cubic-bezier(.2,.8,.3,1); background:linear-gradient(90deg, var(--ehx-accent-dim), var(--ehx-accent)); box-shadow:0 0 14px var(--ehx-accent); }
 #hud .fill::after { content:''; position:absolute; inset:0; background:linear-gradient(100deg, transparent 30%, rgba(255,255,255,.55) 50%, transparent 70%); background-size:220% 100%; animation: ehShine 2.8s linear infinite; mix-blend-mode:overlay; }
 @keyframes ehShine { from { background-position:160% 0 } to { background-position:-60% 0 } }
 #hud .meter.near { animation: ehNear 0.9s ease-in-out infinite; }
-#hud.rf .meter.near { animation:none; box-shadow:0 0 14px var(--eh-accent); }
+#hud.rf .meter.near { animation:none; box-shadow:0 0 14px var(--ehx-accent); }
 #hud.rf .fill::after { animation:none; }
-@keyframes ehNear { 0%,100% { box-shadow:0 0 6px -2px var(--eh-accent); } 50% { box-shadow:0 0 26px 2px var(--eh-accent); } }
+@keyframes ehNear { 0%,100% { box-shadow:0 0 6px -2px var(--ehx-accent); } 50% { box-shadow:0 0 26px 2px var(--ehx-accent); } }
 #hud .pct { margin-top:4px; font-size:10px; letter-spacing:.2em; opacity:.55; font-variant-numeric:tabular-nums; }
 
 #hud .essence { position:absolute; top:max(12px, env(safe-area-inset-top)); right:max(14px, env(safe-area-inset-right)); display:flex; align-items:center; gap:8px; height:38px; padding:0 14px 0 11px; border-radius:19px; font-weight:700; font-size:17px; font-variant-numeric:tabular-nums; transform-origin:right center; }
-#hud .essence .gem { color:var(--eh-accent); filter:drop-shadow(0 0 6px var(--eh-accent)); font-size:15px; }
+#hud .essence .gem { color:var(--ehx-accent); filter:drop-shadow(0 0 6px var(--ehx-accent)); font-size:15px; }
 #hud .essence.bump { animation: ehBump .38s cubic-bezier(.2,1.6,.4,1); }
-@keyframes ehBump { 0% { transform:scale(1) } 35% { transform:scale(1.2); box-shadow:0 0 28px var(--eh-accent); } 100% { transform:scale(1) } }
-#hud .essence .delta { position:absolute; right:10px; top:100%; font-size:12px; color:var(--eh-accent); opacity:0; pointer-events:none; }
+@keyframes ehBump { 0% { transform:scale(1) } 35% { transform:scale(1.2); box-shadow:0 0 28px var(--ehx-accent); } 100% { transform:scale(1) } }
+#hud .essence .delta { position:absolute; right:10px; top:100%; font-size:12px; color:var(--ehx-accent); opacity:0; pointer-events:none; }
 #hud .essence .delta.go { animation: ehDelta 1s ease-out; }
 @keyframes ehDelta { 0% { opacity:1; transform:translateY(-2px) } 100% { opacity:0; transform:translateY(14px) } }
 
 #hud .pausebtn { position:absolute; top:max(12px, env(safe-area-inset-top)); left:max(14px, env(safe-area-inset-left)); width:42px; height:42px; border-radius:50%; display:grid; place-items:center; padding:0; transition:box-shadow .15s, transform .1s; }
-#hud .pausebtn:hover { box-shadow:0 0 20px -2px var(--eh-accent); }
+#hud .pausebtn:hover { box-shadow:0 0 20px -2px var(--ehx-accent); }
 #hud .pausebtn:active { transform:scale(.92); }
 
 #hud .fps { position:absolute; left:max(10px, env(safe-area-inset-left)); bottom:max(8px, env(safe-area-inset-bottom)); font-size:11px; opacity:.6; font-variant-numeric:tabular-nums; }
 
 /* ability buttons */
 #hud .abil { position:absolute; pointer-events:none; }
-#hud .ab { --s:60px; position:relative; width:var(--s); height:var(--s); border-radius:50%; padding:0; display:none; place-items:center; flex-direction:column; touch-action:none; overflow:hidden; font-size:calc(var(--s) * .4); line-height:1; transition:transform .1s, box-shadow .2s, border-color .2s; border-color:color-mix(in srgb, var(--eh-accent) 45%, rgba(255,255,255,.2)); }
+#hud .ab { --s:60px; position:relative; width:var(--s); height:var(--s); border-radius:50%; padding:0; display:none; place-items:center; flex-direction:column; touch-action:none; font-size:calc(var(--s) * .4); line-height:1; transition:transform .1s, box-shadow .2s, border-color .2s; border-color:color-mix(in srgb, var(--ehx-accent) 45%, rgba(255,255,255,.2)); }
 #hud .ab.on { display:grid; }
 #hud .ab:active, #hud .ab.down { transform:scale(.9); background:rgba(255,255,255,.22); }
-#hud .ab .ic { position:relative; z-index:1; filter:drop-shadow(0 0 5px var(--eh-accent)); }
-#hud .ab .nm { position:relative; z-index:1; margin-top:3px; font-size:calc(var(--s) * .15); letter-spacing:.08em; text-transform:uppercase; opacity:.8; max-width:92%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-weight:600; }
+#hud .ab .ic { position:relative; z-index:1; filter:drop-shadow(0 0 5px var(--ehx-accent)); }
+#hud .ab .nm { position:absolute; z-index:1; top:calc(100% + 5px); left:50%; transform:translateX(-50%); font-size:10px; letter-spacing:.12em; text-transform:uppercase; opacity:.75; white-space:nowrap; font-weight:600; pointer-events:none; }
 #hud .ab .cd { position:absolute; inset:0; z-index:2; border-radius:50%; background:conic-gradient(rgba(5,2,14,.74) var(--cd, 0deg), transparent 0); pointer-events:none; }
 #hud .ab .cdt { position:absolute; z-index:3; font-size:calc(var(--s) * .27); font-weight:700; display:none; }
 #hud .ab.cooling .cdt { display:block; }
-#hud .ab .key { position:absolute; z-index:3; top:2px; font-size:9px; letter-spacing:.1em; opacity:.7; font-weight:700; background:rgba(0,0,0,.4); border-radius:6px; padding:1px 5px; }
+#hud .ab .key { position:absolute; z-index:3; top:-8px; left:50%; transform:translateX(-50%); font-size:9px; letter-spacing:.1em; opacity:.7; font-weight:700; background:rgba(10,6,24,.85); border:1px solid var(--ehx-edge); border-radius:6px; padding:1px 6px; }
 #hud .ab.cooling { opacity:.85; }
 #hud .ab.cooling .ic { opacity:.45; }
 #hud .ab.pop { animation: ehReady .5s ease-out; }
 #hud.rf .ab.pop { animation:none; }
-@keyframes ehReady { 0% { box-shadow:0 0 0 0 var(--eh-accent); } 100% { box-shadow:0 0 0 18px transparent; } }
+@keyframes ehReady { 0% { box-shadow:0 0 0 0 var(--ehx-accent); } 100% { box-shadow:0 0 0 18px transparent; } }
 
 /* desktop: compact row, bottom centre */
-#hud .abil.desk { left:50%; bottom:max(14px, env(safe-area-inset-bottom)); transform:translateX(-50%); display:flex; gap:10px; align-items:flex-end; }
-#hud .abil.desk .ab { --s:58px; pointer-events:auto; }
+#hud .abil.desk { left:50%; bottom:max(34px, env(safe-area-inset-bottom)); transform:translateX(-50%); display:flex; gap:16px; align-items:flex-end; }
+#hud .abil.desk .ab { --s:60px; pointer-events:auto; }
 /* touch: big thumb cluster bottom-right */
 #hud .abil.touch { right:max(14px, env(safe-area-inset-right)); bottom:max(20px, env(safe-area-inset-bottom)); width:0; height:0; }
 #hud .abil.touch .ab { --s:66px; position:absolute; pointer-events:auto; }
@@ -95,11 +95,11 @@ export function mountHud(game: Game, root: HTMLElement) {
     <style>${CSS}</style>
     <div class="top">
       <div class="tierline"></div>
-      <div class="meter eh-glass"><div class="track"><div class="fill"></div></div></div>
+      <div class="meter ehx-glass"><div class="track"><div class="fill"></div></div></div>
       <div class="pct"></div>
     </div>
-    <div class="essence eh-glass interactive"><span class="gem">✦</span><span class="num">0</span><span class="delta"></span></div>
-    <button class="pausebtn eh-glass interactive" aria-label="Pause">${ICON_PAUSE}</button>
+    <div class="essence ehx-glass interactive"><span class="gem">✦</span><span class="num">0</span><span class="delta"></span></div>
+    <button class="pausebtn ehx-glass interactive" aria-label="Pause">${ICON_PAUSE}</button>
     <div class="abil ${touch ? 'touch' : 'desk'}"></div>
     <div class="fps"></div>`;
   root.appendChild(el);
@@ -114,7 +114,7 @@ export function mountHud(game: Game, root: HTMLElement) {
   interface Btn { el: HTMLButtonElement; ic: HTMLElement; nm: HTMLElement; cd: HTMLElement; cdt: HTMLElement; on: boolean; ready: number; label: string }
   const btns = new Map<Action, Btn>();
   for (const a of BUTTONS) {
-    const b = h('button', 'ab eh-glass interactive');
+    const b = h('button', 'ab ehx-glass interactive');
     b.dataset.a = a;
     b.innerHTML = `<span class="ic"></span><span class="nm"></span><span class="cd"></span><span class="cdt"></span>${touch ? '' : `<span class="key">${KEYS[a]}</span>`}`;
     b.style.touchAction = 'none';
@@ -198,9 +198,9 @@ export function mountHud(game: Game, root: HTMLElement) {
     el.classList.toggle('rf', !!st.reduceFlashing);
     if (s.tierIndex !== lastTier) {
       lastTier = s.tierIndex;
-      el.style.setProperty('--eh-accent', colorToCss(s.accent));
-      el.style.setProperty('--eh-accent-dim', colorToCss(s.accent, 0.55));
-      root.style.setProperty('--eh-accent', colorToCss(s.accent));
+      el.style.setProperty('--ehx-accent', colorToCss(s.accent));
+      el.style.setProperty('--ehx-accent-dim', colorToCss(s.accent, 0.55));
+      root.style.setProperty('--ehx-accent', colorToCss(s.accent));
     }
     const label = `Tier ${s.tierIndex} · <b>${s.tierName}</b> · <span class="sc">${s.scaleLabel}</span>${s.ngPlus ? ` · NG+${s.ngPlus}` : ''}`;
     if (label !== lastLabel) {

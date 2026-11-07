@@ -10,7 +10,7 @@ import { h, pow10Label } from './dom';
 
 /** Open/close helper with fade. */
 function makeScreen(cls: string) {
-  const el = h('div', `eh-screen ${cls}`);
+  const el = h('div', `ehx-screen ${cls}`);
   let t = 0;
   return {
     el,
@@ -33,33 +33,33 @@ function makeScreen(cls: string) {
 }
 
 const MAP_CSS = /* css */ `
-.eh-map { width:min(94vw, 560px); height:min(92vh, 860px); padding:18px 0 14px; }
-.eh-map .hd { display:flex; align-items:center; justify-content:space-between; padding:0 20px 10px; gap:10px; }
-.eh-map .hd h2 { margin:0; font-size:18px; letter-spacing:.28em; font-weight:800; text-shadow:0 0 18px var(--eh-accent); }
-.eh-map .zoom { display:flex; gap:6px; }
-.eh-map .zoom button { width:34px; height:34px; border-radius:50%; border:1px solid var(--eh-edge); background:rgba(255,255,255,.08); font-size:18px; line-height:1; padding:0; }
-.eh-map .ladder { position:relative; flex:1; overflow-y:auto; overflow-x:hidden; touch-action:pan-y; overscroll-behavior:contain; -webkit-mask-image:linear-gradient(transparent, #000 28px, #000 calc(100% - 28px), transparent); mask-image:linear-gradient(transparent, #000 28px, #000 calc(100% - 28px), transparent); }
-.eh-map .inner { position:relative; width:100%; }
-.eh-map .spine { position:absolute; left:58px; top:0; bottom:0; width:2px; background:linear-gradient(transparent, rgba(255,255,255,.35) 3%, rgba(255,255,255,.35) 97%, transparent); }
-.eh-map .tick { position:absolute; left:0; width:52px; text-align:right; font-size:10px; letter-spacing:.06em; color:var(--eh-dim); transform:translateY(-50%); font-variant-numeric:tabular-nums; white-space:nowrap; }
-.eh-map .tick::after { content:''; position:absolute; left:calc(100% + 2px); top:50%; width:8px; height:1px; background:rgba(255,255,255,.4); }
-.eh-map .node { position:absolute; left:76px; right:18px; height:54px; transform:translateY(-50%); display:flex; align-items:center; gap:12px; padding:0 14px 0 10px; border-radius:16px; transition:box-shadow .2s; }
-.eh-map .node::before { content:''; position:absolute; left:-20px; top:50%; width:20px; height:2px; background:var(--c, #fff); opacity:.6; }
-.eh-map .dot { position:absolute; left:-23px; top:50%; width:10px; height:10px; margin-top:-5px; border-radius:50%; background:var(--c, #888); box-shadow:0 0 12px var(--c, #888); }
-.eh-map .sw { flex:0 0 auto; width:34px; height:34px; border-radius:50%; background:var(--sw); box-shadow:0 0 14px -2px var(--c), inset 0 0 0 1px rgba(255,255,255,.25); display:grid; place-items:center; font-size:15px; font-weight:700; }
-.eh-map .tx { min-width:0; flex:1; }
-.eh-map .tx .n { font-size:15px; font-weight:700; letter-spacing:.06em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.eh-map .tx .s { font-size:12px; color:var(--eh-dim); font-variant-numeric:tabular-nums; margin-top:1px; letter-spacing:.06em; }
-.eh-map .idx { font-size:11px; letter-spacing:.14em; color:var(--eh-dim); }
-.eh-map .node.locked { opacity:.55; background:rgba(255,255,255,.04); }
-.eh-map .node.locked .sw { background:#1a1626; box-shadow:inset 0 0 0 1px rgba(255,255,255,.12); color:rgba(255,255,255,.5); }
-.eh-map .node.locked .n { letter-spacing:.3em; filter:blur(.2px); }
-.eh-map .node.locked .dot { background:#555; box-shadow:none; }
-.eh-map .node.cur { box-shadow:0 0 0 1.5px var(--c), 0 0 30px -4px var(--c); }
-.eh-map .node.cur .here { display:block; }
-.eh-map .here { display:none; font-size:9px; font-weight:800; letter-spacing:.16em; padding:3px 7px; border-radius:8px; background:var(--c); color:#07040f; white-space:nowrap; }
-.eh-map .foot { text-align:center; padding:8px 20px 0; }
-.eh-map .foot .eh-btn { margin-top:4px; min-height:44px; }
+.ehx-map { width:min(94vw, 560px); height:min(92vh, 860px); padding:18px 0 14px; }
+.ehx-map .hd { display:flex; align-items:center; justify-content:space-between; padding:0 20px 10px; gap:10px; }
+.ehx-map .hd h2 { margin:0; font-size:18px; letter-spacing:.28em; font-weight:800; text-shadow:0 0 18px var(--ehx-accent); }
+.ehx-map .zoom { display:flex; gap:6px; }
+.ehx-map .zoom button { width:34px; height:34px; border-radius:50%; border:1px solid var(--ehx-edge); background:rgba(255,255,255,.08); font-size:18px; line-height:1; padding:0; }
+.ehx-map .ladder { position:relative; flex:1; overflow-y:auto; overflow-x:hidden; touch-action:pan-y; overscroll-behavior:contain; -webkit-mask-image:linear-gradient(transparent, #000 28px, #000 calc(100% - 28px), transparent); mask-image:linear-gradient(transparent, #000 28px, #000 calc(100% - 28px), transparent); }
+.ehx-map .inner { position:relative; width:100%; }
+.ehx-map .spine { position:absolute; left:58px; top:0; bottom:0; width:2px; background:linear-gradient(transparent, rgba(255,255,255,.35) 3%, rgba(255,255,255,.35) 97%, transparent); }
+.ehx-map .tick { position:absolute; left:0; width:52px; text-align:right; font-size:10px; letter-spacing:.06em; color:var(--ehx-dim); transform:translateY(-50%); font-variant-numeric:tabular-nums; white-space:nowrap; }
+.ehx-map .tick::after { content:''; position:absolute; left:calc(100% + 2px); top:50%; width:8px; height:1px; background:rgba(255,255,255,.4); }
+.ehx-map .node { position:absolute; left:76px; right:18px; height:54px; transform:translateY(-50%); display:flex; align-items:center; gap:12px; padding:0 14px 0 10px; border-radius:16px; transition:box-shadow .2s; }
+.ehx-map .node::before { content:''; position:absolute; left:-20px; top:50%; width:20px; height:2px; background:var(--c, #fff); opacity:.6; }
+.ehx-map .dot { position:absolute; left:-23px; top:50%; width:10px; height:10px; margin-top:-5px; border-radius:50%; background:var(--c, #888); box-shadow:0 0 12px var(--c, #888); }
+.ehx-map .sw { flex:0 0 auto; width:34px; height:34px; border-radius:50%; background:var(--sw); box-shadow:0 0 14px -2px var(--c), inset 0 0 0 1px rgba(255,255,255,.25); display:grid; place-items:center; font-size:15px; font-weight:700; }
+.ehx-map .tx { min-width:0; flex:1; }
+.ehx-map .tx .n { font-size:15px; font-weight:700; letter-spacing:.06em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.ehx-map .tx .s { font-size:12px; color:var(--ehx-dim); font-variant-numeric:tabular-nums; margin-top:1px; letter-spacing:.06em; }
+.ehx-map .idx { font-size:11px; letter-spacing:.14em; color:var(--ehx-dim); }
+.ehx-map .node.locked { opacity:.55; background:rgba(255,255,255,.04); }
+.ehx-map .node.locked .sw { background:#1a1626; box-shadow:inset 0 0 0 1px rgba(255,255,255,.12); color:rgba(255,255,255,.5); }
+.ehx-map .node.locked .n { letter-spacing:.3em; filter:blur(.2px); }
+.ehx-map .node.locked .dot { background:#555; box-shadow:none; }
+.ehx-map .node.cur { box-shadow:0 0 0 1.5px var(--c), 0 0 30px -4px var(--c); }
+.ehx-map .node.cur .here { display:block; }
+.ehx-map .here { display:none; font-size:9px; font-weight:800; letter-spacing:.16em; padding:3px 7px; border-radius:8px; background:var(--c); color:#07040f; white-space:nowrap; }
+.ehx-map .foot { text-align:center; padding:8px 20px 0; }
+.ehx-map .foot .ehx-btn { margin-top:4px; min-height:44px; }
 `;
 
 export function mountMenus(game: Game, root: HTMLElement) {
@@ -67,9 +67,9 @@ export function mountMenus(game: Game, root: HTMLElement) {
   style.textContent = MAP_CSS;
   root.appendChild(style);
 
-  const pause = makeScreen('eh-pause');
-  const settings = makeScreen('eh-settings');
-  const map = makeScreen('eh-mapscreen');
+  const pause = makeScreen('ehx-pause');
+  const settings = makeScreen('ehx-settings');
+  const map = makeScreen('ehx-mapscreen');
   settings.el.style.zIndex = '2';
   map.el.style.zIndex = '2';
   root.append(pause.el, settings.el, map.el);
@@ -81,11 +81,11 @@ export function mountMenus(game: Game, root: HTMLElement) {
   };
 
   // ------------------------------------------------------------ pause
-  const card = h('div', 'eh-card eh-glass');
-  card.innerHTML = `<h1 class="eh-title">PAUSED</h1><div class="eh-sub"></div>`;
-  const sub = card.querySelector('.eh-sub') as HTMLElement;
+  const card = h('div', 'ehx-card ehx-glass');
+  card.innerHTML = `<h1 class="ehx-title">PAUSED</h1><div class="ehx-sub"></div>`;
+  const sub = card.querySelector('.ehx-sub') as HTMLElement;
   const mkBtn = (label: string, fn: () => void, cls = '') => {
-    const b = h('button', `eh-btn ${cls}`, label);
+    const b = h('button', `ehx-btn ${cls}`, label);
     b.addEventListener('click', (e) => {
       e.stopPropagation();
       fn();
@@ -132,9 +132,9 @@ export function mountMenus(game: Game, root: HTMLElement) {
   });
 
   // ------------------------------------------------------------ settings
-  const sCard = h('div', 'eh-card eh-glass');
-  sCard.innerHTML = `<h1 class="eh-title" style="font-size:22px">SETTINGS</h1><div class="eh-sub">Tune the experience</div><div class="eh-scroll"></div>`;
-  const list = sCard.querySelector('.eh-scroll') as HTMLElement;
+  const sCard = h('div', 'ehx-card ehx-glass');
+  sCard.innerHTML = `<h1 class="ehx-title" style="font-size:22px">SETTINGS</h1><div class="ehx-sub">Tune the experience</div><div class="ehx-scroll"></div>`;
+  const list = sCard.querySelector('.ehx-scroll') as HTMLElement;
   const syncers: (() => void)[] = [];
 
   const commit = () => {
@@ -147,9 +147,9 @@ export function mountMenus(game: Game, root: HTMLElement) {
     saveStore.saveSettings(next);
     window.dispatchEvent(new CustomEvent('everhunger:settingsChanged', { detail: next }));
   };
-  const section = (t: string) => list.appendChild(h('div', 'eh-section', t));
+  const section = (t: string) => list.appendChild(h('div', 'ehx-section', t));
   const slider = (label: string, key: 'masterVolume' | 'musicVolume' | 'sfxVolume') => {
-    const row = h('div', 'eh-row', `<label>${label}</label><input type="range" min="0" max="100" step="1"><span class="val"></span>`);
+    const row = h('div', 'ehx-row', `<label>${label}</label><input type="range" min="0" max="100" step="1"><span class="val"></span>`);
     const inp = row.querySelector('input') as HTMLInputElement;
     const val = row.querySelector('.val') as HTMLElement;
     inp.addEventListener('input', () => {
@@ -163,7 +163,7 @@ export function mountMenus(game: Game, root: HTMLElement) {
     list.appendChild(row);
   };
   const toggle = (label: string, get: () => boolean, set: (v: boolean) => void) => {
-    const row = h('div', 'eh-row', `<label>${label}</label><button class="eh-switch" role="switch" aria-checked="false" aria-label="${label}"></button>`);
+    const row = h('div', 'ehx-row', `<label>${label}</label><button class="ehx-switch" role="switch" aria-checked="false" aria-label="${label}"></button>`);
     const sw = row.querySelector('button') as HTMLButtonElement;
     sw.addEventListener('click', () => {
       const v = sw.getAttribute('aria-checked') !== 'true';
@@ -174,8 +174,8 @@ export function mountMenus(game: Game, root: HTMLElement) {
     list.appendChild(row);
   };
   const segment = <T extends string>(label: string, opts: T[], get: () => T, set: (v: T) => void) => {
-    const row = h('div', 'eh-row', `<label>${label}</label><div class="eh-seg"></div>`);
-    const seg = row.querySelector('.eh-seg') as HTMLElement;
+    const row = h('div', 'ehx-row', `<label>${label}</label><div class="ehx-seg"></div>`);
+    const seg = row.querySelector('.ehx-seg') as HTMLElement;
     const bs = opts.map((o) => {
       const b = h('button', '', o);
       b.setAttribute('aria-pressed', 'false');
@@ -215,7 +215,7 @@ export function mountMenus(game: Game, root: HTMLElement) {
   section('Controls');
   segment('Touch steering', ['follow', 'joystick'] as Settings['touchMode'][], () => game.state.settings.touchMode, (v) => apply({ touchMode: v }));
 
-  const back = h('button', 'eh-btn', 'Back');
+  const back = h('button', 'ehx-btn', 'Back');
   back.addEventListener('click', () => settings.close());
   sCard.appendChild(back);
   settings.el.appendChild(sCard);
@@ -229,11 +229,11 @@ export function mountMenus(game: Game, root: HTMLElement) {
   syncSettings();
 
   // ------------------------------------------------------------ scale map
-  const mCard = h('div', 'eh-card eh-glass eh-map');
+  const mCard = h('div', 'ehx-card ehx-glass ehx-map');
   mCard.innerHTML = `
     <div class="hd"><h2>SCALE MAP</h2><div class="zoom"><button aria-label="Zoom in">+</button><button aria-label="Zoom out">−</button></div></div>
     <div class="ladder"><div class="inner"><div class="spine"></div></div></div>
-    <div class="foot"><button class="eh-btn">Back</button></div>`;
+    <div class="foot"><button class="ehx-btn">Back</button></div>`;
   map.el.appendChild(mCard);
   map.el.addEventListener('pointerdown', (e) => {
     if (e.target === map.el) map.close();
@@ -272,7 +272,7 @@ export function mountMenus(game: Game, root: HTMLElement) {
         ticks.push({ el: t, exp: e });
       }
       for (const tier of TIERS) {
-        const n = h('div', 'node eh-glass');
+        const n = h('div', 'node ehx-glass');
         nodes.push({ el: n, exp: tier.scaleExponent });
         inner.appendChild(n);
       }
@@ -282,7 +282,7 @@ export function mountMenus(game: Game, root: HTMLElement) {
       const open = unlocked(tier.index);
       const c = colorToCss(tier.palette.accent);
       const p = tier.palette;
-      n.className = `node eh-glass${open ? '' : ' locked'}${tier.index === cur ? ' cur' : ''}`;
+      n.className = `node ehx-glass${open ? '' : ' locked'}${tier.index === cur ? ' cur' : ''}`;
       n.style.setProperty('--c', open ? c : '#777');
       n.style.setProperty('--sw', open ? `radial-gradient(circle at 35% 30%, ${colorToCss(p.bgCenter ?? p.bgTop)} 0%, ${colorToCss(p.bgTop)} 55%, ${colorToCss(p.accent)} 100%)` : '#1a1626');
       n.innerHTML = `<span class="dot"></span><span class="sw">${open ? '' : '?'}</span>
