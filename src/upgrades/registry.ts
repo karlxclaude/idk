@@ -15,6 +15,12 @@ export interface UpgradeDef {
   cost(level: number): number;
   /** Mutate stats for the owned level (>= 1). */
   apply(stats: PlayerStats, level: number): void;
+  /** Glyph shown on the shop card. */
+  icon?: string;
+  /** Hidden/locked until state.maxTierReached >= this. */
+  unlockTier?: number;
+  /** Short human text of the effect at `level` (0 = none), e.g. '+24% speed'. */
+  effect?(level: number): string;
   /** Optional: grants an ability id (added to state.ownedAbilities by the shop). */
   grantsAbility?: string;
 }

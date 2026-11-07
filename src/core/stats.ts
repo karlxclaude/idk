@@ -21,8 +21,10 @@ export interface PlayerStats {
   dashCooldown: number;
   /** Dash impulse (multiples of max speed). */
   dashPower: number;
-  /** HOOK (upgrade agent): number of split pieces; 0 = split disabled. */
+  /** Total split pieces including the main body (0/1 = split disabled). */
   splitCount: number;
+  /** Seconds the split pieces stay out before auto-remerging. */
+  splitDuration: number;
   /** HOOK: glow-lure radius (player radii) - small entities drift toward player. 0 = off. */
   glowLure: number;
   /** HOOK: gravity-well strength pulling everything edible (player radii / s). 0 = off. */
@@ -48,6 +50,7 @@ export const BASE_STATS: Readonly<PlayerStats> = Object.freeze({
   dashCooldown: 2.2,
   dashPower: 2.4,
   splitCount: 0,
+  splitDuration: 5,
   glowLure: 0,
   gravityWell: 0,
   nutrition: 1,

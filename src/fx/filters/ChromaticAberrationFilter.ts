@@ -15,11 +15,20 @@ uniform float uAmount;
 void main() {
   vec2 center = (uInputClamp.xy + uInputClamp.zw) * 0.5;
   vec2 dir = vTextureCoord - center;
-  vec2 off = dir * uAmount * uInputSize.zw * 2.0;
+  // Normalised radial distance: 0 at centre, ~1 at the edge midpoints. Smooth quadratic falloff.
+  float d = length(dir * uInputSize.xy / min(uInputSize.x, uInputSize.y)) * 2.0;
+  float fall = smoothstep(0.05, 1.1, d);
+  fall *= fall;
+  vec2 off = normalize(dir + 1e-6) * uAmount * fall * uInputSize.zw;
   vec4 c = texture(uTexture, vTextureCoord);
-  float r = texture(uTexture, clamp(vTextureCoord + off, uInputClamp.xy, uInputClamp.zw)).r;
-  float b = texture(uTexture, clamp(vTextureCoord - off, uInputClamp.xy, uInputClamp.zw)).b;
-  finalColor = vec4(r, c.g, b, c.a);
+  // Three taps per outer channel smear the split into a soft fringe instead of a hard ghost.
+  float r = 0.0, b = 0.0;
+  for (int i = 0; i < 3; i++) {
+    float k = (float(i) + 1.0) / 3.0;
+    r += texture(uTexture, clamp(vTextureCoord + off * k, uInputClamp.xy, uInputClamp.zw)).r;
+    b += texture(uTexture, clamp(vTextureCoord - off * k, uInputClamp.xy, uInputClamp.zw)).b;
+  }
+  finalColor = vec4(r / 3.0, c.g, b / 3.0, c.a);
 }
 `;
 
