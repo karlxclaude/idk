@@ -1,22 +1,15 @@
 {
-  "name": "idk",
-  "version": "1.0.0",
-  "description": "idk",
-  "main": "index.js",
+  "name": "everhunger",
+  "version": "0.1.0",
+  "private": true,
+  "description": "EVERHUNGER - eat and grow from the Planck scale to eternal inflation",
+  "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/karlxclaude/idk.git"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/karlxclaude/idk/issues"
-  },
-  "homepage": "https://github.com/karlxclaude/idk#readme",
   "dependencies": {
     "pixi.js": "^8.22.0"
   },
