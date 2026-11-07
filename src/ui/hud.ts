@@ -46,13 +46,14 @@ const CSS = /* css */ `
 
 #hud .fps { position:absolute; left:max(10px, env(safe-area-inset-left)); bottom:max(8px, env(safe-area-inset-bottom)); font-size:11px; opacity:.6; font-variant-numeric:tabular-nums; }
 
+@media (max-width:600px) { #hud .top { top:calc(max(12px, env(safe-area-inset-top)) + 50px); width:min(88vw, 460px); } #hud .tierline { font-size:11px; letter-spacing:.14em; } }
 /* ability buttons */
 #hud .abil { position:absolute; pointer-events:none; }
 #hud .ab { --s:60px; position:relative; width:var(--s); height:var(--s); border-radius:50%; padding:0; display:none; place-items:center; flex-direction:column; touch-action:none; font-size:calc(var(--s) * .4); line-height:1; transition:transform .1s, box-shadow .2s, border-color .2s; border-color:color-mix(in srgb, var(--ehx-accent) 45%, rgba(255,255,255,.2)); }
 #hud .ab.on { display:grid; }
 #hud .ab:active, #hud .ab.down { transform:scale(.9); background:rgba(255,255,255,.22); }
 #hud .ab .ic { position:relative; z-index:1; filter:drop-shadow(0 0 5px var(--ehx-accent)); }
-#hud .ab .nm { position:absolute; z-index:1; top:calc(100% + 5px); left:50%; transform:translateX(-50%); font-size:10px; letter-spacing:.12em; text-transform:uppercase; opacity:.75; white-space:nowrap; font-weight:600; pointer-events:none; }
+#hud .ab .nm { position:absolute; z-index:1; top:calc(100% + 5px); left:50%; transform:translateX(-50%); font-size:10px; letter-spacing:.12em; text-transform:uppercase; opacity:.75; white-space:nowrap; font-weight:600; pointer-events:none; max-width:88px; overflow:hidden; text-overflow:ellipsis; }
 #hud .ab .cd { position:absolute; inset:0; z-index:2; border-radius:50%; background:conic-gradient(rgba(5,2,14,.74) var(--cd, 0deg), transparent 0); pointer-events:none; }
 #hud .ab .cdt { position:absolute; z-index:3; font-size:calc(var(--s) * .27); font-weight:700; display:none; }
 #hud .ab.cooling .cdt { display:block; }
