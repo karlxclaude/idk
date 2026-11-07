@@ -1,0 +1,27 @@
+{
+  "name": "idk",
+  "version": "1.0.0",
+  "description": "idk",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/karlxclaude/idk.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/karlxclaude/idk/issues"
+  },
+  "homepage": "https://github.com/karlxclaude/idk#readme",
+  "dependencies": {
+    "pixi.js": "^8.22.0"
+  },
+  "devDependencies": {
+    "typescript": "^7.0.2",
+    "vite": "^8.3.6"
+  }
+}
