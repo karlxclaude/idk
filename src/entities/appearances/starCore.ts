@@ -54,9 +54,10 @@ const starCore: PlayerAppearanceDef = {
       return f;
     });
     const body = R.tinted(sprite(Tex.orb(), 2), pal.player);
-    const plasma1 = sprite(blotchTex('app:star:p1', 41, 36, 0.08, 0.22, 0.9), 1.95, { add: true, alpha: 0.75, tint: pal.playerGlow });
-    const plasma2 = sprite(blotchTex('app:star:p2', 87, 30, 0.06, 0.18, 0.9), 1.9, { add: true, alpha: 0.6, tint: pal.accent });
-    const hot = sprite(Tex.glow(), 1.5, { add: true, alpha: 0.95 });
+    body.alpha = 0.9;
+    const plasma1 = sprite(blotchTex('app:star:p1', 41, 36, 0.08, 0.22, 0.9), 1.95, { add: true, alpha: 0.5, tint: pal.player });
+    const plasma2 = sprite(blotchTex('app:star:p2', 87, 30, 0.06, 0.18, 0.9), 1.9, { add: true, alpha: 0.4, tint: pal.accent });
+    const hot = sprite(Tex.glow(), 1.5, { add: true, alpha: 0.8, tint: pal.accent });
     const rim = sprite(rimTex(), 2.4, { add: true, alpha: 0.9, tint: pal.accent });
     const arc = sprite(Tex.ring(), 2.5, { add: true, alpha: 0.4, tint: pal.playerGlow });
     view.addChild(corona, rays, rays2, ...flares, body, plasma1, plasma2, hot, rim, arc);
@@ -81,7 +82,7 @@ const starCore: PlayerAppearanceDef = {
         });
         plasma1.rotation = t * 0.35;
         plasma2.rotation = -t * 0.5;
-        plasma1.alpha = 0.6 + Math.sin(t * 2.3) * 0.15;
+        plasma1.alpha = 0.45 + Math.sin(t * 2.3) * 0.12;
         hot.alpha = 0.8 + Math.sin(t * 4) * 0.1 + f * 0.2;
         hot.width = hot.height = 1.5 + f * 0.6;
         arc.rotation = t * 0.4;

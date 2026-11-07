@@ -15,7 +15,7 @@ const blob: PlayerAppearanceDef = {
     const swirl = sprite(blotchTex('app:blob:swirl', 11, 22, 0.08, 0.2, 0.6), 1.85, { add: true, alpha: 0.5, tint: pal.playerGlow });
     const rim = sprite(rimTex(), 2.3, { add: true, alpha: 0.9, tint: pal.playerGlow });
     const membrane = sprite(Tex.ring(), 2.15, { add: true, alpha: 0.6, tint: pal.playerGlow });
-    const core = sprite(Tex.glow(), 1.6, { add: true, alpha: 0.9 });
+    const core = sprite(Tex.glow(), 1.2, { add: true, alpha: 0.8, tint: pal.playerGlow });
     const motes = [0, 1, 2].map(() => sprite(Tex.dot(), 0.28, { add: true, alpha: 0.9, tint: pal.accent }));
     view.addChild(halo, body, swirl, rim, membrane, core, ...motes);
     R.attach(view, pal.playerGlow, 2.2);

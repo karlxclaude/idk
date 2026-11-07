@@ -96,9 +96,9 @@ const THEME_CSS = /* css */ `
 /* settings */
 .ehx-scroll { overflow-y: auto; overscroll-behavior: contain; margin: 0 -8px; padding: 0 8px; -webkit-overflow-scrolling: touch; touch-action: pan-y; }
 .ehx-row { display: flex; align-items: center; justify-content: space-between; gap: 14px; min-height: 48px; border-bottom: 1px solid rgba(255,255,255,.07); font-size: 15px; }
-.ehx-row label { flex: 0 0 auto; letter-spacing: .06em; }
+.ehx-row label { flex: 0 0 auto; min-width: 0; letter-spacing: .06em; }
 .ehx-row .val { width: 38px; text-align: right; font-variant-numeric: tabular-nums; color: var(--ehx-dim); font-size: 13px; }
-.ehx-row input[type=range] { flex: 1; min-width: 80px; accent-color: var(--ehx-accent); height: 28px; touch-action: pan-y; }
+.ehx-row input[type=range] { flex: 1; margin-left: auto; min-width: 80px; accent-color: var(--ehx-accent); height: 28px; touch-action: pan-y; }
 .ehx-switch { position: relative; width: 50px; height: 28px; flex: 0 0 auto; border-radius: 14px; border: 1px solid var(--ehx-edge); background: rgba(255,255,255,.1); transition: background .2s; padding: 0; }
 .ehx-switch::after { content: ''; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: #fff; transition: transform .2s; }
 .ehx-switch[aria-checked=true] { background: var(--ehx-accent); box-shadow: 0 0 14px -2px var(--ehx-accent); }

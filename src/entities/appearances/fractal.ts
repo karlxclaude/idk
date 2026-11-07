@@ -19,7 +19,7 @@ function branch(c: CanvasRenderingContext2D, x: number, y: number, a: number, le
   if (depth > 2) branch(c, x1, y1, na, len * 0.7, w * 0.7, depth - 1, r);
 }
 const tendrilTex = (key: string, seed: number, n: number) =>
-  bakeUnits(key, 512, 4.4, (c) => {
+  bakeUnits(key, 768, 6.6, (c) => {
     const r = rng(seed);
     c.strokeStyle = 'rgba(255,255,255,0.85)';
     c.lineCap = 'round';
@@ -27,7 +27,7 @@ const tendrilTex = (key: string, seed: number, n: number) =>
     c.shadowBlur = 6;
     for (let i = 0; i < n; i++) {
       const a = (i / n) * TAU;
-      branch(c, Math.cos(a) * 0.95, Math.sin(a) * 0.95, a, 0.55, 0.045, 5, r);
+      branch(c, Math.cos(a) * 0.95, Math.sin(a) * 0.95, a, 0.6, 0.05, 5, r);
     }
   });
 
@@ -64,8 +64,8 @@ const fractal: PlayerAppearanceDef = {
     const view = new Container();
     const R = new Reactor();
     const halo = sprite(Tex.glow(), 7, { add: true, alpha: 0.55, tint: pal.playerGlow });
-    const ten1 = sprite(tendrilTex('app:fr:t1', 8, 7), 4.4, { add: true, alpha: 0.65, tint: pal.playerGlow });
-    const ten2 = sprite(tendrilTex('app:fr:t2', 23, 5), 3.8, { add: true, alpha: 0.5, tint: pal.accent });
+    const ten1 = sprite(tendrilTex('app:fr:t1', 8, 7), 6.6, { add: true, alpha: 0.65, tint: pal.playerGlow });
+    const ten2 = sprite(tendrilTex('app:fr:t2', 23, 5), 5.6, { add: true, alpha: 0.5, tint: pal.accent });
     const spin: Bubble[] = [];
     const root = bubble(0, pal.player, pal.accent, spin);
     root.scale.set(1.15);
@@ -84,7 +84,7 @@ const fractal: PlayerAppearanceDef = {
         ten1.rotation += dt * 0.12 * boost;
         ten2.rotation -= dt * 0.2 * boost;
         const wob = 1 + Math.sin(t * 2.4) * 0.03 + R.eat * 0.08;
-        ten1.width = ten1.height = 4.4 * wob;
+        ten1.width = ten1.height = 6.6 * wob;
         for (const s of spin) s.node.rotation += dt * s.speed * boost;
         root.rotation -= dt * 0.15 * boost;
         halo.alpha = 0.5 + f * 0.4;

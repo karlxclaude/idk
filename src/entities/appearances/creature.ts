@@ -137,7 +137,7 @@ const creature: PlayerAppearanceDef = {
     tail.position.set(-0.95, 0);
     tail.blendMode = 'normal';
     R.tinted(tail, pal.player);
-    const tailGlow = sprite(tailTex(), 2.4, { add: true, alpha: 0.35, tint: pal.playerGlow });
+    const tailGlow = sprite(tailTex(), 2.4, { add: true, alpha: 0.6, tint: pal.playerGlow });
     tailGlow.position.copyFrom(tail.position);
     const fins: Sprite[] = [];
     const mkFin = (x: number, y: number, flip: number) => {
