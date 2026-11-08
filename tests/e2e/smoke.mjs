@@ -79,16 +79,23 @@ try {
     await page.waitForFunction(() => window.__game && !window.__game.loop.paused, null, { timeout: 30000 });
     step('game running');
     await sleep(1500);
-    await page.keyboard.press(']');
-    step("pressed ']' - waiting for shop");
-    await page.waitForSelector('.eh-shop.vis', { timeout: 30000 });
-    step('shop open');
-    await page.click('.eh-shop [data-go]');
-    await page.waitForSelector('.eh-shop.vis', { state: 'detached', timeout: 10000 }).catch(() => {});
-    const stillOpen = await page.evaluate(() => document.querySelector('.eh-shop')?.classList.contains('vis'));
-    if (stillOpen) fail('shop did not close after Continue');
-    const tier = await page.evaluate(() => window.__game.tier.index);
-    if (tier !== 2) fail(`expected tier 2 after shift, got ${tier}`);
+    // Several consecutive shifts: the 2nd shift used to crash the renderer (destroyed
+    // previous-world texture still referenced), freezing the game on entering tier 3.
+    for (let n = 1; n <= 3; n++) {
+      await page.keyboard.press('[');
+      await sleep(300);
+      await page.keyboard.press(']');
+      step(`shift ${n}: waiting for shop`);
+      await page.waitForSelector('.eh-shop.vis', { timeout: 45000 });
+      step(`shift ${n}: shop open`);
+      await page.click('.eh-shop [data-go]');
+      await page.waitForSelector('.eh-shop.vis', { state: 'detached', timeout: 10000 }).catch(() => {});
+      const stillOpen = await page.evaluate(() => document.querySelector('.eh-shop')?.classList.contains('vis'));
+      if (stillOpen) fail(`shop did not close after Continue (shift ${n})`);
+      const tier = await page.evaluate(() => window.__game.tier.index);
+      if (tier !== n + 1) fail(`expected tier ${n + 1} after shift ${n}, got ${tier}`);
+      await sleep(1200);
+    }
     await sleep(1000);
     errs.forEach((e) => fail(`flow: ${e}`));
     await ctx.close();

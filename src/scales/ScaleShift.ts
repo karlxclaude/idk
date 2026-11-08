@@ -163,9 +163,13 @@ export class ScaleShift {
       g.state.ngPlus++;
       g.events.emit('ngPlus', { count: g.state.ngPlus });
     }
+    // Point at the new snapshot BEFORE entering the tier: enterTier spawns the tier's extra
+    // previous-world specks, whose renderer reads lastWorldTexture. If it still held oldTex,
+    // those sprites would reference a destroyed texture and the renderer would throw every
+    // frame (froze the game on the second shift).
+    g.lastWorldTexture = speckTex;
     g.enterTier(this.toIndex, { viaShift: true }); // tears down the old world (destroys views using oldTex)
     oldTex?.destroy(true);
-    g.lastWorldTexture = speckTex;
 
     // 4) Place the conquered world as one edible speck next to the new player.
     const a = g.rng.range(-0.6, 0.6) - Math.PI / 4;
