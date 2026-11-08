@@ -30,8 +30,9 @@ const arrowTex = () =>
 
 const PREY = 0x3ff5ff;
 const THREAT = 0xff4a5a;
-const MAX_PREY = 16;
-const MAX_THREAT = 6;
+const MAX_RINGS = 26;
+const MAX_ARROW_PREY = 12;
+const MAX_ARROW_THREAT = 5;
 
 interface Cand { sx: number; sy: number; d2: number; r: number; uid: number }
 
@@ -101,21 +102,23 @@ function frame(ctx: GameContext, realDt: number) {
   threats.sort((a, b) => a.d2 - b.d2);
 
   let ai = 0, ri = 0;
-  const place = (list: Cand[], max: number, color: number) => {
-    let n = 0;
+  const place = (list: Cand[], maxArrows: number, color: number) => {
+    let n = 0, nr = 0;
     for (const c of list) {
-      if (n >= max) break;
+      if (n >= maxArrows && nr >= MAX_RINGS) break;
       const on = c.sx > m && c.sx < W - m && c.sy > m && c.sy < H - m;
       if (on) {
+        if (nr >= MAX_RINGS) continue;
+        nr++;
         const r = grab(rings, ri++, makeRing);
         const t = (now * 1.1 + c.uid * 0.37) % 1;
         r.visible = true;
         r.tint = color;
         r.position.set(c.sx, c.sy);
-        r.width = r.height = Math.max(26, c.r * 2.6) * (0.8 + t * 0.9);
-        r.alpha = (1 - t) * 0.9 * fade;
-        n++;
+        r.width = r.height = Math.max(40, c.r * 2.8) * (0.7 + t * 0.9);
+        r.alpha = (1 - t) * 0.95 * fade;
       } else {
+        if (n >= maxArrows) continue;
         const dx = c.sx - cx, dy = c.sy - cy;
         const k = Math.min((cx - m) / (Math.abs(dx) || 1), (cy - m) / (Math.abs(dy) || 1));
         const a = grab(arrows, ai++, makeArrow);
@@ -132,8 +135,8 @@ function frame(ctx: GameContext, realDt: number) {
       }
     }
   };
-  place(prey, MAX_PREY, PREY);
-  place(threats, MAX_THREAT, THREAT);
+  place(prey, MAX_ARROW_PREY, PREY);
+  place(threats, MAX_ARROW_THREAT, THREAT);
   for (let i = ai; i < arrows.length; i++) arrows[i].visible = false;
   for (let i = ri; i < rings.length; i++) rings[i].visible = false;
 }

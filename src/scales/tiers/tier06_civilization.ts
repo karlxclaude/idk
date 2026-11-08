@@ -1,20 +1,73 @@
-import { stubTier } from '../stubTier';
+import { defineTier } from '../types';
 
-/**
- * Tier 6 - Civilization (10⁴ m). STUB: playable with generic archetypes.
- * Content agent: replace with a full defineTier({...}) + tier-specific archetypes/mechanics.
- */
-export default stubTier({
+/** Tier 6 - Civilization (10^4 m). A neon city at night: traffic streams, towers, police and tanks hunt; lights come on as you grow. */
+export default defineTier({
   id: 'civilization',
   index: 6,
   name: 'Civilization',
   scaleLabel: '10⁴ m',
   scaleExponent: 4,
-  colors: { top: 0x0a0518, bottom: 0x020108, center: 0x2a0a3a, accent: 0xffe066, glow: 0xff4fa3, player: 0xfff8e0 },
-  music: { root: 'C', mode: 'mixolydian', tempo: 118, mood: 'Neon city pulse, traffic arpeggios, sirens.' },
+  palette: {
+    bgTop: 0x080b22,
+    bgBottom: 0x1a0c2e,
+    bgCenter: 0x2a2a7a,
+    fog: 0x1a1a45,
+    fogAlpha: 0.35,
+    accent: 0xffd23a,
+    glow: 0xff4fa3,
+    player: 0xfff8e0,
+    playerGlow: 0xffc23a,
+    particles: [0xffd23a, 0xff4fa3, 0x6ad0ff],
+  },
+  background: [
+    { type: 'gradient', depth: 0, alpha: 0.45 },
+    { type: 't06_skyline', depth: 0.05, color: 0x0b1130, alpha: 0.85, scale: 1 },
+    { type: 't06_grid', depth: 0.1, color: 0x26366a, alpha: 0.5, scale: 1.7, params: { seed: 11 } },
+    { type: 't06_grid', depth: 0.3, color: 0x3a4a8e, alpha: 0.45, scale: 1.05, params: { seed: 29 } },
+    { type: 'dots', depth: 0.45, color: 0xffe0a0, density: 0.7, alpha: 0.35, blend: 'add', params: { twinkle: 0.4 } },
+  ],
+  ambient: [
+    { count: 26, colors: [0xffd23a, 0xff4fa3, 0x6ad0ff], size: [1.5, 3.5], drift: 10, flicker: 0.6, depth: 0.7, alpha: 0.6 },
+    { count: 8, colors: [0xfff0c8], size: [3, 8], drift: 14, flicker: 0.3, depth: 1.4, alpha: 0.2 },
+  ],
+  music: {
+    root: 'C', octave: 2, mode: 'mixolydian', tempo: 118,
+    timbre: { pad: 'sawtooth', bass: 'square', lead: 'square', texture: 'noise', perc: 'click' },
+    mood: 'Neon city pulse, traffic arpeggios, distant sirens and a hum of power lines.',
+    layers: ['drone', 'bass', 'perc', 'arp'],
+    reverb: 0.4,
+  },
+  spawns: [
+    { archetype: 't06_person', count: 22, size: [0.05, 0.1], group: { size: [3, 8], spread: 3 } },
+    { archetype: 't06_house', count: 7, size: [0.4, 0.75] },
+    { archetype: 't06_building', count: 3, size: [0.6, 0.88], progress: [0, 1] },
+    { archetype: 't06_building', count: 2, size: [1.3, 2.2], progress: [0.1, 1] },
+    { archetype: 't06_police', count: 3, size: [0.35, 0.65] },
+    { archetype: 't06_plane', count: 1, size: [0.5, 0.9] },
+    { archetype: 't06_tank', count: 1, size: [0.5, 0.75], progress: [0.1, 1] },
+  ],
+  hazards: [
+    { archetype: 't06_police', count: 2, size: [1.25, 1.7], progress: [0.15, 1] },
+    { archetype: 't06_tank', count: 1, size: [1.4, 1.9], progress: [0.3, 1] },
+    { archetype: 't06_plane', count: 1, size: [1.3, 1.8], progress: [0.3, 1] },
+  ],
+  mechanics: [{ id: 't06_cityGrid' }],
   abilityId: 'gridlock',
   playerStage: 'beast',
-  previousLabel: 'a stretch of coastline',
-  previousColors: [0xffc36b, 0x6bd3ff],
-  title: { subtitle: 'The Neon Sprawl', flavor: 'Cars, towers, entire districts. Everything is edible eventually.' },
+  growthTarget: 20,
+  nutrition: 0.5,
+  maxEntities: 220,
+  previousSpeck: {
+    count: 3,
+    size: [0.3, 0.5],
+    label: 'a whale',
+    colors: [0x5a7a9a, 0xc8d6e2],
+    nutritionMul: 1.5,
+    essence: 2,
+  },
+  titleCard: {
+    title: 'Civilization',
+    subtitle: 'The Neon Sprawl',
+    flavor: 'Cars, towers, entire districts. Everything is edible eventually.',
+  },
 });
