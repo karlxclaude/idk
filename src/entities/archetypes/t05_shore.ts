@@ -1,11 +1,15 @@
-/** Tier 5 - Living Shore archetypes: sardines, gulls, crabs, turtles, seals, boats, orcas, whales, buoys. */
+/**
+ * Tier 5 - Living Shore archetypes (8): sardine schools, seagulls, shore crabs, sea turtles, seals,
+ * boats (fishing boats and sailboats, edible only at a risk when close in size), orcas and blue whales.
+ * 'tide'-tagged entities get carried further by the t05_tides mechanic.
+ */
 import { defineArchetypes } from '../define';
 
 export default defineArchetypes([
   {
     id: 't05_sardine',
     name: 'Sardine',
-    renderer: { id: 't04_minnow' },
+    renderer: { id: 't05_sardine' },
     behaviors: [
       { id: 'schooling', params: { speed: 2.2, neighbor: 8, cohere: 0.3 } },
       { id: 'faceVelocity', params: { turn: 10 } },
@@ -83,12 +87,12 @@ export default defineArchetypes([
   {
     id: 't05_boat',
     name: 'Fishing boat',
-    renderer: { id: 't05_boat' },
+    renderer: { id: 't05_boat', params: { sail: 0.4 } },
     behaviors: [
       { id: 'wander', params: { speed: 0.45, turn: 1 } },
       { id: 'faceVelocity', params: { turn: 1.4 } },
     ],
-    colors: [0x2a6a9a, 0xc84a3a, 0xf2f2f2, 0x2a8a7a],
+    colors: [0x2a6a9a, 0xc84a3a, 0xf2f2f2, 0x2a8a7a, 0xe8a05a],
     colors2: [0xd8b080, 0xe8c898],
     tags: ['boat'],
     edible: 'closeInSizeOnly',
@@ -96,24 +100,6 @@ export default defineArchetypes([
     damage: 0.14,
     massValue: 1.5,
     essence: 7,
-    drag: 1.3,
-  },
-  {
-    id: 't05_sailboat',
-    name: 'Sailboat',
-    renderer: { id: 't05_boat', params: { sail: true } },
-    behaviors: [
-      { id: 'wander', params: { speed: 0.5, turn: 0.8 } },
-      { id: 'faceVelocity', params: { turn: 1.2 } },
-    ],
-    colors: [0xf2f2f2, 0x3a6aa8, 0xe8a05a],
-    colors2: [0xc8a070, 0xe8d0a0],
-    tags: ['boat'],
-    edible: 'closeInSizeOnly',
-    closeDamage: 0.08,
-    damage: 0.12,
-    massValue: 1.4,
-    essence: 6,
     drag: 1.3,
   },
   {
@@ -149,17 +135,5 @@ export default defineArchetypes([
     essence: 22,
     drag: 1.6,
     maxSpeed: 4,
-  },
-  {
-    id: 't05_buoy',
-    name: 'Buoy (hazard)',
-    renderer: { id: 't05_buoy' },
-    behaviors: [{ id: 'drift', params: { speed: 0.05, jitter: 0.02 } }],
-    colors: [0xe8483a, 0xe8a03a],
-    colors2: [0xff6a5a, 0xffd06a],
-    tags: ['buoy', 'tide'],
-    edible: 'never',
-    damage: 0.07,
-    drag: 1.4,
   },
 ]);

@@ -1,12 +1,12 @@
 /**
- * Tier 5 (Living Shore) renderers: seabirds, crabs, turtles and boats (top-down), buoys, plus the
- * side-profile seals, orcas and whales built on the shared swimmer kit. Baked once, cheap per frame.
+ * Tier 5 (Living Shore) renderers: seabirds, crabs, turtles and boats (top-down), plus the
+ * side-profile sardines, seals, orcas and whales built on the tier-5 copy of the swimmer kit.
+ * Every texture is baked once; per-frame work is only sprite transforms and alphas.
  */
 import { Container, Sprite } from 'pixi.js';
 import { Tex } from '../../core/textures';
 import { defineRenderers } from '../define';
-import { TAU, bakeU, glowSprite, swimmerRenderer, us } from './t04_kit';
-import { fusi } from './t04_abyss';
+import { TAU, bakeU, fusi, glowSprite, swimmerRenderer, us } from './t05_kit';
 
 const eye = (c: CanvasRenderingContext2D, x: number, y: number, r: number, iris = '#fff', pupil = '#000') => {
   c.fillStyle = iris;
@@ -28,6 +28,35 @@ const shadow = (d: number, ox: number, oy: number, a = 0.28): Sprite => {
 };
 
 // ---------------------------------------------------------------- swimmers
+const sardine = swimmerRenderer('t05_sardine', {
+  ext: 1.5, L: 1.05,
+  top: fusi(0.3, 0.7, 0.8, 0.04), bot: fusi(0.27, 0.7, 0.8, 0.04),
+  hinge: -0.98, tailExt: 0.9, tailAmp: 0.5, tailSpeed: 12, bend: 0.12,
+  tail(c) {
+    c.beginPath();
+    c.moveTo(0.12, -0.06); c.quadraticCurveTo(-0.3, -0.12, -0.82, -0.6);
+    c.quadraticCurveTo(-0.5, 0, -0.82, 0.6); c.quadraticCurveTo(-0.3, 0.12, 0.12, 0.06);
+    c.closePath(); c.fill();
+  },
+  fins(c) {
+    c.beginPath(); c.moveTo(0.15, -0.26); c.lineTo(-0.25, -0.55); c.lineTo(-0.4, -0.22); c.closePath(); c.fill();
+  },
+  bellyLine: () => 0.04,
+  detail(c) {
+    // blue-green back stripe, silver flank shine, row of dark spots, eye
+    c.fillStyle = 'rgba(20,70,110,0.55)';
+    c.beginPath(); c.ellipse(-0.05, -0.17, 0.85, 0.08, 0, 0, TAU); c.fill();
+    c.fillStyle = 'rgba(255,255,255,0.55)';
+    c.beginPath(); c.ellipse(0.0, -0.02, 0.75, 0.045, 0, 0, TAU); c.fill();
+    c.fillStyle = 'rgba(10,30,50,0.6)';
+    for (let i = 0; i < 5; i++) { c.beginPath(); c.arc(0.45 - i * 0.18, -0.08, 0.03, 0, TAU); c.fill(); }
+    c.strokeStyle = 'rgba(0,0,0,0.25)'; c.lineWidth = 0.025;
+    c.beginPath(); c.arc(0.62, 0.0, 0.2, -1.1, 1.1); c.stroke();
+    eye(c, 0.82, -0.04, 0.075, '#f4f0e0', '#000');
+  },
+  glow: 1.3, glowAlpha: 0.06,
+});
+
 const seal = swimmerRenderer('t05_seal', {
   ext: 2.0, L: 1.25,
   top: fusi(0.46, 0.55, 0.9, 0.1), bot: fusi(0.42, 0.55, 0.9, 0.1),
@@ -396,23 +425,29 @@ const wakeTex = () =>
     c.fillStyle = g2; c.beginPath(); c.ellipse(-1.9, 0, 0.7, 0.28, 0, 0, TAU); c.fill();
   }, 384);
 
+/** Fishing boat or sailboat: `sail` = chance (0..1) that a given boat is a sailboat (picked per entity). */
 const boat = {
   id: 't05_boat',
-  defaults: { sail: false },
-  create(_a: any, p: any) {
+  defaults: { sail: 0.4 },
+  create() {
     const v = new Container();
     v.addChild(us(wakeTex(), 2.6, { add: true, alpha: 0.5 }));                 // 0 wake
     v.addChild(shadow(4.2, 0.15, 0.2, 0.28));                                  // 1
     v.addChild(us(hullTex(), 2.0));                                            // 2
     v.addChild(us(deckTex(), 2.0));                                            // 3
-    v.addChild(us(p.sail ? sailTex() : cabinTex(), 2.0));                       // 4
+    v.addChild(us(cabinTex(), 2.0));                                           // 4 cabin
     v.addChild(glowSprite(0.6, 0.9, -0.5, 0));                                 // 5 lamp
+    v.addChild(us(sailTex(), 2.0));                                            // 6 sail
     (v.children[0] as any).bx = v.children[0].scale.x;
     return v;
   },
-  reset(v: Container, e: any) {
+  reset(v: Container, e: any, p: any) {
+    const sail = ((e.uid * 0.6180339) % 1) < (p.sail ?? 0.4);
     (v.children[2] as Sprite).tint = e.color;
     (v.children[3] as Sprite).tint = e.color2;
+    v.children[4].visible = !sail;
+    v.children[5].visible = !sail;
+    v.children[6].visible = sail;
     (v.children[5] as Sprite).tint = 0xffe8a0;
   },
   update(v: Container, e: any) {
@@ -425,42 +460,4 @@ const boat = {
   },
 };
 
-// ---------------------------------------------------------------- buoy
-const buoyTex = () =>
-  bakeU('t05:buoy', 1.4, (c) => {
-    for (let i = 0; i < 8; i++) {
-      c.fillStyle = i % 2 ? '#fff' : '#888';
-      c.beginPath(); c.moveTo(0, 0); c.arc(0, 0, 1, (i / 8) * TAU, ((i + 1) / 8) * TAU); c.closePath(); c.fill();
-    }
-    c.strokeStyle = 'rgba(0,0,0,0.5)'; c.lineWidth = 0.06; c.beginPath(); c.arc(0, 0, 0.97, 0, TAU); c.stroke();
-    c.fillStyle = '#e8e8e8'; c.beginPath(); c.arc(0, 0, 0.42, 0, TAU); c.fill();
-    c.strokeStyle = 'rgba(0,0,0,0.4)'; c.lineWidth = 0.05; c.beginPath(); c.arc(0, 0, 0.42, 0, TAU); c.stroke();
-  }, 256);
-const buoy = {
-  id: 't05_buoy',
-  create() {
-    const v = new Container();
-    const ring = us(Tex.ring(), 1.6, { add: true, alpha: 0.3 });
-    (ring as any).bx = ring.scale.x;
-    v.addChild(ring);
-    v.addChild(shadow(3, 0.12, 0.18, 0.25));
-    v.addChild(us(buoyTex(), 1.4));
-    v.addChild(glowSprite(2.6, 0.0));
-    v.addChild(glowSprite(0.5, 1));
-    return v;
-  },
-  reset(v: Container, e: any) {
-    (v.children[2] as Sprite).tint = e.color;
-    (v.children[3] as Sprite).tint = e.color2;
-  },
-  update(v: Container, e: any) {
-    const b = Math.max(0, Math.sin(e.age * 3 + e.uid));
-    v.children[3].alpha = 0.15 + 0.7 * b;
-    v.children[4].alpha = 0.3 + 0.7 * b;
-    const ph = (e.age * 0.8) % 1;
-    v.children[0].scale.set((v.children[0] as any).bx * (1 + ph * 0.35));
-    v.children[0].alpha = 0.35 * (1 - ph);
-  },
-};
-
-export default defineRenderers([seal, orca, whale, gull, crab, turtle, boat, buoy] as any);
+export default defineRenderers([sardine, seal, orca, whale, gull, crab, turtle, boat] as any);
