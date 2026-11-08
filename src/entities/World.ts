@@ -163,7 +163,7 @@ export class World {
       if (!v) continue;
       const x = e.prevX + (e.x - e.prevX) * alpha;
       const y = e.prevY + (e.y - e.prevY) * alpha;
-      const r = e.radius * 2.2; // allow for glow
+      const r = e.radius * (e.arch.cullScale ?? 2.2); // allow for glow / long visuals
       const visible = Math.abs(x - cam.rx) < hw + r && Math.abs(y - cam.ry) < hh + r && e.radius > minPx && e.alpha > 0.01;
       v.visible = visible;
       if (!visible) continue;

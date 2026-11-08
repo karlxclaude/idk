@@ -260,12 +260,13 @@ export class Game implements GameContext {
     }
     if (this.input.consume('split')) p.trySplit(this);
     this.abilities.update(dt);
+    this.events.emit('simStep', { dt });
     this.world.update(dt);
     for (const m of this.mechanics) m.update?.(dt);
 
     resolvePlayerCollisions(this, {
       eat: (e, r) => this.eat(e, r),
-      hurt: (e, r, f) => this.hurt(e, r, f),
+      hurt: (e, r, f) => this.hurtInternal(e, r, f, true),
       bump: (e, r) => {
         bumpApart(this, e);
         if (Math.hypot(p.vx - e.vx, p.vy - e.vy) > p.radius * 1.5) this.events.emit('bump', { entity: e, x: e.x, y: e.y, sizeRatio: r });
@@ -370,10 +371,16 @@ export class Game implements GameContext {
     this.events.emit('eat', { entity: e, archetypeId: arch.id, massGained: gain, essenceGained: essence, x: e.x, y: e.y, sizeRatio: ratio, playerMass: p.mass });
   }
 
-  hurt(e: Entity | null, ratio: number, fraction: number) {
+  /** Public damage hook for mechanics (beams, jets): no separation bump, knockback only if a source is given. */
+  hurt(source: Entity | null, fraction: number) {
+    const p = this.player;
+    this.hurtInternal(source, source ? source.radius / Math.max(1e-6, p.radius) : 0, fraction, false);
+  }
+
+  private hurtInternal(e: Entity | null, ratio: number, fraction: number, bump: boolean) {
     const p = this.player;
     if (!p.alive) return;
-    if (e) bumpApart(this, e);
+    if (e && bump) bumpApart(this, e);
     if (p.invuln > 0) return;
     const lost = p.mass * fraction * (1 - this.stats.armor);
     p.setMass(p.mass - lost);

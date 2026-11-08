@@ -16,6 +16,8 @@ export interface Settings {
   touchMode: 'follow' | 'joystick';
   haptics: boolean;
   showFps: boolean;
+  /** Mute all audio (honored by the audio engine if present). */
+  muted?: boolean;
 }
 
 export interface GameStats {

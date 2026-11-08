@@ -12,6 +12,7 @@ import type { PlayerStats } from './stats';
 import type { Rng } from './math';
 import type { World } from '../entities/World';
 import type { Player } from '../entities/Player';
+import type { Entity } from '../entities/Entity';
 import type { FX } from '../fx/FX';
 import type { TierConfig } from '../scales/types';
 
@@ -59,4 +60,6 @@ export interface GameContext {
   readonly shifting: boolean;
   /** Current size-meter progress 0..1. */
   readonly progress: number;
+  /** Damage the player for `fraction` of their mass (respects invulnerability, armor, shake, hurt event). Source may be null. */
+  hurt(source: Entity | null, fraction: number): void;
 }

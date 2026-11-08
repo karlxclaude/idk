@@ -59,6 +59,8 @@ export interface GameEvents {
   settingsChanged: { settings: Settings };
   /** Generic tier-mechanic event, e.g. { mechanic: 'ionize', kind: 'strip' }. */
   mechanic: { mechanic: string; kind: string; x: number; y: number; value?: number };
+  /** Fired once per fixed sim step (60 Hz), only while the sim actually runs. */
+  simStep: { dt: number };
   /** Raw action pressed (keyboard or UI button), before gameplay handles it. */
   action: { action: Action };
 }

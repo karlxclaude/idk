@@ -118,9 +118,8 @@ export function installSplit(game: Game) {
     if (!sats.length) cooldown = 3;
   };
 
-  game.app.ticker.add((tk) => {
-    const l = game.loop;
-    if (l.paused || l.frozen || l.inHitStop || game.shifting) return;
-    step(Math.min(tk.deltaMS / 1000, 0.05) * l.timeScale);
+  events.on('simStep', ({ dt }) => {
+    if (game.shifting) return;
+    step(dt);
   });
 }

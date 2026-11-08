@@ -69,6 +69,8 @@ export interface EntityArchetype {
   hitScale?: number;
   /** Bounce strength when bumped (default 1). */
   bounce?: number;
+  /** View cull padding as a multiple of radius (default 2.2). Raise for long visuals (comet tails, beams, jets). */
+  cullScale?: number;
 }
 
 export interface BehaviorDef<P = any> {
