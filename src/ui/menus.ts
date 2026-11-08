@@ -329,5 +329,6 @@ export function mountMenus(game: Game, root: HTMLElement) {
   }, { passive: false });
   ladder.addEventListener('touchend', () => (pinch = 0), { passive: true });
 
-  return { pause, settings, map, closeAll };
+  const openMap = () => { buildMap(); map.open(); requestAnimationFrame(centerOnCurrent); };
+  return { pause, settings, map, openMap, closeAll };
 }

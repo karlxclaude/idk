@@ -10,7 +10,7 @@ import { installProgression } from '../../upgrades/progression';
 import { allUpgrades, buyUpgrade, canBuy, equipAbility, isUnlocked, nextCost, upgradeLevel } from '../../upgrades/purchase';
 
 const CSS = `
-.eh-shop{position:fixed;inset:0;z-index:60;display:none;flex-direction:column;align-items:center;
+.eh-shop{position:fixed;inset:0;z-index:60;pointer-events:auto;display:none;flex-direction:column;align-items:center;
   background:radial-gradient(ellipse at 50% 0%,rgba(30,10,60,.82),rgba(3,1,10,.94));backdrop-filter:blur(14px);
   -webkit-backdrop-filter:blur(14px);color:#e9e4ff;font-family:system-ui,-apple-system,Segoe UI,sans-serif;--a:#8affd8;
   opacity:0;transition:opacity .35s;touch-action:pan-y}

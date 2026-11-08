@@ -4,7 +4,7 @@ import { saveStore } from '../../core/save';
 import { TitleBackground } from './background';
 
 const CSS = `
-.eh-title{position:fixed;inset:0;z-index:50;display:none;flex-direction:column;align-items:center;justify-content:center;
+.eh-title{position:fixed;inset:0;z-index:50;pointer-events:auto;display:none;flex-direction:column;align-items:center;justify-content:center;
  color:#fff;font-family:system-ui,-apple-system,Segoe UI,sans-serif;text-align:center;padding:16px;box-sizing:border-box;
  overflow:hidden;touch-action:manipulation;user-select:none}
 .eh-title.on{display:flex}
@@ -98,7 +98,6 @@ export function mountTitleScreen(game: Game, root: HTMLElement): { show(): void;
       case 'new':
         hide();
         fire('everhunger:newGame');
-        try { game.jumpToTier(1); } catch { /* ignore */ }
         break;
       case 'map': fire('everhunger:openScaleMap'); break;
       case 'settings': fire('everhunger:openSettings'); break;
