@@ -40,7 +40,7 @@ export default defineTier({
     reverb: 0.5,
   },
   spawns: [
-    { archetype: 't05_sardine', count: 16, size: [0.1, 0.2], group: { size: [4, 8], spread: 3 } },
+    { archetype: 't05_sardine', count: 16, size: [0.15, 0.28], group: { size: [4, 8], spread: 3 } },
     { archetype: 't05_gull', count: 8, size: [0.16, 0.3] },
     { archetype: 't05_crab', count: 6, size: [0.28, 0.5] },
     { archetype: 't05_turtle', count: 4, size: [0.5, 0.8], progress: [0, 1] },
