@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Spark — the origin of life</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<canvas id="game"></canvas>
+
+<div id="hud">
+  <div id="timeline">
+    <div id="timeline-track"><div id="timeline-fill"></div><div id="timeline-marker"></div></div>
+    <div id="timeline-label">4.0 billion years ago</div>
+  </div>
+  <div id="stage-title"></div>
+  <div id="objective"><div id="objective-text"></div><div id="progress"><div id="progress-fill"></div></div></div>
+  <div id="hint"></div>
+  <div id="toolbar">
+    <button id="btn-codex" title="Codex">Codex</button>
+    <button id="btn-stages" title="Stage select">Stages</button>
+    <button id="btn-restart" title="Restart stage">Restart</button>
+    <button id="btn-mute" title="Toggle sound">Sound: on</button>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<div id="overlay" class="hidden">
+  <div id="popup" class="panel hidden">
+    <div class="tag" id="popup-tag"></div>
+    <h2 id="popup-title"></h2>
+    <div class="years" id="popup-years"></div>
+    <p id="popup-body"></p>
+    <button id="popup-ok">Continue</button>
+  </div>
+
+  <div id="codex" class="panel wide hidden">
+    <div class="panel-head"><h2>Codex</h2><button class="close" data-close="codex">×</button></div>
+    <div id="codex-list"></div>
+  </div>
+
+  <div id="stages" class="panel wide hidden">
+    <div class="panel-head"><h2>Stages</h2><button class="close" data-close="stages">×</button></div>
+    <p class="muted">Debug menu: every stage is openable. Normal play unlocks them in order.</p>
+    <div id="stage-list"></div>
+  </div>
+
+  <div id="title" class="panel hidden">
+    <h1>Spark</h1>
+    <p class="sub">A game about how life began, from a hot rock in the dark to the first thought.</p>
+    <p class="muted">You are the thing evolving. Each stage is a different problem life had to solve before the next one could exist.</p>
+    <button id="btn-play">Begin, 4 billion years ago</button>
+    <button id="btn-continue" class="secondary hidden">Continue</button>
+    <p class="muted small">Mouse or touch. Space for actions. Press ` for the stage menu.</p>
+  </div>
+</div>
+
+<script src="js/engine/core.js"></script>
+<script src="js/engine/gfx.js"></script>
+<script src="js/engine/audio.js"></script>
+<script src="js/engine/codex.js"></script>
+<script src="js/engine/ui.js"></script>
+<script src="js/stages/stage01_chemistry.js"></script>
+<script src="js/stages/stage02_polymer.js"></script>
+<script src="js/stages/stage03_protocell.js"></script>
+<script src="js/stages/stage04_rnaworld.js"></script>
+<script src="js/stages/stage05_firstcell.js"></script>
+<script src="js/stages/stage06_fission.js"></script>
+<script src="js/stages/stage07_endosymbiosis.js"></script>
+<script src="js/stages/stage08_sex.js"></script>
+<script src="js/stages/stage09_multicell.js"></script>
+<script src="js/stages/stage10_nervous.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>
