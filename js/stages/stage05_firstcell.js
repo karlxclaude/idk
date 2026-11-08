@@ -7,8 +7,8 @@
   };
   const BUILDS = [
     { key: 'ribosome', name: 'Ribosome', cost: 30, color: '#b48cff', desc: 'RNA machine that builds proteins' },
-    { key: 'enzymes', name: 'Metabolic enzymes', cost: 25, color: '#7fd0d8', desc: 'Protein catalysts: fix carbon, make parts' },
-    { key: 'dna', name: 'DNA genome', cost: 40, color: '#4fd8ff', desc: 'Stable double-stranded copy of the genes' }
+    { key: 'enzymes', name: 'Metabolic enzymes', cost: 25, color: '#7fd0d8', desc: 'Catalysts: fix carbon, make parts' },
+    { key: 'dna', name: 'DNA genome', cost: 40, color: '#4fd8ff', desc: 'Stable copy of the genes' }
   ];
   const SLOTS = 8;
 
@@ -46,7 +46,7 @@
         // gradient dynamics: synthases drain it, pumps restore it, slow leak always
         gradient += dt * (nP * 0.09 - nS * 0.05 - 0.012);
         gradient = S.clamp(gradient, 0, 1);
-        const atpRate = nS * 2.2 * gradient;
+        const atpRate = nS * 3 * gradient;
         atp += atpRate * dt; rotor += atpRate * dt * 2;
         // proton visuals: equilibrate pools to gradient
         const targetOut = 40 + Math.round(gradient * 130), targetIn = 20 + Math.round((1 - gradient) * 130);
@@ -120,13 +120,13 @@
         // slots
         slots.forEach(s => {
           const p = slotPos(s);
-          if (!s.part) { ctx.setLineDash([3, 4]); ctx.strokeStyle = 'rgba(142,247,194,' + (0.4 + 0.3 * Math.sin(t * 3)) + ')'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(p.x, p.y, 16, 0, S.TAU); ctx.stroke(); ctx.setLineDash([]); return; }
+          if (!s.part) { G.glow(ctx, p.x, p.y, 22, '#8ef7c2', 0.25 + 0.15 * Math.sin(t * 3)); ctx.setLineDash([3, 4]); ctx.strokeStyle = 'rgba(142,247,194,' + (0.6 + 0.3 * Math.sin(t * 3)) + ')'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(p.x, p.y, 16, 0, S.TAU); ctx.stroke(); ctx.setLineDash([]); return; }
           drawPart(ctx, s.part, p.x, p.y, s.a, 1);
         });
         // built things inside
         let bi = 0; BUILDS.forEach(b => { if (!built[b.key]) return; const a = bi * 2.1 + t * 0.2; const x = cx + Math.cos(a) * R * 0.45, y = cy + Math.sin(a) * R * 0.45; G.orb(ctx, x, y, 14, b.color, 2); G.text(ctx, b.name, x, y + 26, 11, b.color); bi++; });
         // palette
-        G.text(ctx, 'MEMBRANE PARTS (drag)', 70, H * 0.42 - 54, 11, '#7f9bbd');
+        G.text(ctx, 'MEMBRANE PARTS', 70, H * 0.42 - 62, 11, '#7f9bbd'); G.text(ctx, 'drag onto the membrane', 70, H * 0.42 - 48, 10, '#7f9bbd');
         palette().forEach(p => { drawPart(ctx, p.key, p.x, p.y, -Math.PI / 2, 1.2); const d = PARTS[p.key]; G.text(ctx, d.name, p.x, p.y + 36, 12, d.color); G.text(ctx, d.cost ? d.cost + ' ATP' : 'free', p.x, p.y + 50, 11, atp >= d.cost ? '#8ef7c2' : '#ff9a8a'); });
         if (held) drawPart(ctx, held.key, held.x, held.y, -Math.PI / 2, 1.3);
         // build panel
@@ -143,7 +143,7 @@
         });
         // meters
         G.bar(ctx, 18, 92, 200, 8, gradient, gradient > 0.35 ? '#ff9a8a' : '#ff5a5a', 'proton gradient (membrane battery) ' + Math.round(gradient * 100) + '%');
-        G.text(ctx, 'ATP ' + Math.floor(atp) + '   (+' + (count('synthase') * 2.2 * gradient).toFixed(1) + ' / s)', 18, 118, 15, '#8ef7c2', 'left');
+        G.text(ctx, 'ATP ' + Math.floor(atp) + '   (+' + (count('synthase') * 3 * gradient).toFixed(1) + ' / s)', 18, 118, 15, '#8ef7c2', 'left');
         G.text(ctx, count('pump') ? 'Pumps keep the battery charged.' : count('synthase') ? 'Synthase alone drains the natural gradient.' : 'Nothing is harvesting the gradient yet.', 18, 138, 11, '#7f9bbd', 'left');
       };
       function drawPart(ctx, key, x, y, a, scale) {
@@ -161,6 +161,7 @@
         }
         ctx.restore();
       }
+      st.debug = () => ({ atp, gradient, slots: slots.map(s => ({ part: s.part, pos: slotPos(s) })), palette: palette(), builds: buildRects().map(r => ({ key: r.b.key, cost: r.b.cost, x: r.x + r.w / 2, y: r.y + r.h / 2, built: !!built[r.b.key] })), done });
       return st;
     }
   });

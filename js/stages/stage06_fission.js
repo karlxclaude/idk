@@ -124,6 +124,7 @@
         });
         G.text(ctx, 'Speed and spikes cost energy. Spikes make you harder to swallow.', 18, 196, 10, '#7f9bbd', 'left');
       };
+      st.debug = () => ({ me, cells: cells.map(c => ({ x: c.x, y: c.y, r: radius(c), lineage: c.lineage, me: !!c.me, mass: c.mass, spikes: c.tr.spikes })), food, canDivide: me.mass >= divideAt(me), mine: mine().length, done });
       return st;
     }
   });

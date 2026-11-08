@@ -123,6 +123,7 @@
           });
         }
       };
+      st.debug = () => ({ me, bugs, oxy, mitos: mitos.length, choice: !!choice, done });
       return st;
     }
   });

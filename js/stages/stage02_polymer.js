@@ -163,6 +163,7 @@
         G.text(ctx, 'Clay surface: 10× slower, and never while the tide is out', 18, 90, 12, '#ffcf7a', 'left');
         G.text(ctx, 'Chains broken: ' + breaks, 18, 108, 12, '#7f9bbd', 'left');
       };
+      st.debug = () => ({ blocks, chains: chains.map(c => ({ kind: c.kind, where: c.where, n: c.items.length, end: endPos(c) })), held: !!held, dry: isDry(), done });
       return st;
     }
   });

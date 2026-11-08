@@ -156,6 +156,7 @@
         ctx.lineTo(x + Math.cos(a) * 7, y + Math.sin(a) * 7); ctx.lineTo(x + Math.cos(a) * 7 + Math.cos(a + 0.6) * 4, y + Math.sin(a) * 7 + Math.sin(a + 0.6) * 4); ctx.stroke();
         G.circle(ctx, x, y, 2.6, 'rgba(255,216,107,' + alpha + ')');
       }
+      st.debug = () => ({ me, fats, eddies, vesicles, phase, dead });
       return st;
     }
   });

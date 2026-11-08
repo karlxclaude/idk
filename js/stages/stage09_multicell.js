@@ -3,7 +3,7 @@
   const S = window.Spark, G = S.Gfx;
   const ROLES = ['feeder', 'mover', 'sensor'];
   const ROLEC = { feeder: '#8ef7c2', mover: '#4fd8ff', sensor: '#ffd86b', stem: '#9fc0e8' };
-  const CELL_GOAL = 12, ROLE_GOAL = 3, ENERGY_GOAL = 100, DIVIDE_COST = 25;
+  const CELL_GOAL = 12, ROLE_GOAL = 3, ENERGY_GOAL = 100, DIVIDE_COST = 20;
   const DIRS = [[1, 0], [0.5, 0.87], [-0.5, 0.87], [-1, 0], [-0.5, -0.87], [0.5, -0.87]];
 
   S.registerStage({
@@ -16,17 +16,17 @@
       let W, H, col, food, predator, t, flags, done, energy;
 
       st.enter = function () {
-        W = S.W; H = S.H; t = 0; done = false; energy = 60;
+        W = S.W; H = S.H; t = 0; done = false; energy = 80;
         flags = { mc: false, spec: false, hintRole: false };
         col = { x: W / 2, y: H / 2, vx: 0, vy: 0, cells: [{ dx: 0, dy: 0, role: 'feeder', ph: 0 }] };
-        food = []; for (let i = 0; i < 40; i++) food.push({ x: S.rand(W), y: S.rand(70, H - 70) });
+        food = []; for (let i = 0; i < 55; i++) food.push({ x: S.rand(W), y: S.rand(70, H - 70) });
         predator = { x: -100, y: H / 2, vx: 0, vy: 0, r: 34, t: 0 };
         S.UI.hint('You are one cell. Press Space to divide. Your daughter cell will stay attached.', 8);
       };
       st.resize = function () { W = S.W; H = S.H; };
       const CR = 13; // cell radius
       const count = (r) => col.cells.filter(c => c.role === r).length;
-      const senseR = () => 70 + 75 * count('sensor');
+      const senseR = () => 130 + 90 * count('sensor');
       function addCell() {
         // find a free hex neighbour of a random existing cell
         for (let tries = 0; tries < 40; tries++) {
@@ -48,20 +48,20 @@
         t += dt;
         const movers = count('mover'), feeders = count('feeder'), sensors = count('sensor');
         // move toward pointer, speed from movers divided by drag of body size
-        const speed = movers === 0 ? 12 : (60 + 70 * movers) / Math.sqrt(col.cells.length) * 1.6;
+        const speed = (40 + 110 * movers) / Math.sqrt(col.cells.length) * 1.4;
         if (S.input.x > -100) { const dx = S.input.x - col.x, dy = S.input.y - col.y, d = Math.hypot(dx, dy); if (d > 8) { col.vx += dx / d * speed * 4 * dt; col.vy += dy / d * speed * 4 * dt; } }
         const s2 = Math.hypot(col.vx, col.vy); if (s2 > speed) { col.vx *= speed / s2; col.vy *= speed / s2; }
         col.vx *= 0.93; col.vy *= 0.93; col.x += col.vx * dt; col.y += col.vy * dt;
         col.x = S.clamp(col.x, 50, W - 50); col.y = S.clamp(col.y, 100, H - 100);
         // energy: feeders eat food touching any cell; upkeep per cell
-        energy -= dt * (0.5 + col.cells.length * 0.25 + movers * 0.5);
-        if (food.length < 45 && S.chance(dt * 6)) food.push({ x: S.rand(W), y: S.rand(70, H - 70) });
+        energy -= dt * (0.2 + col.cells.length * 0.14 + movers * 0.3);
+        if (food.length < 60 && S.chance(dt * 9)) food.push({ x: S.rand(W), y: S.rand(70, H - 70) });
         for (let i = food.length - 1; i >= 0; i--) {
           const f = food[i];
           for (const c of col.cells) {
             if (S.dist(f.x, f.y, col.x + c.dx, col.y + c.dy) < CR + 3) {
               food.splice(i, 1);
-              const gain = c.role === 'feeder' ? 7 : c.role === 'stem' ? 2 : 1;
+              const gain = c.role === 'feeder' ? 10 : c.role === 'stem' ? 3 : 1;
               energy = Math.min(ENERGY_GOAL, energy + gain); S.Audio.sfx('eat'); G.burst(f.x, f.y, '#8ef7c2', 5, 40, 2); break;
             }
           }
@@ -135,6 +135,7 @@
         G.text(ctx, 'Feeders eat · movers push (cost energy) · sensors widen what you can see', 18, 116, 11, '#7f9bbd', 'left');
         G.text(ctx, 'Alone, each role would starve. Together they are a body.', 18, 132, 11, '#7f9bbd', 'left');
       };
+      st.debug = () => ({ col, food, predator, energy, senseR: senseR(), done });
       return st;
     }
   });

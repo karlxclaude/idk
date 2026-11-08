@@ -9,6 +9,7 @@
     canvas: null, ctx: null, W: 0, H: 0, dpr: 1,
     time: 0,
     paused: false,
+    debugSpeed: 1,
     input: { x: -999, y: -999, down: false, keys: {}, justDown: false, justUp: false },
     state: { unlocked: 1, completed: [], codex: [], muted: false },
     _listeners: {},
@@ -164,7 +165,7 @@
       ctx.clearRect(0, 0, this.W, this.H);
       Spark.Gfx.drawBackground(ctx, dt, this.current ? this.current.def : null);
       if (this.current) {
-        if (!blocked) { this.time += dt; this.current.update(dt); }
+        if (!blocked) { const n = this.debugSpeed || 1; for (let i = 0; i < n; i++) { this.time += dt; this.current.update(dt); if (i < n - 1) Spark.Gfx.particles.update(dt); } }
         this.current.draw(ctx);
       }
       if (!blocked) Spark.Gfx.particles.update(dt);

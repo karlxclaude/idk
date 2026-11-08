@@ -29,10 +29,10 @@
       function fitness(g) { let m = 0; for (let i = 0; i < LEN; i++) if (g[i] === target[i]) m++; return m / LEN; }
       function newCell(x, y, g, gen) {
         const f = fitness(g);
-        return { id: nextId++, x, y, vx: 0, vy: 0, g, fit: f, nucs: 0, age: 0, life: 22 + 30 * f + S.rand(-4, 4), gen, r: 16, flash: 0, wob: S.rand(S.TAU) };
+        return { id: nextId++, x, y, vx: 0, vy: 0, g, fit: f, nucs: 0, age: 0, life: 20 + 50 * f + S.rand(-12, 12), gen, r: 16, flash: 0, wob: S.rand(S.TAU) };
       }
       function mutate(g, fit) {
-        const rate = 0.22 - 0.14 * fit; // better ribozyme copies more accurately
+        const rate = 0.12 - 0.08 * fit; // better ribozyme copies more accurately
         return g.map(b => Math.random() < rate ? S.randInt(0, 3) : b);
       }
       function copy(c) {
@@ -53,7 +53,7 @@
         // cells
         for (let i = cells.length - 1; i >= 0; i--) {
           const c = cells[i];
-          const speed = 60 + 110 * c.fit;
+          const speed = c.me ? 100 + 100 * c.fit : 40 + 170 * c.fit;
           let tx, ty;
           if (c.me) { tx = S.input.x; ty = S.input.y; }
           else {
@@ -77,6 +77,8 @@
           // death
           if (c.age > c.life) kill(i, c, 'age');
         }
+        // population floor: new protocells keep drifting in from the vent field
+        if (cells.length < 6 && S.chance(dt * 0.8)) { const c = newCell(S.chance(0.5) ? 10 : W - 10, S.rand(80, H - 80), Array.from({ length: LEN }, () => S.randInt(0, 3)), 0); c.nucs = 4; cells.push(c); }
         // crowding: limited food, weakest die
         if (cells.length > CAP) {
           let wi = -1, wf = 2; cells.forEach((c, i) => { if (!c.me && c.fit < wf) { wf = c.fit; wi = i; } });
@@ -133,6 +135,7 @@
         if (history.length > 1) { ctx.strokeStyle = '#8ef7c2'; ctx.lineWidth = 2; ctx.beginPath(); history.forEach((v, i) => { const x = gx + i / 119 * gw, y = gy + gh * (1 - v); if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y); }); ctx.stroke(); }
         G.text(ctx, 'average copying skill over time', gx, gy - 8, 10, '#7f9bbd', 'left');
       };
+      st.debug = () => ({ me, cells, nucs, avg: avgFit(), done });
       return st;
     }
   });

@@ -13,6 +13,7 @@
     { name: 'nucleotide', key: 'nuc', color: '#ff7ad9', need: { CO2: 1, NH3: 2, H2: 1, PO4: 1 } }
   ];
   const GOAL = { amino: 6, nuc: 4 };
+  const MAXPER = { CO2: 2, NH3: 2, H2: 1, PO4: 1 }, POCKET = 6;
 
   S.registerStage({
     id: 'chemistry', index: 1, title: 'Primordial chemistry', years: 'about 4.0 billion years ago', ya: 4.0,
@@ -39,21 +40,23 @@
         const roll = Math.random();
         let type, x, y, vx, vy;
         if (roll < 0.42) { // CO2 sinking from the ocean above
-          type = 'CO2'; x = S.rand(W); y = -10; vx = S.rand(-10, 10); vy = S.rand(18, 32);
+          type = 'CO2'; x = S.rand(W); y = -10; vx = S.rand(-10, 10); vy = S.rand(50, 80);
         } else if (roll < 0.5) { // phosphate from the sides
-          type = 'PO4'; x = Math.random() < 0.5 ? -10 : W + 10; y = S.rand(H * 0.2, ridgeY - 30); vx = (x < 0 ? 1 : -1) * S.rand(14, 26); vy = S.rand(-5, 5);
+          type = 'PO4'; x = Math.random() < 0.5 ? -10 : W + 10; y = S.rand(H * 0.2, ridgeY - 120); vx = (x < 0 ? 1 : -1) * S.rand(14, 26); vy = S.rand(8, 16);
         } else { // vent gases rising from plumes
           type = S.pick(['H2', 'H2', 'NH3', 'NH3', 'H2S', 'H2']);
           const p = S.pick(plumes); x = p.x + S.rand(-40, 40); y = ridgeY + 10; vx = S.rand(-12, 12); vy = -S.rand(28, 50);
         }
-        mols.push({ type, x, y, vx, vy, life: S.rand(14, 20), wob: S.rand(S.TAU) });
+        mols.push({ type, x, y, vx, vy, life: S.rand(22, 30), wob: S.rand(S.TAU) });
       }
 
       function recipeReady() {
         const have = {}; pore.pocket.forEach(m => have[m] = (have[m] || 0) + 1);
-        for (const r of RECIPES) {
+        // recipes whose goal is still unmet get priority; a finished product only forms when the pocket is full
+        const order = RECIPES.slice().sort((a, b) => (counts[a.key] >= GOAL[a.key] ? 1 : 0) - (counts[b.key] >= GOAL[b.key] ? 1 : 0));
+        for (const r of order) {
           let ok = true; for (const k in r.need) if ((have[k] || 0) < r.need[k]) { ok = false; break; }
-          if (ok) return r;
+          if (ok && (counts[r.key] < GOAL[r.key] || pore.pocket.length >= POCKET)) return r;
         }
         return null;
       }
@@ -85,15 +88,17 @@
         for (let i = mols.length - 1; i >= 0; i--) {
           const m = mols[i];
           m.vx += Math.sin(t * 1.3 + m.wob) * 18 * dt; m.vy += Math.cos(t * 0.9 + m.wob) * 12 * dt;
-          if (m.type === 'CO2') m.vy += 6 * dt; else if (m.type !== 'PO4') m.vy -= 4 * dt;
-          m.vx *= 0.995; m.vy *= 0.995;
+          if (m.type === 'CO2' || m.type === 'PO4') { m.vy += 12 * dt; if (m.vy > 85) m.vy = 85; } else m.vy -= 4 * dt;
+          const drag = Math.pow(0.75, dt); m.vx *= drag; if (m.vy < 0) m.vy *= drag;
           m.x += m.vx * dt; m.y += m.vy * dt; m.life -= dt;
           if (m.y > ridgeY - 4 && m.vy > 0) { m.y = ridgeY - 4; m.vy = -m.vy * 0.4; }
           if (m.life <= 0 || m.y < -40 || m.x < -60 || m.x > W + 60) { mols.splice(i, 1); continue; }
           if (S.dist(m.x, m.y, pore.x, pore.y - 6) < pore.r + MOL[m.type].r) {
             mols.splice(i, 1);
             if (m.type === 'H2S') { energy = Math.min(1, energy + 0.25); G.burst(pore.x, pore.y, '#ffd86b', 10, 80, 2); S.UI.toast('H₂S feeds the iron-sulfur catalyst: +energy'); S.Audio.sfx('catch'); continue; }
-            if (pore.pocket.length < 5) { pore.pocket.push(m.type); S.Audio.sfx('catch'); G.burst(m.x, m.y, MOL[m.type].color, 6, 50, 2); }
+            const have = pore.pocket.filter(k => k === m.type).length;
+            if (have >= MAXPER[m.type]) { m.vy = -70; m.y -= 10; mols.push(m); if (S.chance(0.5)) S.UI.toast('Pocket already holds enough ' + MOL[m.type].label); continue; }
+            if (pore.pocket.length < POCKET) { pore.pocket.push(m.type); S.Audio.sfx('catch'); G.burst(m.x, m.y, MOL[m.type].color, 6, 50, 2); }
             else { m.vy = -60; mols.push(m); }
           }
         }
@@ -125,7 +130,7 @@
           if (energy >= 0.6) react(r);
           else { energyT += dt; if (energyT > 1.5 && energyT < 1.6) S.UI.hint('Right parts, not enough energy. Hover a hot plume, or catch a lightning packet.', 6); }
         } else energyT = 0;
-        if (pore.pocket.length >= 5 && !r) { pocketWarnT += dt; if (pocketWarnT > 1 && pocketWarnT < 1.1) S.UI.hint('Pocket full with no recipe. Click to flush it. Amino acid: 2 CO₂ + NH₃ + H₂. Nucleotide: CO₂ + 2 NH₃ + H₂ + PO₄.', 8); }
+        if (pore.pocket.length >= POCKET && !r) { pocketWarnT += dt; if (pocketWarnT > 1 && pocketWarnT < 1.1) S.UI.hint('Pocket full with no recipe. Click to flush it. Amino acid: 2 CO₂ + NH₃ + H₂. Nucleotide: CO₂ + 2 NH₃ + H₂ + PO₄.', 8); }
         else pocketWarnT = 0;
         pore.flash = Math.max(0, pore.flash - dt * 2);
       };
@@ -178,7 +183,7 @@
         G.glow(ctx, px, py, 70 + pore.flash * 40, '#ffb36b', 0.25 + energy * 0.35 + pore.flash * 0.4);
         ctx.fillStyle = '#0b1a2a'; ctx.beginPath(); ctx.arc(px, py - 6, pore.r, 0, S.TAU); ctx.fill();
         ctx.strokeStyle = G.rgba('#ffcf7a', 0.5 + energy * 0.5); ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(px, py - 6, pore.r, 0, S.TAU); ctx.stroke();
-        pore.pocket.forEach((type, i) => { const a = i / 5 * S.TAU - Math.PI / 2 + t; const d = MOL[type]; G.orb(ctx, px + Math.cos(a) * 12, py - 6 + Math.sin(a) * 12, 4.5, d.color, 2); });
+        pore.pocket.forEach((type, i) => { const a = i / POCKET * S.TAU - Math.PI / 2 + t; const d = MOL[type]; G.orb(ctx, px + Math.cos(a) * 12, py - 6 + Math.sin(a) * 12, 4.5, d.color, 2); });
         G.bar(ctx, px - 30, py + 28, 60, 6, energy, energy >= 0.6 ? '#ffd86b' : '#ff9f5a');
         G.text(ctx, energy >= 0.6 ? 'energy ready' : 'energy', px, py + 44, 10, '#ffcf7a');
         G.text(ctx, 'FeS pore', px, py - 6 - pore.r - 10, 11, '#ffcf7a');
@@ -191,6 +196,7 @@
         G.text(ctx, 'nucleotide = CO₂ + 2 NH₃ + H₂ + PO₄', tx, ty + 60, 11, '#7f9bbd', 'left');
         G.text(ctx, 'H₂S = catalyst boost · click = flush pocket', tx, ty + 76, 11, '#7f9bbd', 'left');
       };
+      st.debug = () => ({ pore, mols, plumes, energy, counts, packets: lightning.packets, ridgeY, done });
       return st;
     }
   });

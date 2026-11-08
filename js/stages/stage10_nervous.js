@@ -143,6 +143,7 @@
       };
       st.pointerDown = function () { if (phase === 0) pulse(); };
       st.key = function (code) { if (code === 'Space' && phase === 0) pulse(); };
+      st.debug = () => ({ phase, jelly, worm, food, hazards, caught, done });
       return st;
     }
   });

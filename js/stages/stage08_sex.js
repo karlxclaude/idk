@@ -125,6 +125,7 @@
         G.text(ctx, 'A parasite kills any cell sharing 3 of its 4 gene colours.', 18, H - 70, 11, '#ff9a8a', 'left');
         G.text(ctx, 'Clones: ' + clones().length + ' of ' + clonesStart + ' founders\' line left', 18, H - 54, 11, '#ffb36b', 'left');
       };
+      st.debug = () => ({ me: { x: me.x, y: me.y, cd: me.cd }, cells: cells.map(c => ({ x: c.x, y: c.y, side: c.side, cd: c.cd, age: c.age, me: !!c.me })), parasites: parasites.map(p => ({ x: p.x, y: p.y })), wave, waveActive, kin: kin().length, clones: clones().length, done });
       return st;
     }
   });
