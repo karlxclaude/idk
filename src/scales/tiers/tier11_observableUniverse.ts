@@ -1,20 +1,67 @@
-import { stubTier } from '../stubTier';
+import { defineTier } from '../types';
 
-/**
- * Tier 11 - Observable Universe (10²⁶ m). STUB: playable with generic archetypes.
- * Content agent: replace with a full defineTier({...}) + tier-specific archetypes/mechanics.
- */
-export default stubTier({
+/** Tier 11 - Observable Universe (10^26 m). Superclusters and baby universes; rival universes and dark-energy rifts hunt. */
+export default defineTier({
   id: 'observableUniverse',
   index: 11,
   name: 'Observable Universe',
   scaleLabel: '10²⁶ m',
   scaleExponent: 26,
-  colors: { top: 0x1a0a05, bottom: 0x050100, center: 0x4a1a0a, accent: 0xffa86b, glow: 0xff5f5f, player: 0xfff0e6 },
-  music: { root: 'C', mode: 'aeolian', tempo: 50, mood: 'The whole cosmos breathing: CMB hiss, colossal swells.' },
+  palette: {
+    bgTop: 0x0c0614,
+    bgBottom: 0x020106,
+    bgCenter: 0x2a1020,
+    fog: 0x1a0c18,
+    fogAlpha: 0.3,
+    accent: 0xffa86b,
+    glow: 0x6a9cff,
+    player: 0xfff0e6,
+    playerGlow: 0xffa86b,
+    particles: [0xffa86b, 0x6a9cff, 0xfff0e6],
+  },
+  background: [
+    { type: 'gradient', depth: 0, alpha: 0.6 },
+    { type: 't11_cmb', depth: 0.04, alpha: 0.3, scale: 0.8, speed: 0.6 },
+    { type: 't11_horizon', depth: 0.1, color: 0xff6a3a, alpha: 0.3, scale: 2.4 },
+    { type: 't11_cmb', depth: 0.16, alpha: 0.1, scale: 1.7, speed: 1, blend: 'add', params: { warm: 0.05 } },
+    { type: 'dots', depth: 0.3, color: 0xffd0a0, density: 0.8, alpha: 0.45, blend: 'add', params: { twinkle: 0.25 } },
+    { type: 'dots', depth: 0.5, color: 0x9fc0ff, density: 0.5, alpha: 0.4, blend: 'add', scale: 1.4, params: { twinkle: 0.3 } },
+  ],
+  ambient: [
+    { count: 32, colors: [0xffa86b, 0x8fb8ff, 0xfff0e6], size: [1.5, 4], drift: 6, flicker: 0.4, depth: 0.7, alpha: 0.7 },
+    { count: 8, colors: [0xffc890], size: [4, 10], drift: 12, flicker: 0.2, depth: 1.5, alpha: 0.2 },
+  ],
+  music: {
+    root: 'C', octave: 2, mode: 'aeolian', tempo: 50,
+    timbre: { pad: 'sine', bass: 'sine', lead: 'triangle', texture: 'noise' },
+    mood: 'The whole cosmos breathing: CMB hiss, colossal swells, a sense of edge.',
+    layers: ['drone', 'pulse', 'arp', 'lead'],
+    reverb: 0.85,
+  },
+  spawns: [
+    { archetype: 't11_photon', count: 20, size: [0.07, 0.15], group: { size: [4, 8], spread: 3 } },
+    { archetype: 't11_fragment', count: 9, size: [0.2, 0.5] },
+    { archetype: 't11_supercluster', count: 6, size: [0.4, 0.8] },
+    { archetype: 't11_baby', count: 4, size: [0.7, 1.05], progress: [0.06, 1] },
+    { archetype: 't11_rival', count: 2, size: [1.5, 2.4], progress: [0.15, 1] },
+  ],
+  hazards: [{ archetype: 't11_rift', count: 2, size: [1.2, 1.8], progress: [0.25, 1] }],
+  mechanics: [{ id: 't11_hubbleFlow' }],
   abilityId: 'inflationPulse',
   playerStage: 'cosmicEntity',
-  previousLabel: 'a strand of the cosmic web',
-  previousColors: [0x7aa8ff, 0xb07aff],
-  title: { subtitle: 'Everything Visible', flavor: 'The edge of everything ever seen. Then: further.' },
+  growthTarget: 18,
+  nutrition: 0.5,
+  previousSpeck: {
+    count: 3,
+    size: [0.3, 0.5],
+    label: 'a cluster of galaxies',
+    colors: [0x7aa8ff, 0xb07aff],
+    nutritionMul: 1.5,
+    essence: 2,
+  },
+  titleCard: {
+    title: 'Observable Universe',
+    subtitle: 'Everything Visible',
+    flavor: 'The edge of everything ever seen. Rivals bloom beyond the horizon.',
+  },
 });

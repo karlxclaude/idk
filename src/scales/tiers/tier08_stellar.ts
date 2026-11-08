@@ -1,20 +1,72 @@
-import { stubTier } from '../stubTier';
+import { defineTier } from '../types';
 
-/**
- * Tier 8 - Stellar (10¹² m). STUB: playable with generic archetypes.
- * Content agent: replace with a full defineTier({...}) + tier-specific archetypes/mechanics.
- */
-export default stubTier({
+/** Tier 8 - Stellar (10^12 m). Planets and solar systems as prey, red dwarfs and blue giants, flares, pulsars and black holes. */
+export default defineTier({
   id: 'stellar',
   index: 8,
   name: 'Stellar',
   scaleLabel: '10¹² m',
   scaleExponent: 12,
-  colors: { top: 0x1a0a02, bottom: 0x050100, center: 0x4a2a0a, accent: 0xffd36b, glow: 0xff8a3d, player: 0xfffbe8 },
-  music: { root: 'D', mode: 'harmonicMinor', tempo: 80, mood: 'Blazing solar choirs, flare crackles.' },
+  palette: {
+    bgTop: 0x1a0830,
+    bgBottom: 0x07010f,
+    bgCenter: 0x5a1a40,
+    fog: 0x3a1040,
+    fogAlpha: 0.3,
+    accent: 0xffd36b,
+    glow: 0xff7a3d,
+    player: 0xfffbe8,
+    playerGlow: 0xffb84a,
+    particles: [0xffd36b, 0xff7a3d, 0xff5aa0],
+  },
+  background: [
+    { type: 'gradient', depth: 0, alpha: 0.7 },
+    { type: 't08_plasma', depth: 0.05, colors: [0x2a0a4a, 0x8a1a6a, 0xff8a3a], alpha: 0.5, scale: 0.9, speed: 1, blend: 'add' },
+    { type: 'dots', depth: 0.1, color: 0xffe8d0, density: 1.1, alpha: 0.5, params: { twinkle: 0.3 } },
+    { type: 't08_starGlows', depth: 0.18, density: 9, colors: [0xff9a5a, 0xffd36b, 0x9ac8ff, 0xff5a8a], alpha: 0.32, scale: 1 },
+    { type: 't08_plasma', depth: 0.3, colors: [0x0a1a4a, 0x2a5ad8, 0x9ae0ff], alpha: 0.22, scale: 1.7, speed: 1.6, blend: 'add' },
+    { type: 'dots', depth: 0.42, color: 0xffffff, density: 0.6, alpha: 0.5, blend: 'add', params: { twinkle: 0.25 } },
+    { type: 'sparks', depth: 0.6, colors: [0xffd36b, 0xff7a3d, 0xffffff], alpha: 0.5, params: { count: 30, size: [1.5, 4], drift: 12, flicker: 0.6 } },
+  ],
+  ambient: [
+    { count: 28, colors: [0xffd36b, 0xff7a3d], size: [2, 5], drift: 14, flicker: 0.4, depth: 0.7 },
+    { count: 8, colors: [0xfff0c8], size: [3, 8], drift: 20, flicker: 0.25, depth: 1.4, alpha: 0.3 },
+  ],
+  music: {
+    root: 'A', octave: 1, mode: 'phrygian', tempo: 64,
+    timbre: { pad: 'sawtooth', bass: 'sine', lead: 'triangle', texture: 'noise', perc: 'thud' },
+    mood: 'Burning plasma seas, pulsar heartbeats, and a black hole breathing somewhere beneath the drone.',
+    layers: ['drone', 'pulse', 'arp', 'lead'],
+    reverb: 0.75,
+  },
+  spawns: [
+    { archetype: 't08_planet', count: 14, size: [0.08, 0.2], group: { size: [2, 4], spread: 5 } },
+    { archetype: 't08_comet', count: 3, size: [0.2, 0.4] },
+    { archetype: 't08_system', count: 6, size: [0.4, 0.75] },
+    { archetype: 't08_redDwarf', count: 3, size: [0.88, 1.1], progress: [0.05, 1] },
+    { archetype: 't08_system', count: 2, size: [0.9, 1.1], progress: [0.1, 1] },
+    { archetype: 't08_blueGiant', count: 2, size: [1.7, 2.6], progress: [0.12, 1] },
+  ],
+  hazards: [
+    { archetype: 't08_pulsar', count: 2, size: [0.45, 0.7], progress: [0.1, 1] },
+    { archetype: 't08_blackHole', count: 1, size: [1.0, 1.5], progress: [0.2, 1] },
+  ],
+  mechanics: [{ id: 't08_stellarForces' }],
   abilityId: 'solarFlare',
   playerStage: 'starCore',
-  previousLabel: 'a blue marble planet',
-  previousColors: [0x6bb8ff, 0x7dffb0],
-  title: { subtitle: 'Stellar Nursery', flavor: 'Stars ignite and die. Eat them before they go nova.' },
+  growthTarget: 15,
+  nutrition: 0.5,
+  previousSpeck: {
+    count: 3,
+    size: [0.3, 0.5],
+    label: 'a planet',
+    colors: [0x6bb8ff, 0x7dffb0],
+    nutritionMul: 1.5,
+    essence: 2,
+  },
+  titleCard: {
+    title: 'Stellar',
+    subtitle: 'Stellar Nursery',
+    flavor: 'Stars burn and lash out. Feed on systems, ride the pulsar sweep, and stay clear of the dark.',
+  },
 });

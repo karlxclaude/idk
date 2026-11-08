@@ -108,21 +108,23 @@ const abilities: AbilityDef[] = [
   },
   {
     id: 'bioluminescentLure',
-    name: 'Bioluminescent Lure',
-    description: 'Flare your light: sonar pings reveal the dark and prey swims to you for several seconds.',
+    name: 'Sonar',
+    description: 'Ping the deep: prey and threats are revealed with arrows pointing past the screen edge for several seconds.',
     cooldown: 12,
-    icon: '✧',
+    icon: '◎',
     activate(ctx) {
-      startLinger('bioluminescentLure', 5);
-      ring(ctx, ctx.player.radius * 14, [ctx.tier.palette.glow, 0xffffff], 70);
-      ctx.fx.flash(0.2, ctx.tier.palette.glow, 3);
+      // Overlay lives in sonarOverlay.ts (helper module); loaded through a glob so this entry stays self-contained.
+      const mods = import.meta.glob('./sonarOverlay.ts', { eager: true }) as Record<string, { startSonar: (c: GameContext, s: number) => void }>;
+      for (const m of Object.values(mods)) m.startSonar(ctx, 6);
+      startLinger('bioluminescentLure', 6);
+      ring(ctx, ctx.player.radius * 14, [ctx.tier.palette.accent, 0xffffff], 70);
+      ctx.fx.flash(0.16, ctx.tier.palette.accent, 3);
       return true;
     },
     update(ctx, dt) {
       if (tick('bioluminescentLure', dt) <= 0) return;
       const p = ctx.player;
-      for (const e of near(ctx, p.radius * 16)) if (isEdible(ctx, e)) pullTo(e, p.x, p.y, p.radius * 4.5, 0.06);
-      if (Math.random() < dt * 3) ring(ctx, p.radius * 8, ctx.tier.palette.glow, 14);
+      if (Math.random() < dt * 1.4) ring(ctx, p.radius * 10, ctx.tier.palette.accent, 22);
     },
   },
   {
