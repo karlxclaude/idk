@@ -60,10 +60,11 @@ npm run dev        # Vite dev server on http://localhost:5173
 npm run build      # type-check (tsc --noEmit) then production build into dist/
 npm run preview    # serve the production build
 npm run typecheck  # type-check only
+npm test           # unit + content-validation tests (Vitest)
+npm run test:e2e   # browser smoke test: title, scale shift, shop, all tiers (Playwright)
 ```
 
-There is no automated test script yet (`npm test` is not defined in `package.json`). `npm run typecheck` / `npm run build` is the current correctness gate,
-and in dev mode the game logs `[validate]` notes for any dangling content ids.
+`npm run test:e2e` needs Playwright with Chromium installed. In dev mode the game logs `[validate]` notes for any dangling content ids.
 
 ## The scales
 

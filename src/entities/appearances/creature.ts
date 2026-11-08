@@ -139,6 +139,7 @@ const creature: PlayerAppearanceDef = {
     R.tinted(tail, pal.player);
     const tailGlow = sprite(tailTex(), 2.4, { add: true, alpha: 0.6, tint: pal.playerGlow });
     tailGlow.position.copyFrom(tail.position);
+    const tailSY = tail.scale.y, tailGlowSY = tailGlow.scale.y;
     const fins: Sprite[] = [];
     const mkFin = (x: number, y: number, flip: number) => {
       const f = sprite(finTex(), 1.1, { alpha: 0.9 });
@@ -191,7 +192,9 @@ const creature: PlayerAppearanceDef = {
         const rate = 4 + sp * 8 + R.dash * 6;
         const sw = Math.sin(t * rate);
         tail.rotation = tailGlow.rotation = sw * (0.22 + sp * 0.2);
-        tail.scale.y = tailGlow.scale.y = 1 + Math.sin(t * rate * 0.5) * 0.04;
+        const tailWob = 1 + Math.sin(t * rate * 0.5) * 0.04;
+        tail.scale.y = tailSY * tailWob;
+        tailGlow.scale.y = tailGlowSY * tailWob;
         finT.rotation = Math.sin(t * rate * 0.7) * 0.25;
         finB.rotation = -Math.sin(t * rate * 0.7 + 0.5) * 0.25;
         finTop.rotation = Math.sin(t * rate * 0.9 + 1) * 0.15;

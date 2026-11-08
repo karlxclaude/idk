@@ -143,10 +143,10 @@ function frame(ctx: GameContext, realDt: number) {
 
 /** Start (or extend) the sonar for `seconds`. */
 export function startSonar(ctx: GameContext, seconds: number) {
+  if (root && owner === ctx) { total = seconds; timeLeft = seconds; return; }
+  stop();
   total = seconds;
   timeLeft = seconds;
-  if (root && owner === ctx) return;
-  stop();
   owner = ctx;
   root = new Container();
   sweep = new Sprite(Tex.ring());
