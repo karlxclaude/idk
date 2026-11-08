@@ -1,134 +1,135 @@
-// E2E smoke test: starts vite, drives the game with Playwright chromium.
+// E2E smoke test: serves the production build, drives the game with Playwright chromium.
+// Usage: node tests/e2e/smoke.mjs [--shots DIR]
 import { spawn } from 'node:child_process';
 import { createRequire } from 'node:module';
 import { setTimeout as sleep } from 'node:timers/promises';
+import { mkdirSync } from 'node:fs';
 
 const require = createRequire(import.meta.url);
-let chromium;
-try {
-  ({ chromium } = require('playwright'));
-} catch {
-  const root = process.env.PLAYWRIGHT_NODE_PATH || '/opt/node22/lib/node_modules';
-  ({ chromium } = require(`${root}/playwright`));
-}
+const { chromium } = require('playwright');
 
 const PORT = 5199;
 const BASE = `http://localhost:${PORT}/`;
-const TIER_COUNT = Number(process.env.TIER_COUNT || 12);
+const shotDir = process.argv.includes('--shots') ? process.argv[process.argv.indexOf('--shots') + 1] : null;
+if (shotDir) mkdirSync(shotDir, { recursive: true });
 const failures = [];
 const step = (m) => console.log(`[e2e] ${m}`);
 const fail = (m) => { failures.push(m); console.error(`[e2e] FAIL: ${m}`); };
 
-const vite = spawn('npx', ['vite', '--port', String(PORT), '--strictPort'], { stdio: ['ignore', 'pipe', 'pipe'], detached: true });
-let viteLog = '';
-vite.stdout.on('data', (d) => (viteLog += d));
-vite.stderr.on('data', (d) => (viteLog += d));
-const killVite = () => { try { process.kill(-vite.pid, 'SIGKILL'); } catch { /* gone */ } };
-process.on('exit', killVite);
+const server = spawn('npx', ['vite', 'preview', '--port', String(PORT), '--strictPort'], { stdio: ['ignore', 'pipe', 'pipe'], detached: true });
+let log = '';
+server.stdout.on('data', (d) => (log += d));
+server.stderr.on('data', (d) => (log += d));
+const kill = () => { try { process.kill(-server.pid, 'SIGKILL'); } catch { /* gone */ } };
+process.on('exit', kill);
 
 async function waitForServer() {
   for (let i = 0; i < 120; i++) {
     try { if ((await fetch(BASE)).ok) return; } catch { /* not yet */ }
     await sleep(500);
   }
-  throw new Error('vite did not start:\n' + viteLog);
+  throw new Error('preview server did not start:\n' + log);
 }
-
-// Ignore noise that is environmental, not a game bug.
 const IGNORABLE = [/GPU stall/i, /swiftshader/i, /WebGL.*(performance|deprecated)/i, /AudioContext/i, /autoplay/i, /favicon/i];
-const ignorable = (t) => IGNORABLE.some((r) => r.test(t));
-
-// Other editors may touch source files while tests run; a vite HMR full-reload would reset the page.
-// Neutralise the HMR socket so the page under test is stable.
-async function noHmr(ctx) {
-  await ctx.addInitScript(() => {
-    const Native = window.WebSocket;
-    window.WebSocket = function (url, protocols) {
-      if (protocols === 'vite-hmr' || (Array.isArray(protocols) && protocols.includes('vite-hmr'))) {
-        return { addEventListener() {}, removeEventListener() {}, send() {}, close() {}, readyState: 3 };
-      }
-      return new Native(url, protocols);
-    };
-    window.WebSocket.prototype = Native.prototype;
-    Object.assign(window.WebSocket, { CONNECTING: 0, OPEN: 1, CLOSING: 2, CLOSED: 3 });
-  });
-}
-
-function attach(page, bucket) {
-  page.on('console', (m) => { if (m.type() === 'error' && !ignorable(m.text())) bucket.push(`console.error: ${m.text()}`); });
+const attach = (page, bucket) => {
+  page.on('console', (m) => { if (m.type() === 'error' && !IGNORABLE.some((r) => r.test(m.text()))) bucket.push(`console.error: ${m.text()}`); });
   page.on('pageerror', (e) => bucket.push(`pageerror: ${e.message}`));
+};
+const shot = async (page, name) => { if (shotDir) await page.screenshot({ path: `${shotDir}/${name}.png` }); };
+
+async function run(viewport, label, mobile = false) {
+  const ctx = await browser.newContext({ viewport, hasTouch: mobile, isMobile: mobile, deviceScaleFactor: 1 });
+  const page = await ctx.newPage();
+  const errs = [];
+  attach(page, errs);
+  await page.goto(BASE);
+  step(`${label}: waiting for title`);
+  await page.waitForSelector('.screen.title.on', { timeout: 30000 });
+  await page.waitForFunction(() => window.__game && window.__game.world.player, null, { timeout: 30000 });
+  await sleep(1500);
+  await shot(page, `${label}-title`);
+  await page.click('.screen.title [data-a="play"]');
+  await page.waitForFunction(() => window.__game.phase === 'playing', null, { timeout: 5000 });
+  step(`${label}: playing`);
+  // Steer toward food for a while using the pointer / touch.
+  const cx = viewport.width / 2, cy = viewport.height / 2;
+  // Touch steering follows a held finger, so drive a real touch sequence through CDP instead of tap().
+  const cdp = mobile ? await ctx.newCDPSession(page) : null;
+  let touching = false;
+  const touch = async (x, y) => {
+    await cdp.send('Input.dispatchTouchEvent', { type: touching ? 'touchMove' : 'touchStart', touchPoints: [{ x, y, id: 1 }] });
+    touching = true;
+  };
+  for (let i = 0; i < 24; i++) {
+    const target = await page.evaluate(() => {
+      const g = window.__game, p = g.world.player, cam = g.camera;
+      let best = null, bd = Infinity;
+      for (const f of g.world.food) {
+        if (f.state !== 'free') continue;
+        const d = (f.x - p.x) ** 2 + (f.y - p.y) ** 2;
+        if (d < bd) { bd = d; best = f; }
+      }
+      if (!best) return null;
+      return { x: cam.worldToScreenX(best.x), y: cam.worldToScreenY(best.y) };
+    });
+    const tx = target ? Math.min(viewport.width - 5, Math.max(5, target.x)) : cx + 200;
+    const ty = target ? Math.min(viewport.height - 5, Math.max(5, target.y)) : cy;
+    if (mobile) await touch(tx, ty); else await page.mouse.move(tx, ty);
+    await sleep(250);
+    if (i === 6) await shot(page, `${label}-play`);
+  }
+  if (cdp && touching) await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+  const stats = await page.evaluate(() => {
+    const g = window.__game, w = g.world;
+    return { eaten: w.foodEaten, radius: w.player.radius, phase: g.phase, orgs: w.organisms.length, food: w.food.length, fps: g.loop.fps };
+  });
+  step(`${label}: ${JSON.stringify(stats)}`);
+  if (stats.eaten < 1) fail(`${label}: player ate nothing while steering at food`);
+  if (stats.radius <= 24) fail(`${label}: player did not grow`);
+  // Force a division and watch it complete.
+  await page.evaluate(() => { const w = window.__game.world; w.player.addMass(w.divideRadius ** 2 - w.player.mass + 50); });
+  await page.waitForFunction(() => window.__game.world.player.state === 'dividing', null, { timeout: 8000 }).catch(() => fail(`${label}: division never started`));
+  await sleep(1400);
+  await shot(page, `${label}-mitosis`);
+  await page.waitForFunction(() => window.__game.world.generation >= 1, null, { timeout: 8000 }).catch(() => fail(`${label}: division never finished`));
+  await sleep(600);
+  await shot(page, `${label}-divided`);
+  // Pause / resume.
+  await page.keyboard.press('Escape');
+  await sleep(300);
+  if (!(await page.evaluate(() => window.__game.paused))) fail(`${label}: pause did not engage`);
+  await page.click('.screen.pause [data-a="resume"]');
+  await sleep(300);
+  if (await page.evaluate(() => window.__game.paused)) fail(`${label}: resume failed`);
+  // Death: drop a huge predator on the player.
+  await page.evaluate(() => { const w = window.__game.world, p = w.player; w.graceTimer = 0; const pr = w.spawnOrganism('predator', p.x + p.radius * 0.5, p.y, p.radius * 2.5); pr.vx = 0; });
+  await page.waitForFunction(() => window.__game.phase === 'dying', null, { timeout: 6000 }).catch(() => fail(`${label}: player was never engulfed`));
+  await sleep(900);
+  await shot(page, `${label}-dying`);
+  await page.waitForSelector('.screen.death.on', { timeout: 8000 }).catch(() => fail(`${label}: death screen did not appear`));
+  await sleep(1200);
+  await shot(page, `${label}-death`);
+  await page.click('.screen.death [data-a="restart"]');
+  await page.waitForFunction(() => window.__game.phase === 'playing' && window.__game.world.generation === 0, null, { timeout: 6000 }).catch(() => fail(`${label}: restart failed`));
+  await sleep(1500);
+  await shot(page, `${label}-restarted`);
+  const fps = await page.evaluate(() => window.__game.loop.fps);
+  step(`${label}: fps ${fps.toFixed(1)} (software GL)`);
+  for (const e of errs) fail(`${label}: ${e}`);
+  await ctx.close();
 }
 
 let browser;
 try {
   await waitForServer();
-  browser = await chromium.launch({ args: ['--use-gl=swiftshader', '--enable-unsafe-swiftshader'] });
-
-  // --- Flow: title -> new game -> scale shift -> shop -> continue
-  {
-    const ctx = await browser.newContext({ viewport: { width: 1024, height: 640 } });
-    await noHmr(ctx);
-    const page = await ctx.newPage();
-    const errs = [];
-    attach(page, errs);
-    await page.goto(BASE);
-    step('waiting for title screen');
-    await page.waitForSelector('.eh-title.on', { timeout: 30000 });
-    await page.click('.eh-title [data-a="new"]');
-    await page.waitForSelector('.eh-title.on', { state: 'detached', timeout: 5000 }).catch(() => {});
-    await page.waitForFunction(() => window.__game && !window.__game.loop.paused, null, { timeout: 30000 });
-    step('game running');
-    await sleep(1500);
-    // Several consecutive shifts: the 2nd shift used to crash the renderer (destroyed
-    // previous-world texture still referenced), freezing the game on entering tier 3.
-    for (let n = 1; n <= 3; n++) {
-      await page.keyboard.press('[');
-      await sleep(300);
-      await page.keyboard.press(']');
-      step(`shift ${n}: waiting for shop`);
-      await page.waitForSelector('.eh-shop.vis', { timeout: 45000 });
-      step(`shift ${n}: shop open`);
-      await page.click('.eh-shop [data-go]');
-      await page.waitForSelector('.eh-shop.vis', { state: 'detached', timeout: 10000 }).catch(() => {});
-      const stillOpen = await page.evaluate(() => document.querySelector('.eh-shop')?.classList.contains('vis'));
-      if (stillOpen) fail(`shop did not close after Continue (shift ${n})`);
-      const tier = await page.evaluate(() => window.__game.tier.index);
-      if (tier !== n + 1) fail(`expected tier ${n + 1} after shift ${n}, got ${tier}`);
-      await sleep(1200);
-    }
-    await sleep(1000);
-    errs.forEach((e) => fail(`flow: ${e}`));
-    await ctx.close();
-  }
-
-  // --- Each tier loads cleanly
-  for (let n = 1; n <= TIER_COUNT; n++) {
-    const ctx = await browser.newContext({ viewport: { width: 800, height: 500 } });
-    await noHmr(ctx);
-    const page = await ctx.newPage();
-    const errs = [];
-    attach(page, errs);
-    await page.goto(`${BASE}?tier=${n}&nodebugkeys`);
-    try {
-      await page.waitForFunction((k) => window.__game && window.__game.tier?.index === k, n, { timeout: 30000 });
-      await sleep(2000);
-    } catch {
-      errs.push(`tier ${n} did not load (window.__game.tier.index !== ${n})`);
-    }
-    step(`tier ${n}: ${errs.length ? errs.length + ' error(s)' : 'ok'}`);
-    errs.forEach((e) => fail(`tier ${n}: ${e}`));
-    await ctx.close();
-  }
+  browser = await chromium.launch({ args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] });
+  await run({ width: 1100, height: 700 }, 'desktop');
+  await run({ width: 390, height: 780 }, 'phone', true);
 } catch (e) {
-  fail(`exception: ${e?.stack || e}`);
+  fail(String(e?.stack || e));
 } finally {
-  await browser?.close().catch(() => {});
-  killVite();
+  await browser?.close();
+  kill();
 }
-
-if (failures.length) {
-  console.error(`\n[e2e] ${failures.length} failure(s)`);
-  process.exit(1);
-}
-console.log('\n[e2e] all checks passed');
-process.exit(0);
+if (failures.length) { console.error(`\n[e2e] ${failures.length} failure(s)`); process.exit(1); }
+console.log('\n[e2e] all good');

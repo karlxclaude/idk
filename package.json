@@ -2,7 +2,7 @@
   "name": "everhunger",
   "version": "0.1.0",
   "private": true,
-  "description": "EVERHUNGER - eat and grow from the Planck scale to eternal inflation",
+  "description": "EVERHUNGER - a soft-bodied microorganism that eats, grows and divides",
   "type": "module",
   "scripts": {
     "dev": "vite",

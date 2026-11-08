@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import { Rng, clamp, lerp, invLerp, smoothstep, lerpColor, logLerp, easeOutExpo } from '../../src/core/math';
-import { formatScale } from '../../src/core/camera';
 
 describe('math helpers', () => {
   it('clamp/lerp/invLerp/smoothstep', () => {
@@ -53,10 +52,3 @@ describe('Rng', () => {
   });
 });
 
-describe('formatScale', () => {
-  it('formats exponents with superscripts', () => {
-    expect(formatScale(-35)).toBe('10⁻³⁵ m');
-    expect(formatScale(0)).toBe('10⁰ m');
-    expect(formatScale(26.4)).toBe('10²⁶ m');
-  });
-});
