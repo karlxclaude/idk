@@ -10,6 +10,14 @@ import { Entity } from './Entity';
 import { archetypeRegistry, resolveBehaviors, resolveRenderer } from './registries';
 import type { EntityArchetype, SpawnOptions } from './types';
 
+const rendererCache = new WeakMap<EntityArchetype, ReturnType<typeof resolveRenderer>>();
+/** resolveRenderer allocates a merged params object each call; cache per archetype (hot in render loop). */
+function cachedRenderer(arch: EntityArchetype) {
+  let r = rendererCache.get(arch);
+  if (!r) rendererCache.set(arch, (r = resolveRenderer(arch)));
+  return r;
+}
+
 export type DespawnReason = 'eaten' | 'culled' | 'expired' | 'killed' | 'clear';
 
 export class World {
@@ -59,7 +67,7 @@ export class World {
     e.popScale = opts.popIn === false ? 1 : 0;
 
     // View (pooled per archetype)
-    const { def, params } = resolveRenderer(arch);
+    const { def, params } = cachedRenderer(arch);
     const vp = this.viewPools.get(arch.id);
     const view = vp?.pop() ?? def.create(arch, params, this.ctx);
     def.reset?.(view, e, params, this.ctx);
@@ -172,7 +180,7 @@ export class World {
       const s = e.radius * e.popScale;
       v.scale.set(s * e.scaleX, s * e.scaleY);
       v.alpha = e.alpha;
-      const { def, params } = resolveRenderer(e.arch);
+      const { def, params } = cachedRenderer(e.arch);
       def.update?.(v, e, params, ctx, realDt);
     }
   }

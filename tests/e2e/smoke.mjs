@@ -38,6 +38,22 @@ async function waitForServer() {
 const IGNORABLE = [/GPU stall/i, /swiftshader/i, /WebGL.*(performance|deprecated)/i, /AudioContext/i, /autoplay/i, /favicon/i];
 const ignorable = (t) => IGNORABLE.some((r) => r.test(t));
 
+// Other editors may touch source files while tests run; a vite HMR full-reload would reset the page.
+// Neutralise the HMR socket so the page under test is stable.
+async function noHmr(ctx) {
+  await ctx.addInitScript(() => {
+    const Native = window.WebSocket;
+    window.WebSocket = function (url, protocols) {
+      if (protocols === 'vite-hmr' || (Array.isArray(protocols) && protocols.includes('vite-hmr'))) {
+        return { addEventListener() {}, removeEventListener() {}, send() {}, close() {}, readyState: 3 };
+      }
+      return new Native(url, protocols);
+    };
+    window.WebSocket.prototype = Native.prototype;
+    Object.assign(window.WebSocket, { CONNECTING: 0, OPEN: 1, CLOSING: 2, CLOSED: 3 });
+  });
+}
+
 function attach(page, bucket) {
   page.on('console', (m) => { if (m.type() === 'error' && !ignorable(m.text())) bucket.push(`console.error: ${m.text()}`); });
   page.on('pageerror', (e) => bucket.push(`pageerror: ${e.message}`));
@@ -51,6 +67,7 @@ try {
   // --- Flow: title -> new game -> scale shift -> shop -> continue
   {
     const ctx = await browser.newContext({ viewport: { width: 1024, height: 640 } });
+    await noHmr(ctx);
     const page = await ctx.newPage();
     const errs = [];
     attach(page, errs);
@@ -80,6 +97,7 @@ try {
   // --- Each tier loads cleanly
   for (let n = 1; n <= TIER_COUNT; n++) {
     const ctx = await browser.newContext({ viewport: { width: 800, height: 500 } });
+    await noHmr(ctx);
     const page = await ctx.newPage();
     const errs = [];
     attach(page, errs);

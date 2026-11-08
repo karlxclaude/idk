@@ -21,8 +21,8 @@ export default defineTier({
   },
   background: [
     { type: 'gradient', depth: 0, alpha: 0.5 },
-    { type: 't04_caustics', depth: 0.05, color: 0x7ad8ff, alpha: 0.32, scale: 1, params: { span: 4000 } },
-    { type: 'lightShafts', depth: 0.06, density: 5, color: 0x4aa8ff, alpha: 0.0, scale: 1.1, speed: 0.8 },
+    { type: 't04_caustics', depth: 0.05, color: 0x7ad8ff, alpha: 0.22, scale: 1, params: { span: 4000 } },
+    { type: 'lightShafts', depth: 0.06, density: 5, color: 0x4aa8ff, alpha: 0.12, scale: 1.1, speed: 0.8 },
     { type: 't04_leviathans', depth: 0.1, density: 5, colors: [0x0a2a5a, 0x082048], alpha: 0.5, scale: 1 },
     { type: 't04_depth', depth: 0, color: 0x00030c, alpha: 0.7, params: { span: 4000 } },
     { type: 'dots', depth: 0.32, color: 0xbfe6ff, density: 0.9, alpha: 0.45, blend: 'add', params: { twinkle: 0.3 } },

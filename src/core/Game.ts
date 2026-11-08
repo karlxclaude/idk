@@ -124,6 +124,7 @@ export class Game implements GameContext {
       if (document.hidden && !this.loop.paused) this.setPaused(true);
     });
 
+    this.applyQuality();
     this.resize(app.screen.width, app.screen.height);
     app.renderer.on('resize', (w: number, h: number) => this.resize(w, h));
     app.ticker.add((t) => this.loop.tick(t.deltaMS));
@@ -156,7 +157,7 @@ export class Game implements GameContext {
     this.lastProgressSent = -1;
     this.respawnTimer = -1;
 
-    this.world.maxEntities = tier.maxEntities ?? 260;
+    this.world.maxEntities = Math.round((tier.maxEntities ?? 260) * (st.settings.quality === 'low' ? 0.7 : 1));
     this.player.reset(0, 0, opts.mass ?? 1);
     st.mass = this.player.mass;
     this.player.setAppearance(tier, this);
@@ -179,7 +180,7 @@ export class Game implements GameContext {
     }
 
     const q = st.settings.quality;
-    this.spawner.densityScale = (q === 'low' ? 0.7 : 1) * (1 + 0.1 * st.ngPlus);
+    this.spawner.densityScale = (q === 'low' ? 0.55 : q === 'medium' ? 0.85 : 1) * (1 + 0.1 * st.ngPlus);
     this.spawner.setTier(tier);
     this.spawner.fillInitial();
     this.world.update(0); // build spatial hash
@@ -227,7 +228,19 @@ export class Game implements GameContext {
     this.state.settings = s;
     this.input.touchMode = s.touchMode;
     this.fx.applySettings(s);
+    this.applyQuality();
     this.events.emit('settingsChanged', { settings: s });
+  }
+
+  /** Render resolution cap by quality: low 1x, medium 1.5x, high 2x. Takes effect for density/entity caps on next tier. */
+  private applyQuality() {
+    const cap = this.state.settings.quality === 'low' ? 1 : this.state.settings.quality === 'medium' ? 1.5 : 2;
+    const res = Math.min(window.devicePixelRatio || 1, cap);
+    const r = this.app.renderer;
+    if (r.resolution !== res) {
+      r.resolution = res;
+      r.resize(r.screen.width, r.screen.height);
+    }
   }
 
   addEssence(n: number) {
