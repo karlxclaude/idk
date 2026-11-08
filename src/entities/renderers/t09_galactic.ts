@@ -37,7 +37,12 @@ const armsTex = (seed: number, arms: number, bar: boolean) =>
   bakeTexture(`t09:arms:${seed}:${arms}:${bar}`, 512, (c, s) => {
     const r = new Rng(seed * 53 + 7);
     const m = s / 2;
-    const n = 1800;
+    const n = 2800;
+    for (let i = 0; i < 380; i++) { // soft haze following the arms
+      const arm = i % arms, t = Math.pow(r.next(), 0.8), rad = (0.1 + t * 0.88) * m;
+      const a = (arm / arms) * 6.283 + t * 3.6 + r.range(-0.3, 0.3);
+      dot(c, m + Math.cos(a) * rad, m + Math.sin(a) * rad, r.range(16, 34), 0.1);
+    }
     for (let i = 0; i < n; i++) {
       const arm = i % arms;
       const t = Math.pow(r.next(), 0.8); // 0 centre .. 1 rim
@@ -45,7 +50,7 @@ const armsTex = (seed: number, arms: number, bar: boolean) =>
       const wind = 3.6;
       const a = (arm / arms) * 6.283 + t * wind + r.range(-1, 1) * (0.28 - 0.12 * t) * (1 + (1 - t) * 0.5);
       const x = m + Math.cos(a) * rad, y = m + Math.sin(a) * rad;
-      dot(c, x, y, r.range(1.5, 5) * (1 - t * 0.3), r.range(0.15, 0.8) * (1 - t * 0.5) + 0.1);
+      dot(c, x, y, r.range(2.2, 6.5) * (1 - t * 0.3), r.range(0.2, 0.9) * (1 - t * 0.4) + 0.12);
       if (r.chance(0.06)) dot(c, x, y, r.range(5, 12), 0.28); // HII clumps
     }
     if (bar) for (let i = 0; i < 160; i++) {
@@ -214,9 +219,10 @@ export default defineRenderers([
         plane.addChild(new Sprite());
       } else {
         const bar = p.kind === 'barred';
-        plane.addChild(sprite(Tex.glow(), 2.3, { add: true, alpha: 0.4 }));
+        plane.addChild(sprite(Tex.glow(), 2.3, { add: true, alpha: 0.6 }));
         plane.addChild(box(armsTex(1, p.arms, bar), 2.25, 2.25, { add: true, alpha: 0.95 }));
         plane.addChild(box(dustTex(1), 2.25, 2.25, { alpha: 0.9 }));
+        plane.addChild(box(ellipticalTex(), 1.2, 1.2, { add: true, alpha: 0.85 })); // bulge
       }
       v.addChild(plane);
       v.addChild(sprite(Tex.glow(), p.kind === 'dwarf' ? 0.5 : 0.95, { add: true, alpha: 0.95 })); // 2 core
@@ -231,6 +237,7 @@ export default defineRenderers([
       (plane.children[0] as Sprite).tint = e.color;
       (plane.children[1] as Sprite).tint = p.kind === 'elliptical' ? e.color2 : e.color2;
       (plane.children[2] as Sprite).tint = 0x1a0830;
+      if (plane.children[3]) (plane.children[3] as Sprite).tint = e.color2;
       sp(v, 2).tint = e.color2;
       sp(v, 3).tint = 0xfff6e0;
     },

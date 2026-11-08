@@ -10,7 +10,7 @@ import type { MechanicDef } from '../mechanicRegistry';
 
 const def: MechanicDef = {
   id: 't07_orbitals',
-  defaults: { maxMoons: 14, showerEvery: [26, 42] as [number, number], showerCount: [12, 18] as [number, number], slingBoost: 1.45, beltSpeed: 0.3 },
+  defaults: { maxMoons: 14, showerEvery: [26, 42] as [number, number], showerCount: [12, 18] as [number, number], slingBoost: 1.45, beltSpeed: 0.3, gravity: 3 },
   create(p, ctx) {
     const moons: Entity[] = [];
     let scan = 0;
@@ -112,6 +112,15 @@ const def: MechanicDef = {
           if (e.dead || !e.active) continue;
           if (e.hasTag('host')) {
             if (!e.data.t07m && e.age > 0.05) { e.data.t07m = true; spawnMoons(e); }
+            if (e.hasTag('gas') && pl.alive && !e.offscreen) { // gravity assist: a gentle pull on the player only
+              const gx = e.x - pl.x, gy = e.y - pl.y;
+              const gd = Math.hypot(gx, gy) || 1;
+              if (gd < e.radius * 4 && gd > e.radius * 1.1) {
+                const f = (1 - gd / (e.radius * 4)) ** 2 * p.gravity * pl.maxSpeed(ctx) * step;
+                pl.vx += (gx / gd) * f;
+                pl.vy += (gy / gd) * f;
+              }
+            }
             if (e.hasTag('gas') && sling <= 0 && pl.alive && !e.offscreen) {
               const dx = e.x - pl.x, dy = e.y - pl.y;
               const d = Math.hypot(dx, dy) || 1;

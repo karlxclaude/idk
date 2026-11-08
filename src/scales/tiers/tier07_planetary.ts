@@ -40,8 +40,8 @@ export default defineTier({
     reverb: 0.7,
   },
   spawns: [
-    { archetype: 't07_debris', count: 14, size: [0.07, 0.14], group: { size: [4, 8], spread: 3 } },
-    { archetype: 't07_satellite', count: 8, size: [0.12, 0.22] },
+    { archetype: 't07_debris', count: 14, size: [0.1, 0.18], group: { size: [4, 8], spread: 3 } },
+    { archetype: 't07_satellite', count: 8, size: [0.18, 0.3] },
     { archetype: 't07_beltRock', count: 12, size: [0.18, 0.45], group: { size: [6, 10], spread: 7 } },
     { archetype: 't07_asteroid', count: 4, size: [0.45, 0.85] },
     { archetype: 't07_comet', count: 2, size: [0.28, 0.5], progress: [0.05, 1] },

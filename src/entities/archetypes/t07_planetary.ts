@@ -96,10 +96,7 @@ export default defineArchetypes([
     id: 't07_gasGiant',
     name: 'Gas giant (ringed)',
     renderer: { id: 't07_planet', params: { kind: 'gas', ring: true, glow: 1.9 } },
-    behaviors: [
-      { id: 'drift', params: { speed: 0.03, jitter: 0.004 } },
-      { id: 'gravityWell', params: { range: 3.4, strength: 0.28 } },
-    ],
+    behaviors: [{ id: 'drift', params: { speed: 0.03, jitter: 0.004 } }],
     colors: [0xe8b87a, 0xd89a6a, 0xa8c0e8, 0xc8a0d8],
     colors2: [0xfff0d0, 0xffd0a0],
     tags: ['planet', 'gas', 'host'],
@@ -112,7 +109,7 @@ export default defineArchetypes([
   {
     id: 't07_meteor',
     name: 'Meteor (hazard)',
-    renderer: { id: 't07_comet', params: { tail: 3.6, glow: 2.4 } },
+    renderer: { id: 't07_comet', params: { tail: 6, glow: 3 } },
     behaviors: [{ id: 'drift', params: { speed: 1.4, jitter: 0.01 } }, { id: 'faceVelocity', params: { turn: 6 } }],
     colors: [0xff9a4a, 0xffb060, 0xff7a3a],
     colors2: [0xff4a2a, 0xffd070],

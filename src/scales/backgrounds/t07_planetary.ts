@@ -10,7 +10,7 @@ import { rimTex } from '../../entities/renderers/t07_common';
 import type { BackgroundLayerType } from '../backgroundRegistry';
 
 const limbTex = () =>
-  bakeTexture('bg:t07:limb', 512, (c, s) => {
+  bakeTexture('bg:t07:limb', 1024, (c, s) => {
     const r = new Rng(2024);
     const m = s / 2;
     c.save();
@@ -23,11 +23,11 @@ const limbTex = () =>
     }
     for (let i = 0; i < 140; i++) { // swirling cloud streaks
       c.fillStyle = `rgba(255,255,255,${r.range(0.05, 0.22)})`;
-      c.beginPath(); c.ellipse(r.range(0, s), r.range(0, s), r.range(20, 90), r.range(3, 10), r.range(-0.25, 0.25), 0, 6.3); c.fill();
+      c.beginPath(); c.ellipse(r.range(0, s), r.range(0, s), r.range(40, 180), r.range(6, 20), r.range(-0.25, 0.25), 0, 6.3); c.fill();
     }
     for (let i = 0; i < 50; i++) { // darker continents/storms
       c.fillStyle = `rgba(20,30,50,${r.range(0.08, 0.22)})`;
-      c.beginPath(); c.ellipse(r.range(0, s), r.range(0, s), r.range(20, 80), r.range(10, 40), r.range(0, 3), 0, 6.3); c.fill();
+      c.beginPath(); c.ellipse(r.range(0, s), r.range(0, s), r.range(40, 160), r.range(20, 80), r.range(0, 3), 0, 6.3); c.fill();
     }
     // night-side shading: lit from the upper right
     const g = c.createRadialGradient(s * 0.72, s * 0.18, s * 0.05, s * 0.55, s * 0.4, s * 0.85);

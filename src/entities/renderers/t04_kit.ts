@@ -137,7 +137,6 @@ export function swimmerRenderer(id: string, spec: SwimSpec): RendererDef {
       if (!spec.bellyLine) return;
       c.save();
       profilePath(c, spec.L, spec.top, spec.bot);
-      if (spec.bodyExtra) spec.bodyExtra(c);
       c.clip();
       const y0 = spec.bellyLine(0.5);
       const g = c.createLinearGradient(0, y0 - 0.08, 0, y0 + 0.14);

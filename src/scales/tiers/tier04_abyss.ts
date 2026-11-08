@@ -54,7 +54,7 @@ export default defineTier({
   hazards: [{ archetype: 't04_stingJelly', count: 2, size: [1.3, 2.1], progress: [0.1, 1] }],
   mechanics: [{ id: 't04_darkness' }],
   abilityId: 'bioluminescentLure',
-  playerStage: 'cell',
+  playerStage: 'creature',
   growthTarget: 16,
   nutrition: 0.5,
   previousSpeck: {
