@@ -19,7 +19,10 @@
         flags = { copy: false, sel: false };
         target = Array.from({ length: LEN }, () => S.randInt(0, 3));
         cells = []; nucs = []; history = [];
-        me = newCell(W / 2, H / 2, Array.from({ length: LEN }, () => S.randInt(0, 3)), 0); me.me = true; cells.push(me);
+        const carried = S.carryGet('rna', null);
+        const g0 = carried ? carried.slice(0, LEN).map(b => Math.max(0, BASEN.indexOf(b))) : Array.from({ length: LEN }, () => S.randInt(0, 3));
+        while (g0.length < LEN) g0.push(S.randInt(0, 3));
+        me = newCell(W / 2, H / 2, g0, 0); me.me = true; cells.push(me);
         for (let i = 0; i < 5; i++) cells.push(newCell(S.rand(W * 0.2, W * 0.8), S.rand(H * 0.2, H * 0.8), Array.from({ length: LEN }, () => S.randInt(0, 3)), 0));
         for (let i = 0; i < 50; i++) nucs.push({ x: S.rand(W), y: S.rand(H) });
         S.UI.hint('You are the glowing protocell. Eat 8 nucleotides, then press Space to copy. Copies mutate.', 8);
@@ -89,7 +92,7 @@
         const af = avgFit();
         S.UI.setProgress(Math.min(1, (Math.min(cells.length, POP_GOAL) / POP_GOAL) * 0.4 + Math.min(1, af / FIT_GOAL) * 0.6));
         if (af > 0.5 && cells.length >= 10 && !flags.sel) { flags.sel = true; S.unlock('selection'); }
-        if (af >= FIT_GOAL && cells.length >= POP_GOAL && !done) { done = true; S.unlock('rna-world', () => S.completeStage()); }
+        if (af >= FIT_GOAL && cells.length >= POP_GOAL && !done) { done = true; const best = cells.reduce((a, b) => a.fit > b.fit ? a : b); S.carrySet('genome', best.g.map(b => BASEN[b])); S.carrySet('fitness', best.fit); S.unlock('rna-world', () => S.completeStage()); }
       };
       function kill(i, c, why) {
         cells.splice(i, 1); deaths++;
@@ -115,7 +118,9 @@
           G.glow(ctx, c.x, c.y, c.r * (c.me ? 3 : 1.8) + c.flash * 20, col, (c.me ? 0.5 : 0.22) + c.flash * 0.5);
           G.wobbly(ctx, c.x, c.y, c.r, t + c.wob, 0.07, 6, 'rgba(255,216,107,0.08)', G.rgba('#ffd86b', c.me ? 0.9 : 0.5), c.me ? 2.5 : 1.5);
           // genome beads
-          c.g.forEach((b, i) => { const a = i / LEN * S.TAU + t * 0.5 + c.wob; G.circle(ctx, c.x + Math.cos(a) * 7, c.y + Math.sin(a) * 7, 2.6, b === target[i] ? BASEC[b] : 'rgba(120,120,160,0.8)'); });
+          // lipid membrane carried from the protocell stage
+          for (let k = 0; k < 12; k++) { const a = k / 12 * S.TAU + t * 0.3 + c.wob; G.circle(ctx, c.x + Math.cos(a) * c.r, c.y + Math.sin(a) * c.r, 1.6, 'rgba(255,216,107,' + (c.me ? 0.9 : 0.5) + ')'); }
+          c.g.forEach((b, i) => { const a = i / LEN * S.TAU + t * 0.5 + c.wob; const bx = c.x + Math.cos(a) * 7, by = c.y + Math.sin(a) * 7; G.circle(ctx, bx, by, c.me ? 3.4 : 2.6, b === target[i] ? BASEC[b] : 'rgba(120,120,160,0.8)'); if (c.me) G.text(ctx, BASEN[b], bx, by, 6, '#2a0a1e', 'center', '700'); });
           if (c.me) {
             G.bar(ctx, c.x - 20, c.y + c.r + 8, 40, 4, c.nucs / COPY_COST, c.nucs >= COPY_COST ? '#8ef7c2' : '#ff9ad0');
             G.text(ctx, c.nucs >= COPY_COST ? (S.touch ? 'tap Copy' : 'SPACE to copy') : c.nucs + ' / ' + COPY_COST, c.x, c.y + c.r + 20, 10, '#8ef7c2');
@@ -126,7 +131,7 @@
         const af = avgFit();
         G.text(ctx, 'Population ' + cells.length + ' / ' + POP_GOAL + (S.mobile ? '' : ' (food supports about ' + CAP + ')'), 18, 72, 13, '#d8ecff', 'left');
         G.text(ctx, 'Average copying skill ' + Math.round(af * 100) + '% (goal ' + Math.round(FIT_GOAL * 100) + '%)', 18, 92, 13, '#d8ecff', 'left');
-        G.text(ctx, 'Deaths ' + deaths + ' · your generation ' + me.gen, 18, 112, 12, '#7f9bbd', 'left');
+        G.text(ctx, 'Your strand ' + me.g.map(b => BASEN[b]).join('') + ' · generation ' + me.gen + ' · deaths ' + deaths, 18, 112, 12, '#7f9bbd', 'left');
         G.text(ctx, S.mobile ? 'Bright beads help the strand copy. Grey do not.' : 'Bright beads = bases that help the strand fold into a working copier. Grey = not yet.', 18, 130, 11, '#7f9bbd', 'left');
         // graph
         const gx = 18, gy = H - (S.mobile ? 170 : 130), gw = S.mobile ? 140 : 180, gh = 60;

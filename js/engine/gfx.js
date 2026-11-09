@@ -61,6 +61,48 @@
   };
   Gfx.rgba = function (c, a) { return 'rgba(' + Gfx.rgb(c) + ',' + S.clamp(a, 0, 1) + ')'; };
 
+  // ---------- living mitochondrion ----------
+  // m: { a (angle), d (0..1 of radius), ph, split (0..1 while dividing) }
+  Gfx.mito = function (ctx, cx, cy, R, m, t, scale) {
+    scale = scale || 1;
+    const x = cx + Math.cos(m.a) * R * m.d, y = cy + Math.sin(m.a) * R * m.d;
+    const wig = 1 + 0.12 * Math.sin(t * 5 + (m.ph || 0));
+    const len = 9 * scale * wig, wid = 5 * scale / wig;
+    ctx.save(); ctx.translate(x, y); ctx.rotate((m.a || 0) + Math.sin(t * 1.3 + (m.ph || 0)) * 0.6);
+    Gfx.glow(ctx, 0, 0, 14 * scale + (m.flash || 0) * 10, '#c48cff', 0.35 + (m.flash || 0) * 0.5);
+    ctx.fillStyle = '#c48cff';
+    if (m.split > 0) { // pinching in two
+      const off = len * 0.6 * m.split;
+      ctx.beginPath(); ctx.ellipse(-off, 0, len * (1 - 0.3 * m.split), wid, 0, 0, S.TAU); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(off, 0, len * (1 - 0.3 * m.split), wid, 0, 0, S.TAU); ctx.fill();
+    } else { ctx.beginPath(); ctx.ellipse(0, 0, len, wid, 0, 0, S.TAU); ctx.fill(); }
+    ctx.strokeStyle = '#3a1a5a'; ctx.lineWidth = Math.max(0.6, scale); ctx.beginPath();
+    for (let k = -len * 0.7; k <= len * 0.7; k += Math.max(2.4, 3 * scale)) { ctx.moveTo(k, -wid * 0.6); ctx.lineTo(k + 1.2, wid * 0.6); }
+    ctx.stroke(); ctx.restore();
+    return { x, y };
+  };
+  // animate a list of mitos drifting inside a cell
+  Gfx.mitoUpdate = function (list, dt, t) {
+    list.forEach(m => {
+      m.ph = m.ph || 0; m.a += Math.sin(t * 0.7 + m.ph) * 0.4 * dt; m.d += Math.cos(t * 0.5 + m.ph * 1.7) * 0.15 * dt;
+      m.d = S.clamp(m.d, 0.15, 0.75); m.flash = Math.max(0, (m.flash || 0) - dt * 2);
+      if (m.split > 0) m.split = Math.min(1, m.split + dt * 0.8);
+    });
+  };
+  // small DNA loop (nucleoid) drawn inside a prokaryote
+  Gfx.nucleoid = function (ctx, x, y, r, t, alpha) {
+    ctx.strokeStyle = 'rgba(79,216,255,' + (alpha === undefined ? 0.7 : alpha) + ')'; ctx.lineWidth = 1.2; ctx.beginPath();
+    for (let i = 0; i <= 24; i++) { const a = i / 24 * S.TAU; const rr = r * (0.7 + 0.3 * Math.sin(a * 3 + t * 2)); const px = x + Math.cos(a) * rr, py = y + Math.sin(a) * rr * 0.6; if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py); }
+    ctx.closePath(); ctx.stroke();
+  };
+  // membrane machinery dots on a cell rim: n synthases (green) and pumps (yellow)
+  Gfx.rimParts = function (ctx, x, y, r, parts, t) {
+    if (!parts) return;
+    const n = (parts.synthase || 0) + (parts.pump || 0);
+    for (let i = 0; i < n; i++) { const a = i / n * S.TAU + t * 0.2; const col = i < (parts.synthase || 0) ? '#8ef7c2' : '#ffd86b'; Gfx.circle(ctx, x + Math.cos(a) * r, y + Math.sin(a) * r, 2.2, col); }
+  };
+  Gfx.newMito = function () { return { a: S.rand(S.TAU), d: S.rand(0.25, 0.65), ph: S.rand(S.TAU), split: 0, flash: 0 }; };
+
   // ---------- particles ----------
   class Particles {
     constructor() { this.list = []; }

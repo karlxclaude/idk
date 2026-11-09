@@ -18,7 +18,7 @@
       st.enter = function () {
         W = S.W; H = S.H; t = 0; done = false; energy = 80;
         flags = { mc: false, spec: false, hintRole: false };
-        col = { x: W / 2, y: H / 2, vx: 0, vy: 0, cells: [{ dx: 0, dy: 0, role: 'feeder', ph: 0 }] };
+        col = { x: W / 2, y: H / 2, vx: 0, vy: 0, cells: [{ dx: 0, dy: 0, role: 'feeder', ph: 0, mito: G.newMito() }] };
         food = []; for (let i = 0; i < 55; i++) food.push({ x: S.rand(W), y: S.rand(70, H - 70) });
         predator = { x: -100, y: H / 2, vx: 0, vy: 0, r: 34, t: 0 };
         S.UI.hint('You are one cell. ' + (S.touch ? 'Tap Divide.' : 'Press Space to divide.') + ' Your daughter cell will stay attached.', 8);
@@ -32,7 +32,7 @@
         for (let tries = 0; tries < 40; tries++) {
           const p = S.pick(col.cells), d = S.pick(DIRS);
           const nx = p.dx + d[0] * CR * 2, ny = p.dy + d[1] * CR * 2;
-          if (!col.cells.some(c => S.dist(c.dx, c.dy, nx, ny) < CR)) { col.cells.push({ dx: nx, dy: ny, role: 'stem', ph: S.rand(S.TAU) }); return true; }
+          if (!col.cells.some(c => S.dist(c.dx, c.dy, nx, ny) < CR)) { col.cells.push({ dx: nx, dy: ny, role: 'stem', ph: S.rand(S.TAU), mito: G.newMito() }); return true; }
         }
         return false;
       }
@@ -46,6 +46,7 @@
 
       st.update = function (dt) {
         t += dt;
+        col.cells.forEach(c => G.mitoUpdate([c.mito], dt, t + c.ph));
         const movers = count('mover'), feeders = count('feeder'), sensors = count('sensor');
         // move toward pointer, speed from movers divided by drag of body size
         const speed = (40 + 110 * movers) / Math.sqrt(col.cells.length) * 1.4;
@@ -85,7 +86,7 @@
         S.UI.setProgress(Math.min(1, col.cells.length / CELL_GOAL) * 0.4 + Math.min(1, (Math.min(feeders, 3) + Math.min(movers, 3) + Math.min(sensors, 3)) / 9) * 0.4 + (ok ? Math.min(1, energy / ENERGY_GOAL) : 0) * 0.2);
         S.UI.objective('Cells ' + col.cells.length + ' / ' + CELL_GOAL + ' · feeders ' + feeders + ' · movers ' + movers + ' · sensors ' + sensors + ' (3 each) · energy ' + Math.floor(energy) + (ok ? ' / ' + ENERGY_GOAL : ''));
         if (feeders && movers && sensors && !flags.spec) { flags.spec = true; S.unlock('specialization'); }
-        if (ok && energy >= ENERGY_GOAL && !done) { done = true; setTimeout(() => S.completeStage(), 300); }
+        if (ok && energy >= ENERGY_GOAL && !done) { done = true; S.carrySet('roles', { feeder: feeders, mover: movers, sensor: sensors }); setTimeout(() => S.completeStage(), 300); }
       };
       function starve() { S.UI.popup({ tag: 'Starved', title: 'The colony ran out of energy', years: 'about 700 million years ago', body: 'Every cell costs upkeep, and movers cost extra. Keep enough feeders for the body size, and keep moving toward food you can see.', button: 'Try again' }, () => S.restartStage()); }
       function eaten() { S.UI.popup({ tag: 'Eaten', title: 'Swallowed whole', years: 'about 700 million years ago', body: 'A single cell, or a tiny clump, fits in a predator\'s mouth. Divide early: a clump of four is already too big for it.', button: 'Try again' }, () => S.restartStage()); }
@@ -125,6 +126,7 @@
           const x = col.x + c.dx, y = col.y + c.dy, colr = ROLEC[c.role];
           G.glow(ctx, x, y, CR * 1.6, colr, 0.35);
           G.wobbly(ctx, x, y, CR, t + c.ph, 0.05, 5, G.rgba(colr, 0.25), G.rgba(colr, 0.9), 1.5);
+          G.mito(ctx, x, y, CR, c.mito, t + c.ph, 0.45);
           if (c.role === 'mover') { ctx.strokeStyle = G.rgba(colr, 0.8); ctx.lineWidth = 1.5; const a = Math.atan2(-col.vy, -col.vx); ctx.beginPath(); ctx.moveTo(x + Math.cos(a) * CR, y + Math.sin(a) * CR); ctx.quadraticCurveTo(x + Math.cos(a + 0.4) * (CR + 10), y + Math.sin(a + 0.4) * (CR + 10) + Math.sin(t * 14) * 4, x + Math.cos(a) * (CR + 20), y + Math.sin(a) * (CR + 20)); ctx.stroke(); }
           if (c.role === 'sensor') G.circle(ctx, x, y, 4, '#2a1a05', colr, 1.5);
           if (c.role === 'feeder') { ctx.strokeStyle = G.rgba(colr, 0.8); ctx.lineWidth = 1; for (let k = 0; k < 5; k++) { const a = k / 5 * S.TAU + t; ctx.beginPath(); ctx.moveTo(x + Math.cos(a) * CR, y + Math.sin(a) * CR); ctx.lineTo(x + Math.cos(a) * (CR + 4), y + Math.sin(a) * (CR + 4)); ctx.stroke(); } }

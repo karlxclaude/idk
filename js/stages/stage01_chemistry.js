@@ -22,12 +22,12 @@
     outro: 'You have amino acids and nucleotides, but they are loose and alone. Something has to chain them together, and water is going to fight you the whole way.',
     create() {
       const st = {};
-      let W, H, ridgeY, pore, mols, energy, counts, plumes, lightning, t, done, flags, pocketWarnT, energyT;
+      let W, H, ridgeY, pore, mols, energy, counts, plumes, lightning, t, done, flags, pocketWarnT, energyT, fusions;
 
       st.enter = function () {
         W = S.W; H = S.H; ridgeY = H * 0.78;
         pore = { x: W / 2, y: ridgeY, r: 26, pocket: [], flash: 0 };
-        mols = []; energy = 0.3; counts = { amino: 0, nuc: 0 }; t = 0; done = false; pocketWarnT = 0; energyT = 0;
+        mols = []; fusions = []; energy = 0.3; counts = { amino: 0, nuc: 0 }; t = 0; done = false; pocketWarnT = 0; energyT = 0;
         flags = { blocks: false, energy: false, started: false };
         plumes = [0.25, 0.5, 0.75].map(f => ({ x: W * f, phase: S.rand(S.TAU), speed: S.rand(0.05, 0.12) }));
         lightning = { next: 6, flash: 0, packets: [] };
@@ -61,7 +61,10 @@
         return null;
       }
       function react(r) {
-        for (const k in r.need) for (let i = 0; i < r.need[k]; i++) pore.pocket.splice(pore.pocket.indexOf(k), 1);
+        const used = [];
+        for (const k in r.need) for (let i = 0; i < r.need[k]; i++) { const idx = pore.pocket.indexOf(k); used.push({ type: k, slot: idx }); pore.pocket.splice(idx, 1); }
+        // fusion animation: the used molecules converge, flash, and the product flies to the tally
+        fusions.push({ t: 0, items: used.map(u => ({ type: u.type, a: u.slot / POCKET * S.TAU - Math.PI / 2 + t })), x: pore.x, y: pore.y - 6, r, tx: 18 + 10, ty: r.key === 'amino' ? 72 : 92 });
         energy -= 0.6; counts[r.key]++; pore.flash = 1;
         G.burst(pore.x, pore.y - 10, r.color, 26, 140, 4);
         S.Audio.sfx('react');
@@ -69,7 +72,7 @@
         S.UI.setProgress((counts.amino / GOAL.amino + counts.nuc / GOAL.nuc) / 2);
         if (!flags.blocks) { flags.blocks = true; S.unlock('building-blocks'); }
         else if (!flags.energy && counts.amino + counts.nuc >= 3) { flags.energy = true; S.unlock('energy'); }
-        if (counts.amino >= GOAL.amino && counts.nuc >= GOAL.nuc && !done) { done = true; setTimeout(() => S.completeStage(), 600); }
+        if (counts.amino >= GOAL.amino && counts.nuc >= GOAL.nuc && !done) { done = true; S.carrySet('products', { amino: counts.amino, nuc: counts.nuc }); setTimeout(() => S.completeStage(), 1400); }
       }
 
       st.update = function (dt) {
@@ -134,6 +137,7 @@
         if (pore.pocket.length >= POCKET && !r) { pocketWarnT += dt; if (pocketWarnT > 1 && pocketWarnT < 1.1) S.UI.hint('Pocket full with no recipe. Flush it (button or click). Amino acid: 2 CO₂ + NH₃ + H₂. Nucleotide: CO₂ + 2 NH₃ + H₂ + PO₄.', 8); }
         else pocketWarnT = 0;
         pore.flash = Math.max(0, pore.flash - dt * 2);
+        for (let i = fusions.length - 1; i >= 0; i--) { const f = fusions[i]; f.t += dt; if (f.t > 1.6) fusions.splice(i, 1); }
       };
 
       st.pointerDown = function (x, y, e) {
@@ -194,6 +198,21 @@
         G.text(ctx, energy >= 0.6 ? 'energy ready' : 'energy', px, py + 44, 10, '#ffcf7a');
         G.text(ctx, 'FeS pore', px, py - 6 - pore.r - 10, 11, '#ffcf7a');
 
+        // fusions
+        fusions.forEach(f => {
+          if (f.t < 0.45) { // converge
+            const k = f.t / 0.45;
+            f.items.forEach(it => { const d = MOL[it.type]; const rr = 12 * (1 - k); G.orb(ctx, f.x + Math.cos(it.a) * rr, f.y + Math.sin(it.a) * rr, d.r * (1 - 0.4 * k), d.color, 2); });
+            ctx.strokeStyle = G.rgba(f.r.color, k); ctx.lineWidth = 1.5; f.items.forEach(it => { const rr = 12 * (1 - k); ctx.beginPath(); ctx.moveTo(f.x, f.y); ctx.lineTo(f.x + Math.cos(it.a) * rr, f.y + Math.sin(it.a) * rr); ctx.stroke(); });
+          } else if (f.t < 0.7) { // flash
+            const k = (f.t - 0.45) / 0.25; G.glow(ctx, f.x, f.y, 40 + 40 * k, f.r.color, 1 - k); G.orb(ctx, f.x, f.y, 9, f.r.color, 3);
+            G.text(ctx, f.r.name, f.x, f.y - 30, 12, f.r.color, 'center', '600');
+          } else { // fly to the tally
+            const k = Math.min(1, (f.t - 0.7) / 0.9), e = 1 - Math.pow(1 - k, 3);
+            const x = f.x + (f.tx - f.x) * e, y = f.y + (f.ty - f.y) * e - Math.sin(k * Math.PI) * 60;
+            G.orb(ctx, x, y, 8 * (1 - 0.4 * k), f.r.color, 2.5);
+          }
+        });
         // tally
         const tx = 18, ty = 72;
         G.text(ctx, 'Amino acids ' + counts.amino + ' / ' + GOAL.amino, tx, ty, 13, '#8ef7c2', 'left');

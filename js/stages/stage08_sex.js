@@ -26,7 +26,8 @@
       };
       st.resize = function () { W = S.W; H = S.H; };
       const randG = () => Array.from({ length: GENES }, () => S.randInt(0, 3));
-      function newCell(x, y, g, side) { return { id: nextId++, x, y, vx: 0, vy: 0, g, side, cd: 0, wob: S.rand(S.TAU), flash: 0, age: 0 }; }
+      const NMITO = Math.min(3, Math.max(1, Math.round(S.carryGet('mitos', 4) / 2)));
+      function newCell(x, y, g, side) { return { id: nextId++, x, y, vx: 0, vy: 0, g, side, cd: 0, wob: S.rand(S.TAU), flash: 0, age: 0, mitos: Array.from({ length: NMITO }, () => G.newMito()) }; }
       const kin = () => cells.filter(c => c.side === 'kin'), clones = () => cells.filter(c => c.side === 'clone');
       function mate(a, b) {
         a.cd = 6; b.cd = 6; a.flash = 1; b.flash = 1;
@@ -49,6 +50,7 @@
         t += dt;
         // cells move
         cells.forEach(c => {
+          G.mitoUpdate(c.mitos, dt, t + c.wob);
           c.cd = Math.max(0, c.cd - dt); c.flash = Math.max(0, c.flash - dt * 2); c.age += dt;
           let tx, ty;
           if (c.me) { tx = S.input.x; ty = S.input.y; }
@@ -113,6 +115,7 @@
           if (ready && !c.me) G.glow(ctx, c.x, c.y, 34 + 4 * Math.sin(t * 5), '#ff7ad9', 0.5);
           G.glow(ctx, c.x, c.y, 24 + c.flash * 30, col, (c.me ? 0.6 : 0.25) + c.flash * 0.5);
           G.wobbly(ctx, c.x, c.y, 12, t + c.wob, 0.07, 5, G.rgba(col, 0.2), G.rgba(col, c.me ? 1 : 0.7), c.me ? 2.5 : 1.5);
+          c.mitos.forEach(m => G.mito(ctx, c.x, c.y, 12, m, t + c.wob, 0.45));
           // genes as 4 coloured dots
           c.g.forEach((v, k) => { const a = k / GENES * S.TAU - Math.PI / 2; G.circle(ctx, c.x + Math.cos(a) * 5.5, c.y + Math.sin(a) * 5.5, 2.4, GENEC[v]); });
           if (c.me) G.text(ctx, c.cd > 0 ? 'you · recovering ' + Math.ceil(c.cd) + 's' : 'you · ready to mate', c.x, c.y - 24, 11, '#8ef7c2');

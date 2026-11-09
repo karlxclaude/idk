@@ -10,13 +10,15 @@
     outro: 'Your RNA now lives inside a bubble. Whatever it makes stays with it, so if it copies itself, the copies are its own. That changes everything.',
     create() {
       const st = {};
-      let W, H, me, fats, vesicles, eddies, t, phase, flags, dead;
+      let W, H, me, fats, vesicles, eddies, t, phase, flags, dead, seq, flying;
+      const BASEC = { A: '#ff7ad9', U: '#ff9ad0', G: '#e06bff', C: '#ff6ba8' };
 
       st.enter = function () {
         W = S.W; H = S.H; t = 0; phase = 0; dead = false;
         flags = { ves: false, comp: false, hint: false };
         me = { x: W / 2, y: H / 2, vx: 0, vy: 0, membrane: 0, grown: 0, integrity: 1, r: 34, hurt: 0 };
-        fats = []; vesicles = []; eddies = [];
+        fats = []; vesicles = []; eddies = []; flying = [];
+        seq = S.carryGet('rna', ['A', 'U', 'G', 'C', 'A', 'G', 'U', 'C', 'A', 'G']);
         for (let i = 0; i < 70; i++) fats.push(newFat(S.rand(W), S.rand(H)));
         for (let i = 0; i < 3; i++) eddies.push(newEddy());
         S.UI.hint('Move the mouse to steer. Each fatty acid you touch adds to the ring around your strand.', 8);
@@ -55,8 +57,9 @@
           const need = phase === 0 ? me.membrane < SEGS : me.grown < GROW;
           if (d < me.r + 6 && need) {
             fats.splice(i, 1); S.Audio.sfx('catch');
-            if (phase === 0) { me.membrane++; G.burst(f.x, f.y, '#ffd86b', 5, 40, 2); if (me.membrane >= SEGS) closeMembrane(); }
-            else { me.grown++; me.r += 1.2; G.burst(f.x, f.y, '#ffd86b', 5, 40, 2); if (me.grown >= GROW) finish(); }
+            flying.push({ x: f.x, y: f.y, t: 0 });
+            if (phase === 0) { me.membrane++; if (me.membrane >= SEGS) closeMembrane(); }
+            else { me.grown++; me.r += 1.2; if (me.grown >= GROW) finish(); }
             S.UI.setProgress(phase === 0 ? me.membrane / SEGS * 0.6 : 0.6 + 0.4 * me.grown / GROW);
             continue;
           }
@@ -85,6 +88,7 @@
             S.UI.setProgress(phase === 0 ? me.membrane / SEGS * 0.6 : 0.6 + 0.4 * me.grown / GROW);
           }
         }
+        for (let i = flying.length - 1; i >= 0; i--) { flying[i].t += dt * 3.5; if (flying[i].t >= 1) flying.splice(i, 1); }
         // eddies
         eddies.forEach((e, i) => {
           e.x += e.vx * dt; e.y += e.vy * dt;
@@ -106,7 +110,7 @@
         phase = 1; S.Audio.sfx('milestone'); G.burst(me.x, me.y, '#ffd86b', 40, 120, 3);
         S.unlock('vesicles', () => { S.UI.objective('Membrane closed. Keep collecting fatty acids to grow the vesicle.'); S.UI.hint('The eddies cannot reach the strand now. Grow by absorbing ' + GROW + ' more fatty acids.', 7); });
       }
-      function finish() { S.unlock('compartment', () => S.completeStage()); }
+      function finish() { S.carrySet('membrane', SEGS + GROW); S.unlock('compartment', () => S.completeStage()); }
       function die() {
         dead = true; S.Audio.sfx('hurt'); G.burst(me.x, me.y, '#ff5a7a', 40, 150, 3);
         S.UI.popup({ tag: 'Strand hydrolyzed', title: 'Your RNA fell apart', years: 'about 3.9 billion years ago', body: 'Exposed RNA in warm water does not last. Most strands that ever formed ended this way. Try again: close the ring faster and steer away from the eddies while it is open.', button: 'Try again' }, () => S.restartStage());
@@ -130,13 +134,15 @@
         if (me.hurt > 0) G.glow(ctx, me.x, me.y, me.r * 2, '#ff5a7a', me.hurt * 0.5);
         G.glow(ctx, me.x, me.y, me.r * 1.6, '#ff7ad9', 0.25 + 0.2 * frac);
         if (phase === 1) { ctx.fillStyle = 'rgba(255,216,107,0.08)'; ctx.beginPath(); ctx.arc(me.x, me.y, me.r, 0, S.TAU); ctx.fill(); }
-        ctx.strokeStyle = G.rgba('#ff7ad9', 0.9 * me.integrity + 0.1); ctx.lineWidth = 3; ctx.beginPath();
-        for (let i = 0; i <= 10; i++) { const a = i / 10 * 1.6 * Math.PI + t * 0.6; const rr = me.r * 0.45 * (0.6 + 0.4 * Math.sin(i + t * 2)); const px = me.x + Math.cos(a) * rr, py = me.y + Math.sin(a) * rr; if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py); }
+        const n0 = seq.length, pos = (i) => { const a = i / n0 * 1.7 * Math.PI + t * 0.6; const rr = me.r * 0.45 * (0.6 + 0.4 * Math.sin(i + t * 2)); return { x: me.x + Math.cos(a) * rr, y: me.y + Math.sin(a) * rr }; };
+        ctx.strokeStyle = G.rgba('#ff7ad9', 0.9 * me.integrity + 0.1); ctx.lineWidth = 2.5; ctx.beginPath();
+        for (let i = 0; i < n0; i++) { const p = pos(i); if (i === 0) ctx.moveTo(p.x, p.y); else ctx.lineTo(p.x, p.y); }
         ctx.stroke();
-        for (let i = 0; i <= 10; i += 2) { const a = i / 10 * 1.6 * Math.PI + t * 0.6; const rr = me.r * 0.45 * (0.6 + 0.4 * Math.sin(i + t * 2)); G.circle(ctx, me.x + Math.cos(a) * rr, me.y + Math.sin(a) * rr, 3, '#ff9ad0'); }
+        for (let i = 0; i < n0; i++) { const p = pos(i); G.circle(ctx, p.x, p.y, 4.5, G.rgba(BASEC[seq[i]] || '#ff9ad0', 0.3 + 0.7 * me.integrity)); G.text(ctx, seq[i], p.x, p.y, 7, '#2a0a1e', 'center', '700'); }
         // membrane segments
-        const n = phase === 1 ? SEGS + me.grown : me.membrane;
+        const n = (phase === 1 ? SEGS + me.grown : me.membrane) - flying.length;
         const total = phase === 1 ? SEGS + me.grown : SEGS;
+        flying.forEach((f, j) => { const a = (n + j) / total * S.TAU + t * 0.3; const tx = me.x + Math.cos(a) * me.r, ty = me.y + Math.sin(a) * me.r; const k = 1 - Math.pow(1 - f.t, 2); drawFat(ctx, f.x + (tx - f.x) * k, f.y + (ty - f.y) * k, a + Math.PI, 1); });
         for (let i = 0; i < n; i++) {
           const a = i / total * S.TAU + t * 0.3;
           drawFat(ctx, me.x + Math.cos(a) * me.r, me.y + Math.sin(a) * me.r, a + Math.PI, 1);
@@ -146,7 +152,7 @@
         // bars
         G.bar(ctx, me.x - 30, me.y + me.r + 14, 60, 5, me.integrity, me.integrity > 0.4 ? '#ff7ad9' : '#ff5a7a');
         G.text(ctx, 'RNA integrity', me.x, me.y + me.r + 28, 10, '#ff9ad0');
-        G.text(ctx, phase === 0 ? 'membrane ' + Math.round(frac * 100) + '%' : 'protocell', me.x, me.y - me.r - 14, 11, '#ffd86b');
+        G.text(ctx, phase === 0 ? 'your RNA · membrane ' + Math.round(frac * 100) + '%' : 'protocell', me.x, me.y - me.r - 14, 11, '#ffd86b');
         // legend
         G.text(ctx, S.mobile ? 'Fatty acid: polar head + oily tail' : 'Fatty acid: polar head (yellow) + oily tail. Alone in water they want to hide their tails.', 18, 72, 12, '#ffd86b', 'left');
         G.text(ctx, S.mobile ? 'Pink eddies hydrolyze exposed RNA' : 'Pink eddies: warm water that hydrolyzes exposed RNA.', 18, 90, 12, '#ff9ad0', 'left');

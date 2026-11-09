@@ -8,7 +8,7 @@
   const BUILDS = [
     { key: 'ribosome', name: 'Ribosome', cost: 30, color: '#b48cff', desc: 'RNA machine that builds proteins' },
     { key: 'enzymes', name: 'Metabolic enzymes', cost: 25, color: '#7fd0d8', desc: 'Catalysts: fix carbon, make parts' },
-    { key: 'dna', name: 'DNA genome', cost: 40, color: '#4fd8ff', desc: 'Stable copy of the genes' }
+    { key: 'dna', name: 'DNA genome', cost: 40, color: '#4fd8ff', desc: 'Copy your RNA into stable DNA' }
   ];
   const SLOTS = 8;
 
@@ -19,7 +19,8 @@
     outro: 'A complete prokaryote: membrane energy, protein machinery, a stable genome. Now the only thing left to do is make more of yourself, and keep doing it.',
     create() {
       const st = {};
-      let W, H, cx, cy, R, slots, held, atp, gradient, protonsOut, protonsIn, built, t, flags, done, hintT, rotor;
+      let W, H, cx, cy, R, slots, held, atp, gradient, protonsOut, protonsIn, built, t, flags, done, hintT, rotor, genome;
+      const BASEC = { A: '#ff7ad9', U: '#ff9ad0', G: '#e06bff', C: '#ff6ba8', T: '#4fd8ff' }, COMP = { A: 'T', U: 'A', G: 'C', C: 'G' };
 
       st.enter = function () {
         W = S.W; H = S.H; layout();
@@ -27,6 +28,7 @@
         held = null; atp = 0; gradient = 1; built = {}; t = 0; done = false; hintT = 0; rotor = 0;
         flags = { grad: false, pump: false, lowHint: false };
         protonsOut = []; protonsIn = [];
+        genome = S.carryGet('genome', ['A', 'U', 'G', 'C', 'A', 'G', 'U', 'C']);
         for (let i = 0; i < 160; i++) protonsOut.push(randOutside());
         for (let i = 0; i < 20; i++) protonsIn.push(randInside());
         S.UI.hint(S.mobile ? 'Drag the ATP synthase (bottom) onto an empty membrane slot.' : 'Drag the ATP synthase from the left onto one of the empty membrane slots.', 8);
@@ -77,7 +79,7 @@
         if (held) { held.x += (S.input.x - held.x) * Math.min(1, dt * 20); held.y += (S.input.y - held.y) * Math.min(1, dt * 20); }
         const doneN = BUILDS.filter(b => built[b.key]).length;
         S.UI.setProgress(doneN / 3 * 0.85 + (nS ? 0.1 : 0) + (nP ? 0.05 : 0));
-        if (doneN === 3 && !done) { done = true; S.unlock('luca', () => S.completeStage()); }
+        if (doneN === 3 && !done) { done = true; S.carrySet('parts', { synthase: count('synthase'), pump: count('pump') }); S.unlock('luca', () => S.completeStage()); }
       };
 
       st.pointerDown = function (x, y) {
@@ -123,6 +125,15 @@
           if (!s.part) { G.glow(ctx, p.x, p.y, 22, '#8ef7c2', 0.25 + 0.15 * Math.sin(t * 3)); ctx.setLineDash([3, 4]); ctx.strokeStyle = 'rgba(142,247,194,' + (0.6 + 0.3 * Math.sin(t * 3)) + ')'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(p.x, p.y, 16, 0, S.TAU); ctx.stroke(); ctx.setLineDash([]); return; }
           drawPart(ctx, s.part, p.x, p.y, s.a, 1);
         });
+        // your RNA inside; once DNA is built it is shown as a double strand with complementary bases
+        const gy = cy + R * 0.05, span = Math.min(R * 1.5, genome.length * 24), gx0 = cx - span / 2;
+        genome.forEach((b, i) => {
+          const x = gx0 + i / Math.max(1, genome.length - 1) * span, wob = Math.sin(t * 2 + i * 0.8) * 4;
+          G.circle(ctx, x, gy + wob, 6, BASEC[b] || '#ff9ad0'); G.text(ctx, b, x, gy + wob, 8, '#2a0a1e', 'center', '700');
+          if (built.dna) { const cb = COMP[b] || 'T'; G.circle(ctx, x, gy + 20 - wob, 6, BASEC[cb]); G.text(ctx, cb, x, gy + 20 - wob, 8, '#06203a', 'center', '700'); ctx.strokeStyle = 'rgba(160,210,255,0.5)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(x, gy + wob + 6); ctx.lineTo(x, gy + 20 - wob - 6); ctx.stroke(); }
+        });
+        if (genome.length > 1) { ctx.strokeStyle = 'rgba(255,122,217,0.5)'; ctx.lineWidth = 1.5; ctx.beginPath(); genome.forEach((b, i) => { const x = gx0 + i / (genome.length - 1) * span, y = gy + Math.sin(t * 2 + i * 0.8) * 4; if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y); }); ctx.stroke(); }
+        G.text(ctx, built.dna ? 'your genome, now as DNA' : 'your RNA from the RNA world', cx, gy - 22, 10, built.dna ? '#4fd8ff' : '#ff9ad0');
         // built things inside
         let bi = 0; BUILDS.forEach(b => { if (!built[b.key]) return; const a = bi * 2.1 + t * 0.2; const x = cx + Math.cos(a) * R * 0.45, y = cy + Math.sin(a) * R * 0.45; G.orb(ctx, x, y, 14, b.color, 2); G.text(ctx, b.name, x, y + 26, 11, b.color); bi++; });
         // palette

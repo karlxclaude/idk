@@ -24,13 +24,15 @@
           { kind: 'nuc', where: 'clay', x: W * 0.12, y: clayY + 28, items: [seed('nuc')], label: 'RNA on clay' },
           { kind: 'pep', where: 'clay', x: W * 0.12, y: clayY + 78, items: [seed('pep')], label: 'peptide on clay' }
         ];
-        for (let i = 0; i < 12; i++) spawn(true);
-        S.UI.hint('Drag a building block to the end of a chain. Pink = nucleotides, green = amino acids.', 8);
+        const carried = S.carryGet('products', { amino: 6, nuc: 4 });
+        for (let i = 0; i < carried.nuc; i++) spawnKind('nuc', true); for (let i = 0; i < carried.amino; i++) spawnKind('pep', true);
+        for (let i = 0; i < 4; i++) spawn(true);
+        S.UI.hint('These are your blocks from the vent. Drag one to the end of a chain. Pink = nucleotides, green = amino acids.', 8);
       };
       st.resize = function () { W = S.W; H = S.H; };
       function seed(kind) { return kind === 'nuc' ? { kind, base: S.pick(BASES) } : { kind, color: S.pick(AMINOS) }; }
-      function spawn(anywhere) {
-        const kind = Math.random() < 0.55 ? 'nuc' : 'pep';
+      function spawn(anywhere) { spawnKind(Math.random() < 0.55 ? 'nuc' : 'pep', anywhere); }
+      function spawnKind(kind, anywhere) {
         const b = seed(kind);
         b.x = anywhere ? S.rand(40, W - 40) : (Math.random() < 0.5 ? -12 : W + 12);
         b.y = anywhere ? S.rand(80, clayY - 20) : S.rand(80, clayY - 20);
@@ -65,7 +67,12 @@
         S.UI.setProgress((Math.min(rna, GOAL.rna) / GOAL.rna + Math.min(pep, GOAL.pep) / GOAL.pep) / 2);
         S.UI.objective('RNA strand ' + rna + ' / ' + GOAL.rna + ' nucleotides · peptide ' + pep + ' / ' + GOAL.pep + ' amino acids');
         if (rna >= GOAL.rna && !flags.rna) { flags.rna = true; S.unlock('rna'); }
-        if (rna >= GOAL.rna && pep >= GOAL.pep && !done) { done = true; setTimeout(() => S.completeStage(), 500); }
+        if (rna >= GOAL.rna && pep >= GOAL.pep && !done) {
+          done = true;
+          const best = chains.filter(c => c.kind === 'nuc').reduce((a, b) => a.items.length >= b.items.length ? a : b);
+          S.carrySet('rna', best.items.map(b => b.base.n)); S.carrySet('peptide', pep);
+          setTimeout(() => S.completeStage(), 500);
+        }
       }
 
       st.update = function (dt) {

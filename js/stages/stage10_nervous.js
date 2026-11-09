@@ -81,7 +81,7 @@
       // ---- phase 1: flatworm ----
       function startWorm() {
         phase = 1; caught = 0; food = []; hazards = [];
-        worm = { segs: Array.from({ length: 14 }, (_, i) => ({ x: W / 2 - i * 9, y: H / 2 })), vx: 0, vy: 0, brain: 0, hurt: 0 };
+        worm = { segs: Array.from({ length: 14 }, (_, i) => ({ x: W / 2 - i * 9, y: H / 2, mito: G.newMito() })), vx: 0, vy: 0, brain: 0, hurt: 0 };
         for (let i = 0; i < 10; i++) food.push({ x: S.rand(60, W - 60), y: S.rand(80, H - 80), vx: 0, vy: 0, wob: S.rand(S.TAU) });
         for (let i = 0; i < 5; i++) hazards.push({ x: S.rand(100, W - 100), y: S.rand(120, H - 120), r: S.rand(45, 70), ph: S.rand(S.TAU) });
         S.UI.objective('Phase 2: eyespots and a head. Steer with the mouse. Eat, avoid the dark patches.');
@@ -96,6 +96,7 @@
         head.x = S.clamp(head.x, 20, W - 20); head.y = S.clamp(head.y, 70, H - 70);
         for (let i = 1; i < w.segs.length; i++) { const p = w.segs[i - 1], s = w.segs[i]; const d = S.dist(p.x, p.y, s.x, s.y); if (d > 9) { s.x += (p.x - s.x) * (d - 9) / d; s.y += (p.y - s.y) * (d - 9) / d; } }
         w.hurt = Math.max(0, w.hurt - dt * 2);
+        w.segs.forEach((s, i) => G.mitoUpdate([s.mito], dt, t + i));
         hazards.forEach(h => { if (S.dist(h.x, h.y, head.x, head.y) < h.r) { w.hurt = 1; w.brain = Math.max(0, w.brain - dt * 0.6); if (S.chance(dt * 6)) G.particles.emit({ x: head.x, y: head.y, color: '#ff5a7a', speed: 50, life: 0.4, size: 2 }); if (S.chance(dt * 1.5)) S.UI.toast('Toxic patch: steer out'); } });
         while (food.length < 8) { let f; do { f = { x: S.rand(60, W - 60), y: S.rand(80, H - 80), vx: 0, vy: 0, wob: S.rand(S.TAU) }; } while (hazards.some(h => S.dist(h.x, h.y, f.x, f.y) < h.r + 30) === false && S.chance(0.4)); food.push(f); }
         for (let i = food.length - 1; i >= 0; i--) {
@@ -122,6 +123,7 @@
         G.glow(ctx, head.x, head.y, 50, w.hurt ? '#ff5a7a' : '#8ef7c2', 0.3 + w.hurt * 0.4);
         ctx.lineCap = 'round'; ctx.strokeStyle = 'rgba(142,247,194,0.85)';
         for (let i = 1; i < w.segs.length; i++) { const a = w.segs[i - 1], b = w.segs[i]; ctx.lineWidth = 16 * (1 - i / w.segs.length) + 4; ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke(); }
+        w.segs.forEach((s, i) => { if (i > 1 && i % 2 === 0) G.mito(ctx, s.x, s.y, 3, s.mito, t + i, 0.35); });
         // nerve cords (two lines along body) and brain
         ctx.strokeStyle = 'rgba(255,216,107,0.7)'; ctx.lineWidth = 1.5;
         [-3, 3].forEach(off => { ctx.beginPath(); w.segs.forEach((s, i) => { const nx = i < w.segs.length - 1 ? w.segs[i + 1] : s; const a = Math.atan2(nx.y - s.y, nx.x - s.x) + Math.PI / 2; const x = s.x + Math.cos(a) * off, y = s.y + Math.sin(a) * off; if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y); }); ctx.stroke(); });

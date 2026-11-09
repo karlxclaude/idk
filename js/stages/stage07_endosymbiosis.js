@@ -10,13 +10,14 @@
     outro: 'Thousands of internal power plants mean energy is no longer the limit on size or genome. The eukaryotic cell can afford to get complicated.',
     create() {
       const st = {};
-      let W, H, me, bugs, oxy, t, mitos, choice, flags, done, netNegT, o2level;
+      let W, H, me, bugs, oxy, t, mitos, choice, flags, done, netNegT, o2level, sparks, parts;
 
       st.enter = function () {
         W = S.W; H = S.H; t = 0; done = false; netNegT = 0; o2level = 0;
         flags = { sv: false, o2: false, endo: false, choiceHint: false };
         me = { x: W / 2, y: H / 2, vx: 0, vy: 0, r: 26, energy: 60, hurt: 0 };
-        bugs = []; oxy = []; mitos = []; choice = null;
+        bugs = []; oxy = []; mitos = []; choice = null; sparks = [];
+        parts = S.carryGet('parts', { synthase: 2, pump: 1 });
         for (let i = 0; i < 25; i++) bugs.push(newBug(S.rand(W), S.rand(60, H - 60), false));
         S.UI.hint('Steer with the mouse. Eat the green bacteria to grow.', 7);
       };
@@ -48,7 +49,7 @@
           if (o.y < 40) { oxy.splice(i, 1); continue; }
           if (S.dist(o.x, o.y, me.x, me.y) < me.r + o.r) {
             oxy.splice(i, 1);
-            if (mitos.length) { me.energy = Math.min(100, me.energy + 4); G.burst(o.x, o.y, '#8ef7c2', 8, 60, 2); }
+            if (mitos.length) { me.energy = Math.min(100, me.energy + 4); const m = S.pick(mitos); sparks.push({ x: o.x, y: o.y, m, t: 0 }); }
             else { me.energy -= 5; me.hurt = 1; G.burst(o.x, o.y, '#ff5a7a', 8, 60, 2); S.Audio.sfx('hurt'); if (!flags.o2) { flags.o2 = true; S.unlock('oxygen'); } }
           }
         }
@@ -70,9 +71,15 @@
           }
         }
         // mitochondria multiply inside
-        mitos.forEach(m => { m.a += dt * 0.4; m.t += dt; if (m.t > 18 && mitos.length < 8 && S.chance(dt * 0.3)) { m.t = 0; mitos.push({ a: S.rand(S.TAU), d: S.rand(0.3, 0.7), t: 0 }); S.UI.toast('A mitochondrion divided inside you'); } });
+        G.mitoUpdate(mitos, dt, t);
+        mitos.forEach(m => {
+          m.t += dt;
+          if (m.split > 0 && m.split >= 1) { m.split = 0; m.t = 0; const child = G.newMito(); child.a = m.a + 0.5; child.d = m.d; mitos.push(child); G.burst(me.x + Math.cos(m.a) * me.r * m.d, me.y + Math.sin(m.a) * me.r * m.d, '#c48cff', 10, 50, 2); S.UI.toast('A mitochondrion divided inside you'); }
+          else if (m.split === 0 && m.t > 16 && mitos.length < 8 && S.chance(dt * 0.3)) m.split = 0.01;
+        });
+        for (let i = sparks.length - 1; i >= 0; i--) { const s = sparks[i]; s.t += dt * 2.5; if (s.t >= 1) { s.m.flash = 1; G.burst(me.x + Math.cos(s.m.a) * me.r * s.m.d, me.y + Math.sin(s.m.a) * me.r * s.m.d, '#8ef7c2', 8, 60, 2); sparks.splice(i, 1); } }
         S.UI.setProgress(Math.min(1, (Math.min(mitos.length, MITO_GOAL) / MITO_GOAL) * 0.6 + Math.min(1, me.r / SIZE_GOAL) * 0.4));
-        if (mitos.length >= MITO_GOAL && me.r >= SIZE_GOAL && !done) { done = true; setTimeout(() => S.completeStage(), 400); }
+        if (mitos.length >= MITO_GOAL && me.r >= SIZE_GOAL && !done) { done = true; S.carrySet('mitos', mitos.length); setTimeout(() => S.completeStage(), 400); }
       };
       function die() {
         S.UI.popup({ tag: 'Starved', title: 'Too big to feed itself', years: 'about 2.0 billion years ago', body: 'Your membrane could not make enough energy for your volume, and the oxygen made it worse. Stay smaller until you have a lodger that can burn oxygen for you.', button: 'Try again' }, () => S.restartStage());
@@ -81,7 +88,7 @@
         if (!choice) return;
         const b = choice.bug; choice = null;
         if (keep) {
-          mitos.push({ a: S.rand(S.TAU), d: S.rand(0.3, 0.7), t: 0 }); S.Audio.sfx('milestone'); G.burst(me.x, me.y, '#c48cff', 30, 110, 3);
+          const nm = G.newMito(); nm.t = 0; nm.a = S.angleTo(me.x, me.y, b.x, b.y); nm.d = 0.6; mitos.push(nm); S.Audio.sfx('milestone'); G.burst(me.x, me.y, '#c48cff', 30, 110, 3);
           if (!flags.endo) { flags.endo = true; S.unlock('endosymbiosis', () => { S.UI.objective('Keep ' + MITO_GOAL + ' mitochondria and grow to a complex-cell size. They also turn oxygen into energy now.'); }); }
           else S.UI.toast('Another oxygen-breathing lodger kept');
         } else { me.r = Math.min(90, me.r + 2); me.energy = Math.min(100, me.energy + 14); S.Audio.sfx('eat'); S.UI.toast('Digested. Short-term food, long-term nothing.'); }
@@ -96,12 +103,19 @@
       st.draw = function (ctx) {
         // oxygen
         oxy.forEach(o => { G.circle(ctx, o.x, o.y, o.r, 'rgba(200,240,255,0.12)', 'rgba(200,240,255,0.6)', 1); G.text(ctx, 'O₂', o.x, o.y, 7, 'rgba(200,240,255,0.8)'); });
-        bugs.forEach(b => { const col = b.purple ? '#c48cff' : '#8ef7c2'; G.glow(ctx, b.x, b.y, b.r * 3, col, b.purple ? 0.6 : 0.3); ctx.save(); ctx.translate(b.x, b.y); ctx.rotate(Math.atan2(b.vy, b.vx)); ctx.fillStyle = col; ctx.beginPath(); ctx.ellipse(0, 0, b.r * 1.5, b.r, 0, 0, S.TAU); ctx.fill(); ctx.restore(); if (b.purple) G.text(ctx, 'breathes O₂', b.x, b.y - 14, 9, '#c48cff'); });
+        bugs.forEach(b => { const col = b.purple ? '#c48cff' : '#8ef7c2'; G.glow(ctx, b.x, b.y, b.r * 3, col, b.purple ? 0.6 : 0.3); ctx.save(); ctx.translate(b.x, b.y); ctx.rotate(Math.atan2(b.vy, b.vx)); ctx.fillStyle = col; ctx.beginPath(); ctx.ellipse(0, 0, b.r * 1.5, b.r, 0, 0, S.TAU); ctx.fill();
+          ctx.strokeStyle = G.rgba(col, 0.7); ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(-b.r * 1.5, 0); for (let k = 1; k <= 6; k++) ctx.lineTo(-b.r * 1.5 - k * 3, Math.sin(t * 18 + k + b.wob) * 3); ctx.stroke();
+          if (b.purple) { ctx.strokeStyle = '#3a1a5a'; ctx.beginPath(); for (let k = -6; k <= 6; k += 3) { ctx.moveTo(k, -3); ctx.lineTo(k + 1.5, 3); } ctx.stroke(); }
+          ctx.restore(); if (b.purple) G.text(ctx, 'breathes O₂', b.x, b.y - 14, 9, '#c48cff'); });
         // me
         G.glow(ctx, me.x, me.y, me.r * 1.8, me.hurt ? '#ff5a7a' : '#4fd8ff', 0.3 + me.hurt * 0.4);
         G.wobbly(ctx, me.x, me.y, me.r, t, 0.05, 7, 'rgba(79,216,255,0.12)', 'rgba(79,216,255,0.9)', 2.5);
         G.circle(ctx, me.x, me.y, me.r * 0.28, 'rgba(120,160,255,0.35)', 'rgba(160,200,255,0.7)', 1.5); // nucleus-ish
-        mitos.forEach(m => { const x = me.x + Math.cos(m.a) * me.r * m.d, y = me.y + Math.sin(m.a) * me.r * m.d; G.glow(ctx, x, y, 16, '#c48cff', 0.5); ctx.save(); ctx.translate(x, y); ctx.rotate(m.a); ctx.fillStyle = '#c48cff'; ctx.beginPath(); ctx.ellipse(0, 0, 9, 5, 0, 0, S.TAU); ctx.fill(); ctx.strokeStyle = '#3a1a5a'; ctx.lineWidth = 1; ctx.beginPath(); for (let k = -6; k <= 6; k += 3) { ctx.moveTo(k, -3); ctx.lineTo(k + 1.5, 3); } ctx.stroke(); ctx.restore(); });
+        G.nucleoid(ctx, me.x, me.y, me.r * 0.18, t, 0.8);
+        G.rimParts(ctx, me.x, me.y, me.r, parts, t);
+        mitos.forEach(m => G.mito(ctx, me.x, me.y, me.r, m, t, 1));
+        sparks.forEach(s => { const tx = me.x + Math.cos(s.m.a) * me.r * s.m.d, ty = me.y + Math.sin(s.m.a) * me.r * s.m.d; const x = s.x + (tx - s.x) * s.t, y = s.y + (ty - s.y) * s.t; G.glow(ctx, x, y, 10, '#cfefff', 0.8); G.circle(ctx, x, y, 2.5, '#fff'); });
+        if (mitos.length) G.text(ctx, mitos.length + ' living mitochondri' + (mitos.length === 1 ? 'on' : 'a'), me.x, me.y - me.r - 14, 11, '#c48cff');
         // meters
         const prod = production(), cons = consumption();
         G.bar(ctx, me.x - 30, me.y + me.r + 10, 60, 5, me.energy / 100, me.energy > 30 ? '#8ef7c2' : '#ff5a7a');

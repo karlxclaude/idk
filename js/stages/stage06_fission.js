@@ -10,10 +10,11 @@
     outro: 'Your lineage dominates this patch of ocean. Bacteria will run the planet alone like this for well over a billion years. Then one of them swallows something it does not digest.',
     create() {
       const st = {};
-      let W, H, cells, food, me, t, flags, done, nextId;
+      let W, H, cells, food, me, t, flags, done, nextId, parts;
 
       st.enter = function () {
         W = S.W; H = S.H; t = 0; done = false; nextId = 1;
+        parts = S.carryGet('parts', { synthase: 2, pump: 1 });
         flags = { fis: false, traits: false };
         cells = []; food = [];
         me = newCell(W * 0.3, H * 0.5, { speed: 1, size: 1, spikes: 0 }, 'me', 10); me.me = true; cells.push(me);
@@ -86,7 +87,7 @@
         const n = mine().length;
         S.UI.setProgress(n / GOAL);
         if (n >= 5 && !flags.traits) { flags.traits = true; S.unlock('traits'); }
-        if (n >= GOAL && !done) { done = true; S.unlock('competition', () => S.completeStage()); }
+        if (n >= GOAL && !done) { done = true; const k = mine(); const avg = (key) => k.reduce((a, c) => a + c.tr[key], 0) / k.length; S.carrySet('traits', { speed: avg('speed'), size: avg('size'), spikes: Math.round(avg('spikes')) }); S.unlock('competition', () => S.completeStage()); }
       };
       function canEat(big, small) { return radius(big) > radius(small) * (1.25 + 0.3 * small.tr.spikes); }
       function die(i, c, why) {
@@ -109,6 +110,8 @@
           G.glow(ctx, c.x, c.y, r * 2 + c.flash * 20, col, (c.me ? 0.5 : 0.2) + c.flash * 0.4);
           if (c.tr.spikes) { ctx.strokeStyle = G.rgba(col, 0.8); ctx.lineWidth = 2; ctx.beginPath(); const n = 6 + c.tr.spikes * 3; for (let k = 0; k < n; k++) { const a = k / n * S.TAU + t * 0.3; ctx.moveTo(c.x + Math.cos(a) * r, c.y + Math.sin(a) * r); ctx.lineTo(c.x + Math.cos(a) * (r + 3 + c.tr.spikes * 2), c.y + Math.sin(a) * (r + 3 + c.tr.spikes * 2)); } ctx.stroke(); }
           G.wobbly(ctx, c.x, c.y, r, t + c.wob, 0.06, 6, G.rgba(col, 0.18), G.rgba(col, c.me ? 1 : 0.7), c.me ? 2.5 : 1.5);
+          G.nucleoid(ctx, c.x, c.y, r * 0.45, t + c.wob, c.me ? 0.8 : 0.4);
+          if (c.lineage === 'me') G.rimParts(ctx, c.x, c.y, r, parts, t + c.wob);
           // flagella hint for speed
           const n = Math.round(c.tr.speed * 2); ctx.strokeStyle = G.rgba(col, 0.5); ctx.lineWidth = 1;
           for (let k = 0; k < n; k++) { const a = Math.atan2(-c.vy, -c.vx) + (k - (n - 1) / 2) * 0.35; ctx.beginPath(); ctx.moveTo(c.x + Math.cos(a) * r, c.y + Math.sin(a) * r); ctx.quadraticCurveTo(c.x + Math.cos(a + 0.3) * (r + 10), c.y + Math.sin(a + 0.3) * (r + 10) + Math.sin(t * 12 + k) * 4, c.x + Math.cos(a) * (r + 18), c.y + Math.sin(a) * (r + 18)); ctx.stroke(); }

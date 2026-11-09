@@ -13,7 +13,8 @@
     touch: false,
     mobile: false,
     input: { x: -999, y: -999, down: false, keys: {}, justDown: false, justUp: false },
-    state: { unlocked: 1, completed: [], codex: [], muted: false },
+    state: { unlocked: 1, completed: [], codex: [], muted: false, carry: {} },
+    carryText: '', carryT: 0,
     _listeners: {},
 
     // ---------- utils ----------
@@ -40,8 +41,28 @@
       try { localStorage.setItem('spark-save', JSON.stringify(this.state)); } catch (e) { }
     },
     reset() {
-      this.state = { unlocked: 1, completed: [], codex: [], muted: this.state.muted };
+      this.state = { unlocked: 1, completed: [], codex: [], muted: this.state.muted, carry: {} };
       this.save();
+    },
+
+    // ---------- carry-over between stages ----------
+    carryGet(key, def) { const c = this.state.carry || {}; return c[key] === undefined ? def : c[key]; },
+    carrySet(key, val) { if (!this.state.carry) this.state.carry = {}; this.state.carry[key] = val; this.save(); },
+    carrySummary(index) {
+      const c = this.state.carry || {}, g = (k) => c[k];
+      const seq = (a) => a ? a.join('') : '';
+      switch (index) {
+        case 2: return g('products') ? 'You bring ' + g('products').amino + ' amino acids and ' + g('products').nuc + ' nucleotides from the vent' : 'You bring amino acids and nucleotides from the vent';
+        case 3: return g('rna') ? 'You bring your RNA strand ' + seq(g('rna')) + (g('peptide') ? ' and a ' + g('peptide') + '-amino-acid peptide' : '') : 'You bring an RNA strand from the clay';
+        case 4: return 'Your protocell: RNA ' + seq(g('rna') || []).slice(0, 8) + (g('membrane') ? ' inside a ' + g('membrane') + '-lipid membrane' : ' inside its membrane');
+        case 5: return g('genome') ? 'Your evolved RNA: ' + seq(g('genome')) + ', the best copier of its population' : 'Your evolved RNA copier';
+        case 6: return g('parts') ? 'Your cell: ' + g('parts').synthase + ' ATP synthase, ' + g('parts').pump + ' pump' + (g('parts').pump === 1 ? '' : 's') + ', DNA genome' : 'Your cell: membrane machinery and a DNA genome';
+        case 7: return g('traits') ? 'Your lineage: speed ' + g('traits').speed.toFixed(1) + ', size ' + g('traits').size.toFixed(1) + ', spikes ' + g('traits').spikes : 'You are a cell from your winning lineage';
+        case 8: return g('mitos') ? 'Every one of your cells now carries ' + g('mitos') + ' living mitochondria' : 'Your cells carry living mitochondria';
+        case 9: return 'Your kin: mixed genomes, mitochondria inside each cell';
+        case 10: return g('roles') ? 'Your body: ' + g('roles').feeder + ' feeders, ' + g('roles').mover + ' movers, ' + g('roles').sensor + ' sensors' : 'Your body of specialized cells';
+        default: return '';
+      }
     },
 
     // ---------- stages ----------
@@ -63,6 +84,7 @@
       Spark.UI.setProgress(0);
       Spark.UI.hint('');
       Spark.Gfx.particles.clear();
+      this.carryText = this.carrySummary(index); this.carryT = 14;
       if (this.current.enter) this.current.enter();
       this.emit('stage', def);
     },
@@ -173,6 +195,11 @@
       if (this.current) {
         if (!blocked) { const n = this.debugSpeed || 1; for (let i = 0; i < n; i++) { this.time += dt; this.current.update(dt); if (i < n - 1) Spark.Gfx.particles.update(dt); } }
         this.current.draw(ctx);
+        if (this.carryText && this.carryT > 0) {
+          if (!blocked) this.carryT -= dt;
+          const a = Math.min(1, this.carryT);
+          Spark.Gfx.text(ctx, '↳ ' + this.carryText, 18, this.mobile ? 46 : 58, 11, 'rgba(142,247,194,' + (0.85 * a) + ')', 'left');
+        }
       }
       if (!blocked) Spark.Gfx.particles.update(dt);
       Spark.Gfx.particles.draw(ctx);
