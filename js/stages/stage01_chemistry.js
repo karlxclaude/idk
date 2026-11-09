@@ -93,7 +93,8 @@
           m.x += m.vx * dt; m.y += m.vy * dt; m.life -= dt;
           if (m.y > ridgeY - 4 && m.vy > 0) { m.y = ridgeY - 4; m.vy = -m.vy * 0.4; }
           if (m.life <= 0 || m.y < -40 || m.x < -60 || m.x > W + 60) { mols.splice(i, 1); continue; }
-          if (S.dist(m.x, m.y, pore.x, pore.y - 6) < pore.r + MOL[m.type].r) {
+          if (m.cool > 0) m.cool -= dt;
+          if (!(m.cool > 0) && S.dist(m.x, m.y, pore.x, pore.y - 6) < pore.r + MOL[m.type].r) {
             mols.splice(i, 1);
             if (m.type === 'H2S') { energy = Math.min(1, energy + 0.25); G.burst(pore.x, pore.y, '#ffd86b', 10, 80, 2); S.UI.toast('H₂S feeds the iron-sulfur catalyst: +energy'); S.Audio.sfx('catch'); continue; }
             const have = pore.pocket.filter(k => k === m.type).length;
@@ -130,14 +131,19 @@
           if (energy >= 0.6) react(r);
           else { energyT += dt; if (energyT > 1.5 && energyT < 1.6) S.UI.hint('Right parts, not enough energy. Hover a hot plume, or catch a lightning packet.', 6); }
         } else energyT = 0;
-        if (pore.pocket.length >= POCKET && !r) { pocketWarnT += dt; if (pocketWarnT > 1 && pocketWarnT < 1.1) S.UI.hint('Pocket full with no recipe. Click to flush it. Amino acid: 2 CO₂ + NH₃ + H₂. Nucleotide: CO₂ + 2 NH₃ + H₂ + PO₄.', 8); }
+        if (pore.pocket.length >= POCKET && !r) { pocketWarnT += dt; if (pocketWarnT > 1 && pocketWarnT < 1.1) S.UI.hint('Pocket full with no recipe. Flush it (button or click). Amino acid: 2 CO₂ + NH₃ + H₂. Nucleotide: CO₂ + 2 NH₃ + H₂ + PO₄.', 8); }
         else pocketWarnT = 0;
         pore.flash = Math.max(0, pore.flash - dt * 2);
       };
 
-      st.pointerDown = function () {
+      st.pointerDown = function (x, y, e) {
+        if (e && e.pointerType === 'touch') return;
+        st.action();
+      };
+      st.actionLabel = 'Flush pocket'; st.actionReady = () => pore.pocket.length >= POCKET && !recipeReady();
+      st.action = function () {
         if (pore.pocket.length) {
-          pore.pocket.forEach((type, i) => mols.push({ type, x: pore.x + S.rand(-10, 10), y: pore.y - 20, vx: S.rand(-40, 40), vy: -S.rand(40, 90), life: 12, wob: S.rand(S.TAU) }));
+          pore.pocket.forEach((type, i) => mols.push({ type, x: pore.x + S.rand(-30, 30), y: pore.y - 50, vx: S.rand(-60, 60), vy: -S.rand(60, 120), life: 14, wob: S.rand(S.TAU), cool: 1.2 }));
           pore.pocket = []; S.Audio.sfx('click');
         }
       };
@@ -194,7 +200,7 @@
         G.text(ctx, 'Nucleotides ' + counts.nuc + ' / ' + GOAL.nuc, tx, ty + 20, 13, '#ff7ad9', 'left');
         G.text(ctx, 'amino acid = 2 CO₂ + NH₃ + H₂', tx, ty + 44, 11, '#7f9bbd', 'left');
         G.text(ctx, 'nucleotide = CO₂ + 2 NH₃ + H₂ + PO₄', tx, ty + 60, 11, '#7f9bbd', 'left');
-        G.text(ctx, 'H₂S = catalyst boost · click = flush pocket', tx, ty + 76, 11, '#7f9bbd', 'left');
+        G.text(ctx, S.touch ? 'H₂S = catalyst boost' : 'H₂S = catalyst boost · click = flush pocket', tx, ty + 76, 11, '#7f9bbd', 'left');
       };
       st.debug = () => ({ pore, mols, plumes, energy, counts, packets: lightning.packets, ridgeY, done });
       return st;

@@ -8,7 +8,7 @@
 
   UI.setStage = function (def) {
     $('stage-title').innerHTML = 'Stage ' + def.index + ' of 10 <b>' + def.title + '</b>';
-    $('timeline-label').textContent = def.years;
+    $('timeline-label').textContent = S.mobile ? 'Stage ' + def.index + ' · ' + def.title + ' · ' + def.years.replace(/^about /, '') : def.years;
     const frac = S.clamp((4.0 - def.ya) / (4.0 - 0.5), 0, 1);
     $('timeline-fill').style.width = (frac * 100) + '%';
     $('timeline-marker').style.left = (frac * 100) + '%';
@@ -112,7 +112,19 @@
     UI.showPanel('title');
   };
 
+  let lastAction = null;
+  UI.syncAction = function () {
+    const b = $('btn-action'), c = S.current;
+    const label = c && c.action ? (typeof c.actionLabel === 'function' ? c.actionLabel() : (c.actionLabel || 'Action')) : null;
+    const ready = !!(c && c.action && c.actionReady && c.actionReady());
+    const key = label + '|' + ready;
+    if (key === lastAction) return; lastAction = key;
+    b.classList.toggle('hidden', !label);
+    if (label) { b.textContent = label; b.classList.toggle('ready', ready); }
+  };
+
   UI.init = function () {
+    $('btn-action').addEventListener('pointerdown', (e) => { e.preventDefault(); S.doAction(); });
     $('popup-ok').onclick = UI.popupOk;
     document.querySelectorAll('.close').forEach(b => b.onclick = () => { UI.hideAllPanels(); $('overlay').classList.add('hidden'); UI.open = null; });
     $('btn-codex').onclick = () => { if (UI.open === 'codex') UI.closeAll(); else if (UI.open !== 'popup') UI.showCodex(); };

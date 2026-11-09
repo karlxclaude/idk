@@ -105,8 +105,8 @@
       st.draw = function (ctx) {
         // zones
         ctx.fillStyle = 'rgba(255,160,80,0.04)'; ctx.fillRect(0, 60, W * 0.4, H - 120);
-        G.text(ctx, 'CLONE COLONY · one genotype · ' + clones().length + ' cells', W * 0.2, 80, 12, '#ffb36b');
-        G.text(ctx, 'YOUR KIN · mixed genotypes · ' + kin().length + ' cells · ' + born + ' born', W * 0.7, 80, 12, '#8ef7c2');
+        G.text(ctx, S.mobile ? 'CLONES · ' + clones().length : 'CLONE COLONY · one genotype · ' + clones().length + ' cells', W * 0.2, 80, S.mobile ? 11 : 12, '#ffb36b');
+        G.text(ctx, S.mobile ? 'YOUR KIN · ' + kin().length + ' · ' + born + ' born' : 'YOUR KIN · mixed genotypes · ' + kin().length + ' cells · ' + born + ' born', W * 0.7, 80, S.mobile ? 11 : 12, '#8ef7c2');
         cells.forEach(c => {
           const col = c.side === 'clone' ? '#ffb36b' : c.me ? '#8ef7c2' : '#4fd8ff';
           const ready = c.side === 'kin' && c.cd === 0 && c.age > 3;
@@ -122,8 +122,8 @@
           for (let k = 0; k < 8; k++) { const a = k / 8 * S.TAU + t * 3; const r = k % 2 ? 4 : 8; ctx.lineTo(p.x + Math.cos(a) * r, p.y + Math.sin(a) * r); } ctx.fill();
           p.g.forEach((v, k) => { const a = k / GENES * S.TAU - Math.PI / 2; G.circle(ctx, p.x + Math.cos(a) * 11, p.y + Math.sin(a) * 11, 1.8, GENEC[v]); });
         });
-        G.text(ctx, 'A parasite kills any cell sharing 3 of its 4 gene colours.', 18, H - 70, 11, '#ff9a8a', 'left');
-        G.text(ctx, 'Clones: ' + clones().length + ' of ' + clonesStart + ' founders\' line left', 18, H - 54, 11, '#ffb36b', 'left');
+        G.text(ctx, S.mobile ? 'Parasites kill cells sharing 3 of 4 genes' : 'A parasite kills any cell sharing 3 of its 4 gene colours.', 18, H - (S.mobile ? 150 : 70), 11, '#ff9a8a', 'left');
+        G.text(ctx, 'Clones: ' + clones().length + ' of ' + clonesStart + ' founders\' line left', 18, H - (S.mobile ? 134 : 54), 11, '#ffb36b', 'left');
       };
       st.debug = () => ({ me: { x: me.x, y: me.y, cd: me.cd }, cells: cells.map(c => ({ x: c.x, y: c.y, side: c.side, cd: c.cd, age: c.age, me: !!c.me })), parasites: parasites.map(p => ({ x: p.x, y: p.y })), wave, waveActive, kin: kin().length, clones: clones().length, done });
       return st;

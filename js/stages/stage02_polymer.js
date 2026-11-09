@@ -91,7 +91,7 @@
       };
 
       st.pointerDown = function (x, y) {
-        let best = null, bd = 26;
+        let best = null, bd = S.touch ? 40 : 26;
         blocks.forEach(b => { const d = S.dist(x, y, b.x, b.y); if (d < bd) { bd = d; best = b; } });
         if (best) { held = best; S.Audio.sfx('click'); }
       };
@@ -139,7 +139,7 @@
         // tide shading: when dry, the clay surface is exposed (lighter) 
         if (dry) { ctx.fillStyle = 'rgba(255,200,140,0.07)'; ctx.fillRect(0, clayY - 10, W, H - clayY + 10); }
         else { ctx.fillStyle = 'rgba(40,120,220,0.10)'; ctx.fillRect(0, clayY, W, H - clayY); }
-        G.text(ctx, dry ? 'TIDE OUT · surface dry · bonds locked' : 'TIDE IN · surface wet · slow hydrolysis', W - 20, clayY - 14, 12, dry ? '#ffcf7a' : '#7fc0ff', 'right');
+        G.text(ctx, dry ? (S.mobile ? 'TIDE OUT · bonds locked' : 'TIDE OUT · surface dry · bonds locked') : (S.mobile ? 'TIDE IN · slow hydrolysis' : 'TIDE IN · surface wet · slow hydrolysis'), W - 20, clayY - 14, 12, dry ? '#ffcf7a' : '#7fc0ff', 'right');
         G.bar(ctx, W - 180, clayY - 34, 160, 5, dry ? 1 - (tide.t - tide.dryFrom) / (tide.period - tide.dryFrom) : tide.t / tide.dryFrom, dry ? '#ffcf7a' : '#4fa0ff');
 
         // chains
@@ -160,7 +160,7 @@
         blocks.forEach(b => drawBlock(ctx, b, b.x, b.y, b === held ? 1.25 : 1));
         // legend
         G.text(ctx, 'Open water: bonds break about every 2 s', 18, 72, 12, '#7fc0ff', 'left');
-        G.text(ctx, 'Clay surface: 10× slower, and never while the tide is out', 18, 90, 12, '#ffcf7a', 'left');
+        G.text(ctx, S.mobile ? 'Clay: 10× slower, locked when tide is out' : 'Clay surface: 10× slower, and never while the tide is out', 18, 90, 12, '#ffcf7a', 'left');
         G.text(ctx, 'Chains broken: ' + breaks, 18, 108, 12, '#7f9bbd', 'left');
       };
       st.debug = () => ({ blocks, chains: chains.map(c => ({ kind: c.kind, where: c.where, n: c.items.length, end: endPos(c) })), held: !!held, dry: isDry(), done });

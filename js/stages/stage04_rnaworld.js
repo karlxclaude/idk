@@ -105,6 +105,7 @@
 
       st.copyNow = function () { if (!copy(me)) S.UI.toast('Need ' + COPY_COST + ' nucleotides to copy (' + me.nucs + ' / ' + COPY_COST + ')'); };
       st.key = function (code) { if (code === 'Space') st.copyNow(); };
+      st.action = st.copyNow; st.actionLabel = () => 'Copy ' + me.nucs + '/' + COPY_COST; st.actionReady = () => me.nucs >= COPY_COST;
       st.pointerDown = function () { if (me.nucs >= COPY_COST) st.copyNow(); };
 
       st.draw = function (ctx) {
@@ -117,18 +118,18 @@
           c.g.forEach((b, i) => { const a = i / LEN * S.TAU + t * 0.5 + c.wob; G.circle(ctx, c.x + Math.cos(a) * 7, c.y + Math.sin(a) * 7, 2.6, b === target[i] ? BASEC[b] : 'rgba(120,120,160,0.8)'); });
           if (c.me) {
             G.bar(ctx, c.x - 20, c.y + c.r + 8, 40, 4, c.nucs / COPY_COST, c.nucs >= COPY_COST ? '#8ef7c2' : '#ff9ad0');
-            G.text(ctx, c.nucs >= COPY_COST ? 'SPACE to copy' : c.nucs + ' / ' + COPY_COST, c.x, c.y + c.r + 20, 10, '#8ef7c2');
+            G.text(ctx, c.nucs >= COPY_COST ? (S.touch ? 'tap Copy' : 'SPACE to copy') : c.nucs + ' / ' + COPY_COST, c.x, c.y + c.r + 20, 10, '#8ef7c2');
             G.text(ctx, 'you · copies ' + Math.round(c.fit * 100) + '% well', c.x, c.y - c.r - 10, 11, '#8ef7c2');
           }
         });
         // panel
         const af = avgFit();
-        G.text(ctx, 'Population ' + cells.length + ' / ' + POP_GOAL + ' (food supports about ' + CAP + ')', 18, 72, 13, '#d8ecff', 'left');
+        G.text(ctx, 'Population ' + cells.length + ' / ' + POP_GOAL + (S.mobile ? '' : ' (food supports about ' + CAP + ')'), 18, 72, 13, '#d8ecff', 'left');
         G.text(ctx, 'Average copying skill ' + Math.round(af * 100) + '% (goal ' + Math.round(FIT_GOAL * 100) + '%)', 18, 92, 13, '#d8ecff', 'left');
         G.text(ctx, 'Deaths ' + deaths + ' · your generation ' + me.gen, 18, 112, 12, '#7f9bbd', 'left');
-        G.text(ctx, 'Bright beads = bases that help the strand fold into a working copier. Grey = not yet.', 18, 130, 11, '#7f9bbd', 'left');
+        G.text(ctx, S.mobile ? 'Bright beads help the strand copy. Grey do not.' : 'Bright beads = bases that help the strand fold into a working copier. Grey = not yet.', 18, 130, 11, '#7f9bbd', 'left');
         // graph
-        const gx = 18, gy = H - 120, gw = 180, gh = 60;
+        const gx = 18, gy = H - (S.mobile ? 170 : 130), gw = S.mobile ? 140 : 180, gh = 60;
         ctx.fillStyle = 'rgba(4,12,30,0.5)'; ctx.fillRect(gx, gy, gw, gh);
         ctx.strokeStyle = 'rgba(120,190,255,0.3)'; ctx.strokeRect(gx + 0.5, gy + 0.5, gw, gh);
         ctx.strokeStyle = 'rgba(142,247,194,0.4)'; ctx.setLineDash([3, 3]); ctx.beginPath(); ctx.moveTo(gx, gy + gh * (1 - FIT_GOAL)); ctx.lineTo(gx + gw, gy + gh * (1 - FIT_GOAL)); ctx.stroke(); ctx.setLineDash([]);

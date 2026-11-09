@@ -10,6 +10,8 @@
     time: 0,
     paused: false,
     debugSpeed: 1,
+    touch: false,
+    mobile: false,
     input: { x: -999, y: -999, down: false, keys: {}, justDown: false, justUp: false },
     state: { unlocked: 1, completed: [], codex: [], muted: false },
     _listeners: {},
@@ -64,6 +66,7 @@
       if (this.current.enter) this.current.enter();
       this.emit('stage', def);
     },
+    doAction() { if (this.current && this.current.action && !Spark.UI.isBlocking()) { Spark.Audio.resume(); this.current.action(); } },
     restartStage() { if (this.currentIndex > 0) this.goToStage(this.currentIndex); },
 
     completeStage() {
@@ -114,15 +117,18 @@
       const resize = () => {
         this.dpr = Math.min(window.devicePixelRatio || 1, 2);
         this.W = window.innerWidth; this.H = window.innerHeight;
+        this.mobile = this.W < 760 || this.H < 520;
         canvas.width = Math.floor(this.W * this.dpr); canvas.height = Math.floor(this.H * this.dpr);
         this.ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
         if (this.current && this.current.resize) this.current.resize();
       };
-      window.addEventListener('resize', resize); resize();
+      window.addEventListener('resize', resize); window.addEventListener('orientationchange', () => setTimeout(resize, 150)); resize();
+      try { this.touch = window.matchMedia('(pointer: coarse)').matches; } catch (e) { }
 
       const toLocal = (e) => { const r = canvas.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; };
       canvas.addEventListener('pointerdown', (e) => {
         const p = toLocal(e); this.input.x = p.x; this.input.y = p.y; this.input.down = true; this.input.justDown = true;
+        if (e.pointerType === 'touch') this.touch = true;
         Spark.Audio.resume();
         if (this.current && this.current.pointerDown && !Spark.UI.isBlocking()) this.current.pointerDown(p.x, p.y, e);
       });
@@ -171,6 +177,7 @@
       if (!blocked) Spark.Gfx.particles.update(dt);
       Spark.Gfx.particles.draw(ctx);
       Spark.Gfx.drawVignette(ctx);
+      Spark.UI.syncAction();
       this.input.justDown = false; this.input.justUp = false;
     }
   };

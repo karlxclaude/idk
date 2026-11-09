@@ -17,7 +17,7 @@
         jelly = { x: W / 2, y: H / 2, vx: 0, vy: 0, r: 60, contract: 0, tent: Array.from({ length: 10 }, (_, i) => ({ a: i / 10 * S.TAU, pull: 0 })) };
         food = []; hazards = []; flashes = [];
         for (let i = 0; i < 14; i++) food.push(newFood());
-        S.UI.hint('Click to pulse your bell. The direction is up to the currents, not you. Food you happen to touch triggers a reflex.', 10);
+        S.UI.hint((S.touch ? 'Tap' : 'Click') + ' to pulse your bell. The direction is up to the currents, not you. Food you happen to touch triggers a reflex.', 10);
       };
       st.resize = function () { W = S.W; H = S.H; };
       function newFood() { const side = S.randInt(0, 3); const x = side === 0 ? -10 : side === 1 ? W + 10 : S.rand(W), y = side === 2 ? 50 : side === 3 ? H - 50 : S.rand(60, H - 60); return { x, y, vx: S.rand(-25, 25), vy: S.rand(-25, 25), wob: S.rand(S.TAU) }; }
@@ -74,8 +74,8 @@
         // reflex flashes
         flashes.forEach(f => { ctx.strokeStyle = 'rgba(255,216,107,' + f.life + ')'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(f.x, f.y, f.r, 0, S.TAU); ctx.stroke(); });
         G.text(ctx, 'reflexes fired ' + caught + ' / ' + NET_GOAL, j.x, j.y - r * 0.7 - 16, 12, '#ffd86b');
-        G.text(ctx, 'Nerve net: every neuron talks to its neighbours. No centre, no map, no choice.', 18, 72, 12, '#ffd86b', 'left');
-        G.text(ctx, 'Click = pulse (random direction). Food must touch you.', 18, 90, 12, '#7f9bbd', 'left');
+        G.text(ctx, S.mobile ? 'Nerve net: no centre, no map, no choice' : 'Nerve net: every neuron talks to its neighbours. No centre, no map, no choice.', 18, 72, 12, '#ffd86b', 'left');
+        G.text(ctx, (S.touch ? 'Tap' : 'Click') + ' = pulse (random direction). Food must touch you.', 18, 90, 12, '#7f9bbd', 'left');
       }
 
       // ---- phase 1: flatworm ----
@@ -129,8 +129,8 @@
         // eyespots
         [-0.5, 0.5].forEach(o => { const ex = head.x + Math.cos(ang + o) * 9, ey = head.y + Math.sin(ang + o) * 9; G.circle(ctx, ex, ey, 3, '#1a0a05', '#fff', 1); });
         G.text(ctx, 'brain ' + Math.round(w.brain * 100) + '% · food ' + caught + ' / ' + BRAIN_GOAL, head.x, head.y - 28, 11, '#ffd86b');
-        G.text(ctx, 'Sensors at the front, nerves bunched behind them: a head.', 18, 72, 12, '#ffd86b', 'left');
-        G.text(ctx, 'You see ahead and choose where to go. Toxic patches shrink the brain; food grows it.', 18, 90, 12, '#7f9bbd', 'left');
+        G.text(ctx, S.mobile ? 'Sensors in front, nerves behind: a head' : 'Sensors at the front, nerves bunched behind them: a head.', 18, 72, 12, '#ffd86b', 'left');
+        G.text(ctx, S.mobile ? 'Toxic patches shrink the brain; food grows it.' : 'You see ahead and choose where to go. Toxic patches shrink the brain; food grows it.', 18, 90, 12, '#7f9bbd', 'left');
       }
 
       st.update = function (dt) {
@@ -142,6 +142,8 @@
         if (phase === 0) { food.forEach(f => G.orb(ctx, f.x, f.y, 5, '#ffd86b', 2.2)); drawNet(ctx); } else drawWorm(ctx);
       };
       st.pointerDown = function () { if (phase === 0) pulse(); };
+      st.action = function () { if (phase === 0) pulse(); };
+      st.actionLabel = () => phase === 0 ? 'Pulse' : ''; st.actionReady = () => phase === 0 && pulseCd <= 0;
       st.key = function (code) { if (code === 'Space' && phase === 0) pulse(); };
       st.debug = () => ({ phase, jelly, worm, food, hazards, caught, done });
       return st;

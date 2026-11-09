@@ -148,8 +148,8 @@
         G.text(ctx, 'RNA integrity', me.x, me.y + me.r + 28, 10, '#ff9ad0');
         G.text(ctx, phase === 0 ? 'membrane ' + Math.round(frac * 100) + '%' : 'protocell', me.x, me.y - me.r - 14, 11, '#ffd86b');
         // legend
-        G.text(ctx, 'Fatty acid: polar head (yellow) + oily tail. Alone in water they want to hide their tails.', 18, 72, 12, '#ffd86b', 'left');
-        G.text(ctx, 'Pink eddies: warm water that hydrolyzes exposed RNA.', 18, 90, 12, '#ff9ad0', 'left');
+        G.text(ctx, S.mobile ? 'Fatty acid: polar head + oily tail' : 'Fatty acid: polar head (yellow) + oily tail. Alone in water they want to hide their tails.', 18, 72, 12, '#ffd86b', 'left');
+        G.text(ctx, S.mobile ? 'Pink eddies hydrolyze exposed RNA' : 'Pink eddies: warm water that hydrolyzes exposed RNA.', 18, 90, 12, '#ff9ad0', 'left');
       };
       function drawFat(ctx, x, y, a, alpha) {
         ctx.strokeStyle = 'rgba(200,220,255,' + 0.6 * alpha + ')'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(x, y);

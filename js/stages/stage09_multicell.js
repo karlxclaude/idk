@@ -21,7 +21,7 @@
         col = { x: W / 2, y: H / 2, vx: 0, vy: 0, cells: [{ dx: 0, dy: 0, role: 'feeder', ph: 0 }] };
         food = []; for (let i = 0; i < 55; i++) food.push({ x: S.rand(W), y: S.rand(70, H - 70) });
         predator = { x: -100, y: H / 2, vx: 0, vy: 0, r: 34, t: 0 };
-        S.UI.hint('You are one cell. Press Space to divide. Your daughter cell will stay attached.', 8);
+        S.UI.hint('You are one cell. ' + (S.touch ? 'Tap Divide.' : 'Press Space to divide.') + ' Your daughter cell will stay attached.', 8);
       };
       st.resize = function () { W = S.W; H = S.H; };
       const CR = 13; // cell radius
@@ -40,8 +40,8 @@
         if (energy < DIVIDE_COST) { S.UI.toast('Need ' + DIVIDE_COST + ' energy to divide (' + Math.floor(energy) + ')'); return; }
         if (col.cells.length >= 18) { S.UI.toast('Big enough'); return; }
         energy -= DIVIDE_COST; addCell(); S.Audio.sfx('divide'); G.burst(col.x, col.y, '#9fc0e8', 12, 70, 2.5);
-        if (col.cells.length >= 4 && !flags.mc) { flags.mc = true; S.unlock('multicell', () => S.UI.hint('Click a cell to give it a job: feeder, mover or sensor. Grey stem cells do nothing yet.', 9)); }
-        if (!flags.hintRole && col.cells.length === 2) { flags.hintRole = true; S.UI.hint('Click the new grey cell to give it a job.', 6); }
+        if (col.cells.length >= 4 && !flags.mc) { flags.mc = true; S.unlock('multicell', () => S.UI.hint((S.touch ? 'Tap' : 'Click') + ' a cell to give it a job: feeder, mover or sensor. Grey stem cells do nothing yet.', 9)); }
+        if (!flags.hintRole && col.cells.length === 2) { flags.hintRole = true; S.UI.hint((S.touch ? 'Tap' : 'Click') + ' the new grey cell to give it a job.', 6); }
       }
 
       st.update = function (dt) {
@@ -91,9 +91,10 @@
       function eaten() { S.UI.popup({ tag: 'Eaten', title: 'Swallowed whole', years: 'about 700 million years ago', body: 'A single cell, or a tiny clump, fits in a predator\'s mouth. Divide early: a clump of four is already too big for it.', button: 'Try again' }, () => S.restartStage()); }
 
       st.key = function (code) { if (code === 'Space') divide(); };
+      st.action = divide; st.actionLabel = 'Divide'; st.actionReady = () => energy >= DIVIDE_COST && col.cells.length < 18;
       st.pointerDown = function (x, y) {
         for (const c of col.cells) {
-          if (S.dist(x, y, col.x + c.dx, col.y + c.dy) < CR) {
+          if (S.dist(x, y, col.x + c.dx, col.y + c.dy) < (S.touch ? CR + 4 : CR)) {
             c.role = c.role === 'stem' ? 'feeder' : ROLES[(ROLES.indexOf(c.role) + 1) % ROLES.length];
             S.Audio.sfx('click'); G.burst(col.x + c.dx, col.y + c.dy, ROLEC[c.role], 8, 50, 2); return;
           }
@@ -131,9 +132,9 @@
         });
         // legend
         G.text(ctx, 'energy', 18, 72, 11, '#9fc0e8', 'left'); G.bar(ctx, 18, 78, 160, 7, energy / ENERGY_GOAL, energy > 25 ? '#8ef7c2' : '#ff5a7a');
-        G.text(ctx, 'Space: divide (' + DIVIDE_COST + ' energy). Click a cell: feeder → mover → sensor.', 18, 100, 11, '#7f9bbd', 'left');
-        G.text(ctx, 'Feeders eat · movers push (cost energy) · sensors widen what you can see', 18, 116, 11, '#7f9bbd', 'left');
-        G.text(ctx, 'Alone, each role would starve. Together they are a body.', 18, 132, 11, '#7f9bbd', 'left');
+        G.text(ctx, S.mobile ? 'Tap a cell: feeder → mover → sensor' : 'Space: divide (' + DIVIDE_COST + ' energy). Click a cell: feeder → mover → sensor.', 18, 100, 11, '#7f9bbd', 'left');
+        G.text(ctx, S.mobile ? 'Feeders eat · movers push · sensors see' : 'Feeders eat · movers push (cost energy) · sensors widen what you can see', 18, 116, 11, '#7f9bbd', 'left');
+        if (!S.mobile) G.text(ctx, 'Alone, each role would starve. Together they are a body.', 18, 132, 11, '#7f9bbd', 'left');
       };
       st.debug = () => ({ col, food, predator, energy, senseR: senseR(), done });
       return st;

@@ -97,7 +97,9 @@
           else S.UI.popup({ tag: 'Extinct', title: 'Your lineage died out', years: 'about 3.5 billion years ago', body: 'Every cell carrying your genes was ' + why + '. That happened to almost every lineage that ever existed. Try again: eat steadily, divide as soon as the bar fills, and keep away from cells bigger than you.', button: 'Try again' }, () => S.restartStage());
         }
       }
-      st.key = function (code) { if (code === 'Space') { if (!divide(me)) S.UI.toast('Not big enough to divide yet'); } };
+      st.key = function (code) { if (code === 'Space') st.action(); };
+      st.action = function () { if (!divide(me)) S.UI.toast('Not big enough to divide yet'); };
+      st.actionLabel = 'Divide'; st.actionReady = () => me.mass >= divideAt(me);
       st.pointerDown = function () { if (me.mass >= divideAt(me)) divide(me); };
 
       st.draw = function (ctx) {
@@ -110,7 +112,7 @@
           // flagella hint for speed
           const n = Math.round(c.tr.speed * 2); ctx.strokeStyle = G.rgba(col, 0.5); ctx.lineWidth = 1;
           for (let k = 0; k < n; k++) { const a = Math.atan2(-c.vy, -c.vx) + (k - (n - 1) / 2) * 0.35; ctx.beginPath(); ctx.moveTo(c.x + Math.cos(a) * r, c.y + Math.sin(a) * r); ctx.quadraticCurveTo(c.x + Math.cos(a + 0.3) * (r + 10), c.y + Math.sin(a + 0.3) * (r + 10) + Math.sin(t * 12 + k) * 4, c.x + Math.cos(a) * (r + 18), c.y + Math.sin(a) * (r + 18)); ctx.stroke(); }
-          if (c.me) { G.bar(ctx, c.x - 20, c.y + r + 8, 40, 4, c.mass / divideAt(c), c.mass >= divideAt(c) ? '#8ef7c2' : '#ffd86b'); G.text(ctx, c.mass >= divideAt(c) ? 'SPACE: divide' : 'you', c.x, c.y + r + 20, 10, '#8ef7c2'); }
+          if (c.me) { G.bar(ctx, c.x - 20, c.y + r + 8, 40, 4, c.mass / divideAt(c), c.mass >= divideAt(c) ? '#8ef7c2' : '#ffd86b'); G.text(ctx, c.mass >= divideAt(c) ? (S.touch ? 'tap Divide' : 'SPACE: divide') : 'you', c.x, c.y + r + 20, 10, '#8ef7c2'); }
         });
         // panel
         const kin = mine(), riv = cells.filter(c => c.lineage === 'rival');
@@ -122,7 +124,7 @@
           G.bar(ctx, 18, y + 4, 120, 4, avg(kin, k) / max, '#8ef7c2'); G.bar(ctx, 18, y + 10, 120, 4, avg(riv, k) / max, '#ff6b6b');
           G.text(ctx, 'you ' + avg(kin, k).toFixed(1) + ' · rivals ' + avg(riv, k).toFixed(1), 146, y + 9, 10, '#7f9bbd', 'left');
         });
-        G.text(ctx, 'Speed and spikes cost energy. Spikes make you harder to swallow.', 18, 196, 10, '#7f9bbd', 'left');
+        G.text(ctx, S.mobile ? 'Speed and spikes cost energy.' : 'Speed and spikes cost energy. Spikes make you harder to swallow.', 18, 196, 10, '#7f9bbd', 'left');
       };
       st.debug = () => ({ me, cells: cells.map(c => ({ x: c.x, y: c.y, r: radius(c), lineage: c.lineage, me: !!c.me, mass: c.mass, spikes: c.tr.spikes })), food, canDivide: me.mass >= divideAt(me), mine: mine().length, done });
       return st;

@@ -89,8 +89,8 @@
       st.key = function (code) { if (!choice) return; if (code === 'KeyK') resolve(true); if (code === 'KeyD') resolve(false); };
       st.pointerDown = function (x, y) {
         if (!choice) return;
-        const bx = W / 2, by = H / 2 + 60;
-        if (Math.abs(y - by) < 28) { if (x > bx - 230 && x < bx - 20) resolve(false); else if (x > bx + 20 && x < bx + 230) resolve(true); }
+        const bx = W / 2, by = H / 2 + 60, off = Math.min(125, W / 4), hw = Math.min(105, W / 4 - 8);
+        if (Math.abs(y - by) < 30) { if (Math.abs(x - (bx - off)) < hw) resolve(false); else if (Math.abs(x - (bx + off)) < hw) resolve(true); }
       };
 
       st.draw = function (ctx) {
@@ -106,19 +106,20 @@
         const prod = production(), cons = consumption();
         G.bar(ctx, me.x - 30, me.y + me.r + 10, 60, 5, me.energy / 100, me.energy > 30 ? '#8ef7c2' : '#ff5a7a');
         G.text(ctx, 'energy', me.x, me.y + me.r + 24, 10, '#9fc0e8');
-        G.text(ctx, 'Energy made at the surface: ' + prod.toFixed(1) + ' / s' + (mitos.length ? '  (incl. ' + mitos.length + ' mitochondria)' : ''), 18, 72, 13, '#8ef7c2', 'left');
-        G.text(ctx, 'Energy spent by the volume: ' + cons.toFixed(1) + ' / s', 18, 92, 13, prod >= cons ? '#d8ecff' : '#ff9a8a', 'left');
+        G.text(ctx, (S.mobile ? 'Made at surface: ' : 'Energy made at the surface: ') + prod.toFixed(1) + ' / s' + (mitos.length && !S.mobile ? '  (incl. ' + mitos.length + ' mitochondria)' : ''), 18, 72, 13, '#8ef7c2', 'left');
+        G.text(ctx, (S.mobile ? 'Spent by volume: ' : 'Energy spent by the volume: ') + cons.toFixed(1) + ' / s', 18, 92, 13, prod >= cons ? '#d8ecff' : '#ff9a8a', 'left');
         G.text(ctx, 'Radius ' + Math.round(me.r) + ' (goal ' + SIZE_GOAL + ') · mitochondria ' + mitos.length + ' / ' + MITO_GOAL, 18, 112, 12, '#9fc0e8', 'left');
-        G.bar(ctx, 18, 134, 160, 6, o2level, '#cfefff', 'oxygen in the water (rising)');
+        G.bar(ctx, 18, 134, 160, 6, o2level, '#cfefff', S.mobile ? 'oxygen (rising)' : 'oxygen in the water (rising)');
         // choice dialog
         if (choice) {
           ctx.fillStyle = 'rgba(0,4,12,0.6)'; ctx.fillRect(0, 0, W, H);
           const bx = W / 2, by = H / 2 + 60;
-          G.text(ctx, 'You engulfed an oxygen-breathing bacterium.', bx, by - 70, 20, '#d8ecff');
+          G.text(ctx, 'You engulfed an oxygen-breathing bacterium.', bx, by - 70, S.mobile ? 15 : 20, '#d8ecff');
           G.text(ctx, 'It is still alive inside you. What happens next?', bx, by - 42, 14, '#9fc0e8');
-          [[bx - 125, 'Digest it  (D)', '+food now', '#8ef7c2'], [bx + 125, 'Keep it  (K)', 'let it live inside you', '#c48cff']].forEach(([x, l, sub, col]) => {
+          const off = Math.min(125, W / 4), hw = Math.min(105, W / 4 - 8);
+          [[bx - off, S.touch ? 'Digest it' : 'Digest it  (D)', '+food now', '#8ef7c2'], [bx + off, S.touch ? 'Keep it' : 'Keep it  (K)', 'let it live inside you', '#c48cff']].forEach(([x, l, sub, col]) => {
             ctx.fillStyle = 'rgba(20,50,100,0.6)'; ctx.strokeStyle = col; ctx.lineWidth = 1.5;
-            ctx.beginPath(); ctx.roundRect ? ctx.roundRect(x - 105, by - 26, 210, 52, 10) : ctx.rect(x - 105, by - 26, 210, 52); ctx.fill(); ctx.stroke();
+            ctx.beginPath(); ctx.roundRect ? ctx.roundRect(x - hw, by - 26, hw * 2, 52, 10) : ctx.rect(x - hw, by - 26, hw * 2, 52); ctx.fill(); ctx.stroke();
             G.text(ctx, l, x, by - 7, 15, col); G.text(ctx, sub, x, by + 12, 11, '#9fc0e8');
           });
         }

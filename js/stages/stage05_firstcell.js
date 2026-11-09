@@ -29,15 +29,15 @@
         protonsOut = []; protonsIn = [];
         for (let i = 0; i < 160; i++) protonsOut.push(randOutside());
         for (let i = 0; i < 20; i++) protonsIn.push(randInside());
-        S.UI.hint('Drag the ATP synthase from the left onto one of the empty membrane slots.', 8);
+        S.UI.hint(S.mobile ? 'Drag the ATP synthase (bottom) onto an empty membrane slot.' : 'Drag the ATP synthase from the left onto one of the empty membrane slots.', 8);
       };
-      function layout() { cx = W * 0.5; cy = H * 0.52; R = Math.min(W, H) * 0.26; }
+      function layout() { if (S.mobile) { cx = W * 0.5; cy = H * 0.44; R = Math.min(W * 0.3, H * 0.17); } else { cx = W * 0.5; cy = H * 0.52; R = Math.min(W, H) * 0.26; } }
       st.resize = function () { W = S.W; H = S.H; layout(); };
       function randOutside() { let x, y; do { x = S.rand(W); y = S.rand(60, H - 40); } while (S.dist(x, y, cx, cy) < R + 12); return { x, y, vx: 0, vy: 0, ph: S.rand(S.TAU) }; }
       function randInside() { const a = S.rand(S.TAU), r = S.rand(R - 14); return { x: cx + Math.cos(a) * r, y: cy + Math.sin(a) * r, vx: 0, vy: 0, ph: S.rand(S.TAU) }; }
       const slotPos = (s) => ({ x: cx + Math.cos(s.a) * R, y: cy + Math.sin(s.a) * R });
-      const palette = () => [{ key: 'synthase', x: 70, y: H * 0.42 }, { key: 'pump', x: 70, y: H * 0.62 }];
-      const buildRects = () => BUILDS.map((b, i) => ({ b, x: W - 230, y: H * 0.36 + i * 92, w: 210, h: 76 }));
+      const palette = () => S.mobile ? [{ key: 'synthase', x: W * 0.28, y: H - 150 }, { key: 'pump', x: W * 0.62, y: H - 150 }] : [{ key: 'synthase', x: 70, y: H * 0.42 }, { key: 'pump', x: 70, y: H * 0.62 }];
+      const buildRects = () => S.mobile ? BUILDS.map((b, i) => { const w = (W - 32) / 3; return { b, x: 12 + i * (w + 4), y: cy + R + 24, w, h: 64 }; }) : BUILDS.map((b, i) => ({ b, x: W - 230, y: H * 0.36 + i * 92, w: 210, h: 76 }));
       const count = (k) => slots.filter(s => s.part === k).length;
 
       st.update = function (dt) {
@@ -81,7 +81,7 @@
       };
 
       st.pointerDown = function (x, y) {
-        for (const p of palette()) if (S.dist(x, y, p.x, p.y) < 34) {
+        for (const p of palette()) if (S.dist(x, y, p.x, p.y) < (S.touch ? 44 : 34)) {
           if (atp < PARTS[p.key].cost) { S.UI.toast('Need ' + PARTS[p.key].cost + ' ATP for a ' + PARTS[p.key].name); return; }
           held = { key: p.key, x, y }; S.Audio.sfx('click'); return;
         }
@@ -95,7 +95,7 @@
       st.pointerUp = function (x, y) {
         if (!held) return;
         const h = held; held = null;
-        let best = null, bd = 40;
+        let best = null, bd = S.touch ? 55 : 40;
         slots.forEach(s => { const p = slotPos(s); const d = S.dist(h.x, h.y, p.x, p.y); if (!s.part && d < bd) { bd = d; best = s; } });
         if (!best) { S.UI.toast('Drop it on an empty membrane slot'); return; }
         if (atp < PARTS[h.key].cost) { S.UI.toast('Not enough ATP'); return; }
@@ -107,7 +107,7 @@
 
       st.draw = function (ctx) {
         // ocean label and cell interior
-        G.text(ctx, 'acidic ocean · many H⁺', cx, cy - R - 26, 12, '#ff9a8a');
+        G.text(ctx, 'acidic ocean · many H⁺', cx, cy - R - (S.mobile ? 14 : 26), 12, '#ff9a8a');
         G.glow(ctx, cx, cy, R * 1.25, '#4fd8ff', 0.18);
         ctx.fillStyle = 'rgba(10,40,80,0.55)'; ctx.beginPath(); ctx.arc(cx, cy, R, 0, S.TAU); ctx.fill();
         G.text(ctx, 'inside · alkaline · few H⁺', cx, cy + R * 0.55, 12, '#9fc0e8');
@@ -126,23 +126,30 @@
         // built things inside
         let bi = 0; BUILDS.forEach(b => { if (!built[b.key]) return; const a = bi * 2.1 + t * 0.2; const x = cx + Math.cos(a) * R * 0.45, y = cy + Math.sin(a) * R * 0.45; G.orb(ctx, x, y, 14, b.color, 2); G.text(ctx, b.name, x, y + 26, 11, b.color); bi++; });
         // palette
-        G.text(ctx, 'MEMBRANE PARTS', 70, H * 0.42 - 62, 11, '#7f9bbd'); G.text(ctx, 'drag onto the membrane', 70, H * 0.42 - 48, 10, '#7f9bbd');
-        palette().forEach(p => { drawPart(ctx, p.key, p.x, p.y, -Math.PI / 2, 1.2); const d = PARTS[p.key]; G.text(ctx, d.name, p.x, p.y + 36, 12, d.color); G.text(ctx, d.cost ? d.cost + ' ATP' : 'free', p.x, p.y + 50, 11, atp >= d.cost ? '#8ef7c2' : '#ff9a8a'); });
+        const pl = palette(); const lx = S.mobile ? W / 2 : 70, ly = pl[0].y - (S.mobile ? 48 : 62);
+        G.text(ctx, 'MEMBRANE PARTS', lx, ly, 11, '#7f9bbd'); G.text(ctx, 'drag onto the membrane', lx, ly + 14, 10, '#7f9bbd');
+        pl.forEach(p => { drawPart(ctx, p.key, p.x, p.y, -Math.PI / 2, 1.2); const d = PARTS[p.key]; G.text(ctx, d.name, p.x, p.y + 36, 12, d.color); G.text(ctx, d.cost ? d.cost + ' ATP' : 'free', p.x, p.y + 50, 11, atp >= d.cost ? '#8ef7c2' : '#ff9a8a'); });
         if (held) drawPart(ctx, held.key, held.x, held.y, -Math.PI / 2, 1.3);
         // build panel
-        G.text(ctx, 'BUILD WITH ATP (click)', W - 125, H * 0.36 - 18, 11, '#7f9bbd');
+        const br0 = buildRects()[0]; G.text(ctx, S.touch ? 'BUILD WITH ATP (tap)' : 'BUILD WITH ATP (click)', S.mobile ? W / 2 : W - 125, br0.y - 14, 11, '#7f9bbd');
         buildRects().forEach(r => {
           const ok = atp >= r.b.cost, isB = built[r.b.key];
           ctx.fillStyle = isB ? 'rgba(142,247,194,0.12)' : ok ? 'rgba(40,110,190,0.35)' : 'rgba(20,40,80,0.35)';
           ctx.strokeStyle = isB ? 'rgba(142,247,194,0.7)' : G.rgba(r.b.color, ok ? 0.8 : 0.3); ctx.lineWidth = 1.5;
           ctx.beginPath(); ctx.roundRect ? ctx.roundRect(r.x, r.y, r.w, r.h, 10) : ctx.rect(r.x, r.y, r.w, r.h); ctx.fill(); ctx.stroke();
-          G.orb(ctx, r.x + 26, r.y + 38, 12, r.b.color, 1.8);
-          G.text(ctx, r.b.name, r.x + 50, r.y + 22, 14, '#d8ecff', 'left');
-          G.text(ctx, r.b.desc, r.x + 50, r.y + 40, 10, '#9fc0e8', 'left');
-          G.text(ctx, isB ? 'built' : r.b.cost + ' ATP', r.x + 50, r.y + 58, 12, isB ? '#8ef7c2' : ok ? '#8ef7c2' : '#ff9a8a', 'left');
+          if (S.mobile) {
+            G.orb(ctx, r.x + r.w / 2, r.y + 16, 8, r.b.color, 1.8);
+            G.text(ctx, r.b.name, r.x + r.w / 2, r.y + 36, 10, '#d8ecff');
+            G.text(ctx, isB ? 'built' : r.b.cost + ' ATP', r.x + r.w / 2, r.y + 52, 11, isB ? '#8ef7c2' : ok ? '#8ef7c2' : '#ff9a8a');
+          } else {
+            G.orb(ctx, r.x + 26, r.y + 38, 12, r.b.color, 1.8);
+            G.text(ctx, r.b.name, r.x + 50, r.y + 22, 14, '#d8ecff', 'left');
+            G.text(ctx, r.b.desc, r.x + 50, r.y + 40, 10, '#9fc0e8', 'left');
+            G.text(ctx, isB ? 'built' : r.b.cost + ' ATP', r.x + 50, r.y + 58, 12, isB ? '#8ef7c2' : ok ? '#8ef7c2' : '#ff9a8a', 'left');
+          }
         });
         // meters
-        G.bar(ctx, 18, 92, 200, 8, gradient, gradient > 0.35 ? '#ff9a8a' : '#ff5a5a', 'proton gradient (membrane battery) ' + Math.round(gradient * 100) + '%');
+        G.bar(ctx, 18, 92, Math.min(200, W - 40), 8, gradient, gradient > 0.35 ? '#ff9a8a' : '#ff5a5a', 'proton gradient (membrane battery) ' + Math.round(gradient * 100) + '%');
         G.text(ctx, 'ATP ' + Math.floor(atp) + '   (+' + (count('synthase') * 3 * gradient).toFixed(1) + ' / s)', 18, 118, 15, '#8ef7c2', 'left');
         G.text(ctx, count('pump') ? 'Pumps keep the battery charged.' : count('synthase') ? 'Synthase alone drains the natural gradient.' : 'Nothing is harvesting the gradient yet.', 18, 138, 11, '#7f9bbd', 'left');
       };
