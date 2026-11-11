@@ -1,0 +1,536 @@
+<title>Route It</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: one-screen night-sky switchboard. Ticket on top, three model cards below, glowing routes between them. */
+:root {
+  color-scheme: dark;
+  --night: #0a1029;
+  --night-2: #121b42;
+  --ink: #e9eeff;
+  --muted: #8f9bc7;
+  --line: #2a3670;
+  --glow: #9db8ff;
+  --card: #eef2fc;
+  --card-ink: #111735;
+  --card-muted: #5d6790;
+  --sonnet: #3fc7b0;
+  --opus: #7d9cff;
+  --fable: #f2a65a;
+  --good: #5fe0a0;
+  --bad: #ff6b7d;
+  --f-display: "Bricolage Grotesque", "Avenir Next", "Segoe UI", system-ui, sans-serif;
+  --f-body: "Inter", "Segoe UI", system-ui, sans-serif;
+  --f-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+html, body { height: 100%; }
+[hidden] { display: none !important; }
+body {
+  background: var(--night);
+  background-image:
+    radial-gradient(ellipse 80% 50% at 50% 0%, var(--night-2), transparent 70%),
+    radial-gradient(1px 1px at 12% 22%, #ffffff55, transparent),
+    radial-gradient(1px 1px at 78% 14%, #ffffff44, transparent),
+    radial-gradient(1px 1px at 64% 58%, #ffffff33, transparent),
+    radial-gradient(1px 1px at 30% 76%, #ffffff33, transparent),
+    radial-gradient(1px 1px at 90% 82%, #ffffff44, transparent);
+  color: var(--ink);
+  font-family: var(--f-body);
+  overflow: hidden;
+}
+.app {
+  height: 100%;
+  max-width: 760px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-rows: auto auto 1fr auto auto;
+  gap: 14px;
+  padding-block: 14px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  box-sizing: border-box;
+}
+.eyebrow { font-family: var(--f-mono); font-size: 12px; color: var(--muted); letter-spacing: .02em; }
+header { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 10px 16px; }
+h1 { font-family: var(--f-display); font-weight: 800; font-size: clamp(26px, 6vw, 36px); margin: 2px 0 0; letter-spacing: -.02em; line-height: 1; }
+h1 em { font-style: italic; color: var(--glow); font-weight: 700; }
+.stats { display: flex; gap: 14px; font-variant-numeric: tabular-nums; }
+.stat { display: grid; gap: 2px; text-align: right; }
+.stat b { font-family: var(--f-display); font-size: 20px; font-weight: 700; }
+.stat span { font-family: var(--f-mono); font-size: 10px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+.bugs b { color: var(--bad); letter-spacing: .1em; }
+
+.timebar { height: 4px; background: var(--line); border-radius: 4px; overflow: hidden; }
+.timebar i { display: block; height: 100%; width: 100%; background: var(--glow); transform-origin: left; }
+
+.stage { display: grid; align-content: center; gap: 14px; min-height: 0; }
+.ticket {
+  position: relative;
+  justify-self: center;
+  width: min(100%, 420px);
+  box-sizing: border-box;
+  background: var(--night-2);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 16px 18px 18px;
+  display: grid; gap: 8px;
+  box-shadow: 0 0 0 1px #ffffff08, 0 20px 50px -20px #000;
+  transition: transform .18s ease, opacity .18s ease;
+}
+.ticket.leaving { transform: translateY(18px) scale(.96); opacity: 0; }
+.ticket .top { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.chip { font-family: var(--f-mono); font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; padding: 3px 8px; border-radius: 99px; border: 1px solid currentColor; }
+.chip.d1 { color: var(--sonnet); } .chip.d2 { color: var(--opus); } .chip.d3 { color: var(--fable); } .chip.feat { color: #d7a4ff; }
+.ticket h2 { font-family: var(--f-display); font-weight: 700; font-size: clamp(22px, 5.4vw, 30px); margin: 0; letter-spacing: -.01em; text-wrap: balance; }
+.ticket p { margin: 0; color: var(--muted); font-size: 13px; }
+.patience { height: 3px; background: var(--line); border-radius: 3px; overflow: hidden; }
+.patience i { display: block; height: 100%; background: var(--ink); transform-origin: left; }
+.ticket.empty h2 { color: var(--muted); font-weight: 500; font-size: 20px; }
+
+.upnext { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; min-height: 24px; }
+.upnext .mini { font-family: var(--f-mono); font-size: 11px; color: var(--muted); border: 1px dashed var(--line); padding: 3px 8px; border-radius: 6px; white-space: nowrap; }
+.upnext .mini.step { border-style: solid; color: var(--opus); }
+
+.models { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.model {
+  position: relative;
+  font: inherit; text-align: left; cursor: pointer;
+  background: var(--card); color: var(--card-ink);
+  border: 2px solid transparent; border-radius: 12px;
+  padding: 18px 12px 12px;
+  display: grid; gap: 4px;
+  transition: transform .1s ease, box-shadow .2s ease, border-color .2s ease;
+}
+.model:hover { transform: translateY(-2px); }
+.model:active { transform: translateY(1px); }
+.model:focus-visible { outline: 3px solid var(--glow); outline-offset: 3px; }
+.model .nm { font-family: var(--f-display); font-weight: 800; font-size: clamp(17px, 4.4vw, 22px); display: flex; align-items: baseline; gap: 5px; }
+.model .nm small { font-size: .62em; font-weight: 600; color: var(--card-muted); }
+.model .dot { width: 9px; height: 9px; border-radius: 50%; align-self: center; flex: none; }
+.model .price { font-family: var(--f-mono); font-size: 12px; font-weight: 600; color: var(--card-ink); font-variant-numeric: tabular-nums; }
+.model .price span { font-weight: 400; color: var(--card-muted); }
+.model .key { position: absolute; top: 7px; right: 8px; font-family: var(--f-mono); font-size: 10px; color: var(--card-muted); border: 1px solid #c8cfe6; border-radius: 4px; padding: 0 5px; }
+.model .role { position: absolute; top: -11px; left: 50%; transform: translateX(-50%); font-family: var(--f-mono); font-size: 10px; font-weight: 600; letter-spacing: .1em; background: var(--card); color: var(--card-ink); border-radius: 99px; padding: 2px 9px; box-shadow: 0 2px 8px #0006; white-space: nowrap; opacity: 0; transition: opacity .3s; }
+.model .role.on { opacity: 1; }
+.model .use { height: 4px; background: #d7dcef; border-radius: 4px; overflow: hidden; margin-top: 4px; }
+.model .use i { display: block; height: 100%; width: 0%; transition: width .3s; }
+.model.flash-good { border-color: var(--good); box-shadow: 0 0 0 4px #5fe0a033, 0 0 30px #5fe0a055; }
+.model.flash-bad { border-color: var(--bad); box-shadow: 0 0 0 4px #ff6b7d33, 0 0 30px #ff6b7d55; }
+.model.flash-warn { border-color: var(--fable); box-shadow: 0 0 0 4px #f2a65a33, 0 0 30px #f2a65a55; }
+
+.log { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; height: 70px; overflow: hidden; font-size: 12.5px; mask-image: linear-gradient(#000 40%, transparent); -webkit-mask-image: linear-gradient(#000 40%, transparent); }
+.log li { color: var(--muted); display: flex; gap: 8px; }
+.log li b { font-family: var(--f-mono); font-weight: 600; min-width: 46px; font-variant-numeric: tabular-nums; }
+.log li.good b { color: var(--good); } .log li.bad b { color: var(--bad); } .log li.warn b { color: var(--fable); } .log li.info b { color: var(--opus); }
+.log li span { min-width: 0; }
+
+svg.routes { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 5; }
+svg.routes path { fill: none; stroke-width: 2.5; stroke-linecap: round; filter: drop-shadow(0 0 6px currentColor); }
+svg.routes circle { filter: drop-shadow(0 0 8px currentColor); }
+
+.overlay { position: fixed; inset: 0; z-index: 10; display: grid; place-items: center; background: #070b1ee6; backdrop-filter: blur(4px); overflow-y: auto; padding-block: max(16px, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-bottom, 0px)); padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.panel { width: min(100%, 520px); display: grid; gap: 14px; }
+.panel h2 { font-family: var(--f-display); font-weight: 800; font-size: clamp(28px, 7vw, 40px); line-height: 1.05; margin: 0; letter-spacing: -.02em; text-wrap: balance; }
+.panel h2 em { color: var(--glow); }
+.panel p { margin: 0; line-height: 1.55; color: #c3cbec; max-width: 62ch; }
+.rules { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.rules li { display: grid; grid-template-columns: 76px 1fr; gap: 10px; align-items: baseline; font-size: 14px; color: #c3cbec; }
+.rules li .chip { justify-self: start; }
+.cta { font: inherit; font-family: var(--f-display); font-weight: 700; font-size: 18px; cursor: pointer; justify-self: start; background: var(--glow); color: var(--night); border: 0; border-radius: 10px; padding: 12px 22px; }
+.cta:hover { filter: brightness(1.08); }
+.cta:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
+.verdict { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.persona { border: 1px solid var(--line); border-radius: 10px; padding: 10px; display: grid; gap: 2px; opacity: .45; }
+.persona.me { opacity: 1; border-color: var(--glow); box-shadow: 0 0 24px #9db8ff44; }
+.persona b { font-family: var(--f-display); font-size: 15px; }
+.persona span { font-family: var(--f-mono); font-size: 11px; color: var(--muted); }
+.receipt { display: grid; grid-template-columns: 1fr auto; gap: 4px 16px; font-family: var(--f-mono); font-size: 13px; font-variant-numeric: tabular-nums; border-top: 1px dashed var(--line); border-bottom: 1px dashed var(--line); padding-block: 10px; }
+.receipt dd { margin: 0; text-align: right; }
+.receipt dt { color: var(--muted); }
+.receipt .total { color: var(--ink); font-weight: 600; }
+.term { font-family: var(--f-mono); font-size: 13px; background: #050816; border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; display: grid; gap: 4px; overflow-x: auto; }
+.term .c { color: var(--muted); }
+.term code { color: var(--ink); }
+@media (max-width: 440px) {
+  .stats { gap: 10px; } .stat b { font-size: 17px; }
+  .model { padding: 18px 9px 10px; }
+  .model .price span { display: none; }
+  .rules li { grid-template-columns: 1fr; gap: 2px; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="app">
+  <header>
+    <div>
+      <div class="eyebrow">// three models, one sprint, who routes it right</div>
+      <h1>Route <em>It</em></h1>
+    </div>
+    <div class="stats">
+      <div class="stat"><b id="sTime">75</b><span>sec</span></div>
+      <div class="stat"><b id="sSpent">$0</b><span>spent</span></div>
+      <div class="stat"><b id="sScore">0</b><span>score</span></div>
+      <div class="stat bugs"><b id="sBugs">···</b><span>bugs</span></div>
+    </div>
+  </header>
+  <div class="timebar"><i id="timebar"></i></div>
+
+  <section class="stage">
+    <div class="ticket" id="ticket">
+      <div class="top"><span class="chip d1" id="tChip">Easy</span><span class="eyebrow" id="tMeta">incoming</span></div>
+      <h2 id="tName">Fix a typo</h2>
+      <p id="tHint">Pick a model below. Cheapest one that can do the job wins.</p>
+      <div class="patience"><i id="tPatience"></i></div>
+    </div>
+    <div class="upnext" id="upnext"></div>
+  </section>
+
+  <section class="models" id="models"></section>
+  <ol class="log" id="log"></ol>
+</div>
+
+<svg class="routes" id="routes" aria-hidden="true"></svg>
+
+<div class="overlay" id="startScreen">
+  <div class="panel">
+    <div class="eyebrow">// three people, same Claude</div>
+    <h2>Only one uses it <em>like a pro.</em> Is it you?</h2>
+    <p>Tickets come in. Send each one to the cheapest model that can handle it. Your score is what you ship minus what you spend. Three bugs and the sprint is over.</p>
+    <ul class="rules">
+      <li><span class="chip d1">Easy</span><span>Typos, renames, emails. Sonnet does these fine. Fable costs 4× as much.</span></li>
+      <li><span class="chip d2">Medium</span><span>Opus handles it. Sonnet gets stuck, asks Fable for advice (+$3), then carries on.</span></li>
+      <li><span class="chip d3">Hard</span><span>The really hard ones. Only Fable gets these right. Anything smaller ships a bug.</span></li>
+      <li><span class="chip feat">Feature</span><span>Needs a plan. Opus writes it, then Sonnet builds it step by step. Fable can do it all, at Fable prices.</span></li>
+    </ul>
+    <p class="eyebrow">Keys 1 · 2 · 3, or tap a model.</p>
+    <button class="cta" id="startBtn" type="button">Start sprint</button>
+  </div>
+</div>
+
+<div class="overlay" id="endScreen" hidden>
+  <div class="panel">
+    <div class="eyebrow" id="endReason">// sprint over</div>
+    <h2 id="endTitle">You're number three.</h2>
+    <p id="endBody"></p>
+    <div class="verdict">
+      <div class="persona" id="p1"><span>#1</span><b>Beginner</b><span>everything to Fable</span></div>
+      <div class="persona" id="p2"><span>#2</span><b>Improver</b><span>Opus, Fable for hard</span></div>
+      <div class="persona" id="p3"><span>#3</span><b>Pro</b><span>plan, build, advise</span></div>
+    </div>
+    <dl class="receipt" id="receipt"></dl>
+    <div class="term">
+      <span class="c"># the pro setup in Claude Code: two settings</span>
+      <code>/model opusplan</code><span class="c">  Opus plans, Sonnet builds</span>
+      <code>/advisor fable</code><span class="c">  Fable steps in for the hard moments</span>
+    </div>
+    <button class="cta" id="againBtn" type="button">Run another sprint</button>
+  </div>
+</div>
+
+<script>
+(() => {
+  const MODELS = [
+    { id: 'sonnet', name: 'Sonnet', ver: '5.5', price: '$2 / $10', unit: 2, tier: 1, color: 'var(--sonnet)', role: 'BUILDS' },
+    { id: 'opus',   name: 'Opus',   ver: '5.5', price: '$4 / $20', unit: 4, tier: 2, color: 'var(--opus)',   role: 'PLANS' },
+    { id: 'fable',  name: 'Fable',  ver: '5.2', price: '$8 / $40', unit: 8, tier: 3, color: 'var(--fable)',  role: 'HARDEST CALLS' },
+  ];
+  const ADVICE = 3, SPRINT = 75, MAX_BUGS = 3, MAX_QUEUE = 6;
+  const VALUE = { 1: 10, 2: 20, 3: 45 };
+  const FEATURE_BONUS = 15, FEATURE_FABLE_COST = 32, PLAN_COST = 4;
+
+  const POOL = {
+    1: ['Fix a typo', 'Rename a file', 'Write an email', 'Update the README', 'Bump a version', 'Tweak button copy', 'Add a log line'],
+    2: ['Draft a report', 'Fix a flaky test', 'Refactor a module', 'Write unit tests', 'Debug a 500 error', 'Clean up the CSS'],
+    3: ['The really hard one', 'Untangle a race condition', 'Migrate the auth system', 'Big rebuild', 'Design the data model'],
+  };
+  const FEATURES = [
+    { name: 'New feature: sign-up form', steps: [['Set up the page', 1], ['Build the form', 2], ['Test it', 1]] },
+    { name: 'New feature: dark mode', steps: [['Add theme tokens', 1], ['Wire the toggle', 2], ['Check every screen', 1]] },
+    { name: 'New feature: search', steps: [['Index the docs', 2], ['Build the search box', 1], ['Rank the results', 2]] },
+    { name: 'New feature: CSV export', steps: [['Add the button', 1], ['Stream the rows', 2], ['Test big files', 1]] },
+  ];
+  const DLABEL = { 1: 'Easy', 2: 'Medium', 3: 'Hard' };
+
+  const $ = id => document.getElementById(id);
+  const modelsEl = $('models');
+  MODELS.forEach((m, i) => {
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'model'; b.id = 'model-' + m.id;
+    b.innerHTML = `<span class="role">${m.role}</span><span class="key">${i + 1}</span>
+      <span class="nm"><i class="dot" style="background:${m.color}"></i>${m.name}<small>${m.ver}</small></span>
+      <span class="price">${m.price} <span>per M</span></span>
+      <span class="use"><i style="background:${m.color}"></i></span>`;
+    b.addEventListener('click', () => route(i));
+    modelsEl.appendChild(b);
+  });
+
+  let S;
+  function reset() {
+    S = {
+      running: false, t: SPRINT, spawnIn: 0, queue: [], spent: 0, shipped: 0, bugs: 0,
+      routes: { sonnet: 0, opus: 0, fable: 0 }, plans: 0, fableWasted: 0, advice: 0, featureMisroutes: 0,
+      fableAll: 0, groups: {}, gid: 0, lastName: '', done: 0,
+    };
+    $('log').innerHTML = '';
+    MODELS.forEach(m => { const el = $('model-' + m.id); el.querySelector('.role').classList.remove('on'); el.querySelector('.use i').style.width = '0%'; });
+  }
+
+  function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+  function makeTicket() {
+    const elapsed = SPRINT - S.t;
+    const r = Math.random();
+    const featP = elapsed > 6 ? 0.17 : 0;
+    const hardP = elapsed > 4 ? 0.2 : 0.05;
+    let t;
+    if (r < featP) {
+      const f = pick(FEATURES);
+      t = { kind: 'feature', name: f.name, steps: f.steps, d: 4 };
+    } else {
+      const d = r < featP + hardP ? 3 : (Math.random() < 0.55 ? 1 : 2);
+      let name; do { name = pick(POOL[d]); } while (name === S.lastName);
+      t = { kind: 'task', name, d };
+    }
+    S.lastName = t.name;
+    t.patience = t.max = Math.max(6.5, 10 - elapsed * 0.04);
+    return t;
+  }
+  function spawn() {
+    if (S.queue.length >= MAX_QUEUE) { log('bad', 'drop', 'Backlog full. A ticket fell on the floor.'); return; }
+    S.queue.push(makeTicket());
+  }
+
+  function cost(n) { return '$' + n; }
+  function log(cls, tag, text) {
+    const li = document.createElement('li'); li.className = cls;
+    li.innerHTML = `<b>${tag}</b><span>${text}</span>`;
+    const l = $('log'); l.prepend(li);
+    while (l.children.length > 5) l.lastChild.remove();
+  }
+  function flash(id, cls) {
+    const el = $('model-' + id); el.classList.remove('flash-good', 'flash-bad', 'flash-warn');
+    void el.offsetWidth; el.classList.add(cls);
+    setTimeout(() => el.classList.remove(cls), 450);
+  }
+  function lightRole(id) { $('model-' + id).querySelector('.role').classList.add('on'); }
+
+  const svg = $('routes');
+  function fly(fromEl, toEl, color, delay = 0) {
+    const a = fromEl.getBoundingClientRect(), b = toEl.getBoundingClientRect();
+    const x1 = a.left + a.width / 2, y1 = a.bottom - 6, x2 = b.left + b.width / 2, y2 = b.top + 4;
+    const sideways = Math.abs(y2 - y1) < 30;
+    const cy = sideways ? Math.min(y1, y2) + 70 : (y1 + y2) / 2;
+    const d = sideways ? `M${x1},${y1} C${x1},${cy} ${x2},${cy} ${x2},${y2}` : `M${x1},${y1} C${x1},${cy} ${x2},${cy} ${x2},${y2}`;
+    const ns = 'http://www.w3.org/2000/svg';
+    const p = document.createElementNS(ns, 'path');
+    p.setAttribute('d', d); p.style.color = color; p.setAttribute('stroke', color);
+    const len = p.getTotalLength ? 0 : 0;
+    svg.appendChild(p);
+    const L = p.getTotalLength();
+    p.style.strokeDasharray = L; p.style.strokeDashoffset = L;
+    const c = document.createElementNS(ns, 'circle'); c.setAttribute('r', 5); c.setAttribute('fill', color); c.style.color = color; c.style.opacity = 0;
+    svg.appendChild(c);
+    const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const dur = reduce ? 1 : 380; let start = null;
+    function step(ts) {
+      if (start === null) start = ts + delay;
+      const k = Math.min(1, Math.max(0, (ts - start) / dur));
+      const e = 1 - Math.pow(1 - k, 3);
+      p.style.strokeDashoffset = L * (1 - e);
+      const pt = p.getPointAtLength(L * e); c.setAttribute('cx', pt.x); c.setAttribute('cy', pt.y); c.style.opacity = k > 0 ? 1 : 0;
+      if (k < 1) requestAnimationFrame(step);
+      else { p.style.transition = 'opacity .6s'; c.style.transition = 'opacity .4s'; p.style.opacity = 0; c.style.opacity = 0; setTimeout(() => { p.remove(); c.remove(); }, 700); }
+    }
+    requestAnimationFrame(step);
+  }
+
+  function spend(n) { S.spent += n; }
+  function bug(id, msg) {
+    S.bugs++; flash(id, 'flash-bad'); log('bad', 'bug', msg);
+    if (S.bugs >= MAX_BUGS) end('// three bugs shipped, sprint stopped');
+  }
+  function useBars() {
+    const tot = S.routes.sonnet + S.routes.opus + S.routes.fable || 1;
+    MODELS.forEach(m => { $('model-' + m.id).querySelector('.use i').style.width = (S.routes[m.id] / tot * 100) + '%'; });
+  }
+
+  function route(i) {
+    if (!S.running) return;
+    const t = S.queue[0]; if (!t) return;
+    const m = MODELS[i];
+    const tEl = $('ticket'), mEl = $('model-' + m.id);
+    S.queue.shift();
+    S.routes[m.id]++;
+    fly(tEl, mEl, m.color);
+
+    if (!t.step) S.fableAll += t.kind === 'feature' ? FEATURE_FABLE_COST : t.d * 8;
+
+    if (t.kind === 'feature') {
+      if (m.id !== 'opus') S.featureMisroutes++;
+      if (m.id === 'sonnet') { spend(2); bug('sonnet', `Sonnet built "${t.name.replace('New feature: ', '')}" with no plan. Half a feature shipped.`); }
+      else if (m.id === 'opus') {
+        spend(PLAN_COST); S.plans++; lightRole('opus'); flash('opus', 'flash-good');
+        const g = ++S.gid; S.groups[g] = { left: t.steps.length, name: t.name.replace('New feature: ', ''), failed: false };
+        const steps = t.steps.map(([name, d], k) => ({ kind: 'task', step: true, group: g, name, d, idx: k + 1, of: t.steps.length, patience: 11, max: 11 }));
+        S.queue.unshift(...steps);
+        log('info', cost(PLAN_COST), `Opus wrote the plan for ${S.groups[g].name}. ${steps.length} steps queued for building.`);
+      } else {
+        spend(FEATURE_FABLE_COST); S.shipped += 55; flash('fable', 'flash-warn'); S.done++;
+        log('warn', cost(FEATURE_FABLE_COST), `Fable built the whole ${t.name.replace('New feature: ', '')} feature. It works. It cost 8× the plan.`);
+      }
+    } else {
+      let c = m.unit * t.d;
+      let ok = false;
+      if (m.tier >= t.d) {
+        ok = true;
+        if (m.id === 'fable' && t.d < 3) { S.fableWasted++; flash('fable', 'flash-warn'); log('warn', cost(c), `Fable did "${t.name}". ${t.d === 1 ? "That's four times the price of Sonnet." : 'Opus or Sonnet could have.'}`); }
+        else if (m.id === 'opus' && t.d === 1) { flash('opus', 'flash-warn'); log('warn', cost(c), `Opus did "${t.name}". Sonnet would have charged half.`); }
+        else {
+          flash(m.id, 'flash-good');
+          if (m.id === 'fable') lightRole('fable');
+          if (m.id === 'sonnet' && t.step) lightRole('sonnet');
+          log('good', cost(c), `${m.name} did "${t.name}".`);
+        }
+      } else if (m.id === 'sonnet' && t.d === 2) {
+        ok = true; c += ADVICE; S.advice++;
+        fly(mEl, $('model-fable'), 'var(--fable)', 260);
+        flash('sonnet', 'flash-good'); lightRole('sonnet'); lightRole('fable');
+        log('good', cost(c), `Sonnet got stuck on "${t.name}", asked Fable for advice, then carried on.`);
+      } else {
+        spend(c);
+        if (t.step) S.groups[t.group].failed = true;
+        bug(m.id, `${m.name} couldn't handle "${t.name}". Bug shipped.`);
+      }
+      if (ok) {
+        spend(c); S.shipped += VALUE[t.d]; S.done++;
+        if (t.step) {
+          const g = S.groups[t.group]; g.left--;
+          if (g.left === 0 && !g.failed) { S.shipped += FEATURE_BONUS; log('info', '+' + FEATURE_BONUS, `${g.name} shipped. Planned by Opus, built step by step.`); }
+        }
+      }
+    }
+    useBars();
+    tEl.classList.add('leaving');
+    setTimeout(() => { tEl.classList.remove('leaving'); render(); }, 140);
+    render(true);
+  }
+
+  function render(keepTicket) {
+    $('sTime').textContent = Math.ceil(S.t);
+    $('sSpent').textContent = '$' + S.spent;
+    $('sScore').textContent = S.shipped - S.spent;
+    $('sBugs').textContent = '●'.repeat(S.bugs) + '·'.repeat(MAX_BUGS - S.bugs);
+    $('timebar').style.transform = `scaleX(${S.t / SPRINT})`;
+    if (keepTicket) return;
+    const t = S.queue[0], tk = $('ticket');
+    if (!t) {
+      tk.classList.add('empty');
+      $('tChip').className = 'chip d1'; $('tChip').textContent = 'Queue';
+      $('tMeta').textContent = '';
+      $('tName').textContent = S.running ? 'Waiting for the next ticket…' : 'Fix a typo';
+      $('tHint').textContent = '';
+      $('tPatience').style.transform = 'scaleX(0)';
+    } else {
+      tk.classList.remove('empty');
+      if (t.kind === 'feature') { $('tChip').className = 'chip feat'; $('tChip').textContent = 'Feature'; $('tHint').textContent = 'Too big to build blind. It needs a plan first.'; $('tMeta').textContent = 'needs a plan'; }
+      else {
+        $('tChip').className = 'chip d' + t.d; $('tChip').textContent = DLABEL[t.d];
+        $('tMeta').textContent = t.step ? `step ${t.idx} of ${t.of} · from Opus's plan` : `~${t.d}M tokens`;
+        $('tHint').textContent = t.step ? 'The plan is written. Now someone just has to build it.' : (t.d === 3 ? 'The biggest model is for the hardest calls.' : t.d === 1 ? 'Small job.' : 'Real work, but not the hardest call.');
+      }
+      $('tName').textContent = t.name;
+    }
+    const up = $('upnext'); up.innerHTML = '';
+    S.queue.slice(1, 6).forEach(q => {
+      const s = document.createElement('span'); s.className = 'mini' + (q.step ? ' step' : '');
+      s.textContent = q.kind === 'feature' ? 'Feature' : (q.step ? `step ${q.idx}` : DLABEL[q.d]);
+      up.appendChild(s);
+    });
+  }
+
+  let last = 0;
+  function loop(ts) {
+    if (!S.running) return;
+    const dt = Math.min(0.1, (ts - (last || ts)) / 1000); last = ts;
+    S.t -= dt;
+    S.spawnIn -= dt;
+    if (S.spawnIn <= 0) {
+      spawn();
+      const elapsed = SPRINT - S.t;
+      S.spawnIn = Math.max(1.6, 2.9 - elapsed * 0.018) * (0.8 + Math.random() * 0.4);
+      if (S.queue.length === 1) render();
+      else render();
+    }
+    const t = S.queue[0];
+    if (t) {
+      t.patience -= dt;
+      $('tPatience').style.transform = `scaleX(${Math.max(0, t.patience / t.max)})`;
+      if (t.patience <= 0) {
+        S.queue.shift();
+        if (t.step) S.groups[t.group].failed = true;
+        log('bad', 'miss', `"${t.name}" waited too long and went stale.`);
+        render();
+      }
+    }
+    if (S.t <= 0) { S.t = 0; end('// time is up'); return; }
+    render(true);
+    requestAnimationFrame(loop);
+  }
+
+  function start() {
+    reset();
+    $('startScreen').hidden = true; $('endScreen').hidden = true;
+    S.running = true; last = 0; S.spawnIn = 0;
+    render();
+    requestAnimationFrame(loop);
+  }
+
+  function end(reason) {
+    if (!S.running) return;
+    S.running = false; render(true);
+    const r = S.routes, tot = r.sonnet + r.opus + r.fable;
+    const fs = tot ? r.fable / tot : 0;
+    let who;
+    if (tot === 0) who = 0;
+    else if (fs >= 0.45) who = 1;
+    else if (r.sonnet >= r.opus && S.fableWasted <= 2 && S.featureMisroutes === 0) who = 3;
+    else who = 2;
+    const score = S.shipped - S.spent;
+    const titles = {
+      0: 'You routed nothing.',
+      1: "You're number one.",
+      2: "You're number two.",
+      3: "You're number three.",
+    };
+    const bodies = {
+      0: 'The tickets piled up and nobody picked a model. Try again, and press 1, 2 or 3 as they come in.',
+      1: `You sent ${Math.round(fs * 100)}% of your tickets to Fable, the newest and most powerful model, including jobs Sonnet does at a quarter of the price. Fable didn't mind. Your bill did.`,
+      2: `You started on Opus and stepped up to Fable for the hard jobs. That's solid, and it's the routing Anthropic recommends. The pro move is to let Sonnet build from an Opus plan and call Fable only when it's stuck.`,
+      3: `${S.plans ? `Opus planned ${S.plans} feature${S.plans === 1 ? '' : 's'}, ` : ''}Sonnet did the building, and Fable came in for advice ${S.advice} time${S.advice === 1 ? '' : 's'} and for the hardest calls. The biggest model, for the hardest calls, not every call.`,
+    };
+    $('endReason').textContent = reason;
+    $('endTitle').textContent = titles[who];
+    $('endBody').textContent = bodies[who];
+    [1, 2, 3].forEach(n => $('p' + n).classList.toggle('me', n === who));
+    const saved = S.fableAll - S.spent;
+    $('receipt').innerHTML = `
+      <dt>Tickets shipped</dt><dd>${S.done}</dd>
+      <dt>Value shipped</dt><dd>${S.shipped}</dd>
+      <dt>Spent (Sonnet ${r.sonnet} · Opus ${r.opus} · Fable ${r.fable})</dt><dd>$${S.spent}</dd>
+      <dt>Same tickets, all on Fable</dt><dd>$${S.fableAll}</dd>
+      <dt class="total">Score</dt><dd class="total">${score}${saved > 0 ? ` · saved $${saved}` : ''}</dd>`;
+    $('endScreen').hidden = false;
+    $('againBtn').focus();
+  }
+
+  document.addEventListener('keydown', e => {
+    if (e.repeat) return;
+    if (['1', '2', '3'].includes(e.key)) { route(+e.key - 1); e.preventDefault(); }
+    else if ((e.key === 'Enter' || e.key === ' ') && !S.running && document.activeElement?.tagName !== 'BUTTON') { start(); e.preventDefault(); }
+  });
+  $('startBtn').addEventListener('click', start);
+  $('againBtn').addEventListener('click', start);
+
+  reset(); render();
+})();
+</script>
